@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>登录页面</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body class="body-show">
+    <div class="container">
+        <div class="login-img-area"></div>
+        <p class="login-title">大数据</p>
+        <div class="login-area">
+            <div class="login-info-item">
+                <div class="login-info-img login-info-img-user"></div>
+                <div class="login-info-content">
+                    <input class="login-info-input"  placeholder="请输入手机号" />
+                </div>
+            </div>
+            <div class="login-info-item">
+                <div class="login-info-img login-info-img-password"></div>
+                <div class="login-info-content">
+                    <input class="login-info-input"  placeholder="请输入密码" />
+                </div>
+            </div>
+            <div class="pass-handle-area">
+                <span class="register-info">立即注册</span>
+                <span class="forget-pass-info">忘记密码？</span>
+            </div>
+        </div>
+        <div class="logo-btn">登录</div>
+        <p class="company-logo">上海韵达速递(物流)有限公司</p>
+    </div>
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script>
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs()
+    };
+    function viewJs() {
+        var height = $(".company-logo").offset().top;
+        $(".company-logo").css("top",height);
+        $(".login-info-input").on({
+            focus:function() {
+                $(this).parents(".login-info-item").addClass("login-info-item-active");
+            },
+            blur:function() {
+                $(this).parents(".login-info-item").removeClass("login-info-item-active");
+            }
+        })
+    }
+</script>
+</body>
+</html>

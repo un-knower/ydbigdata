@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var id_code_type = "";
+	var id_domain_id = "";
+	var statsDt="";
+	var pageId = 'cainiao_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	//var callUrl=appId+"/actions/cainiao/cainiao/insertCn.do?actionId=cainiao_addData";
+	/* var addFormUrl = 'cost/c9_cost_others_detail_form.html?actionId=c9_cost_others_detail_form&mode=add';
+	var updateFormUrl = 'cost/c9_cost_others_detail_form.html?actionId=c9_cost_others_detail_form&mode=edit';
+	var getFormUrl = 'cost/c9_cost_others_detail_form.html?actionId=c9_cost_others_detail_form&mode=display'; */
+	var getUrl = appId + "/actions/cainiao/getDataByStatsDt.do?actionId=cainiao_getDataByStatsDt";
+	var formTemplate = "#form_cainiao";
+	var listId = "cip_admin_codes_list";
+	var ddicUrl = appId	+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var domainUrl = appId + '/actions/admin_domain/searchData.do?actionId=cip_admin_domain_searchData';
+	var urlResource = appId	+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {
+			//cainiao_importData:"/actions/cainiao/importData.do?actionId=cainiao_importData"
+	};
+	var aa = '#cainiao_list';
+	$(function(){
+		
+		init();
+		// 保存
+		$("#btn_save").bind("click", function() {			
+			    submitData();			
+		});
+		// 修改 确定
+		$("#btn_update_save").bind("click", function() {			
+			    updateData();			
+		});
+		// 取消 
+		$("#btn_cancel").bind("click", function(){
+			$$.closeJcdfDialog();
+		});
+	});
+
+	function init(){
+		$('#statsDt').datebox({'editable':false});
+		var entrPers = top.$('#userName').text();
+		$("#entrPers").val(entrPers);
+		
+		statsDt = $$.QueryString("statsDt");
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+		
+		callUrl = actionUrl+"?actionId="+actionId;
+		if(mode == "edit"){
+			loadEditData();
+			$('#statsDt').datebox({'readonly':true});
+			$('#tjrishow').show();
+			//隐藏省文件导入框
+			$('#importFileTr').hide();
+			$('#importFile').validatebox({required:false});
+			$('#importFile').attr({ "disabled": "disabled" });
+			//隐藏市文件导入框
+			$('#importFileShiTr').hide();
+			$('#importFileShi').validatebox({required:false});
+			$('#importFileShi').attr({ "disabled": "disabled" });
+			$('#btn_save').hide();
+		}else if(mode == "display"){
+			loadEditData();
+			$('#btn_save').attr({ "disabled": "disabled" });
+		}else if(mode == "add" ){
+			$('#btn_update_save').hide();
+			$('#full_path_nm').val('');
+			$('#indust_avg_tlns').val('');
+			$('#entr_pers').val('');
+			$('#rmk').val('');
+			var stats_dt = getTimeStamp().substring(0,10);
+				$('#stats_dt').datebox('setValue', stats_dt);
+			}
+	};
+	/* 获取当前日期 */
+	function getTimeStamp(){
+		var d = new Date();
+		var str = getDate();
+		var hh = d.getHours();
+		var mm = d.getMinutes();
+		var ss = d.getSeconds();
+		
+		str += " ";
+		if( hh < 10 ){
+			str += "0";
+		}
+		str += hh + ":";
+		if( mm < 10 ){
+			str += "0";
+		}
+		str += mm + ":";
+		if( ss < 10 ){
+			str += "0";
+		}
+		str += ss;
+		
+		return str;
+	}
+	
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData(){
+		$$.openProcessingDialog();
+		var jsonData = {"stats_dt":statsDt};
+		$.ajax({
+		   type: "POST",
+		   url: getUrl,
+		   dataType:"json",
+		   contentType: "application/json",
+		   data: JSON.stringify(jsonData),
+		   success: function(oData){
+		   	 	$$.closeProcessingDialog();
+				if (oData!=null && oData.errorCode == 0) {
+					//填充修改记录的历史数据
+					editHistoryData = oData.data;
+					$(formTemplate).form('load', editHistoryData);					
+				} else {
+		 			$$.showJcdfMessager('提示消息',oData.msg,'warning');
+				}
+		   }
+		});
+	}
+	
+	/**
+	*	提交
+	*/
+	function submitData(){
+		/* 日期框 */
+		var slcDate=$("#statsDt").datebox("getValue"); 
+		slcDate = slcDate.replace(/-/g,'/'); 
+		var timestampStart = new Date(slcDate).getTime();
+		var timestampToday = new Date().getTime();
+		var result=timestampToday-timestampStart;
+		if(result<0){
+			$$.showJcdfMessager('提示消息', '日期不能大于今天', 'warning');
+			return false;
+		}
+		
+		
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		 
+		var jsonData = $$.serializeToJson(formTemplate);
+		if(!jsonData) return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+		
+		//ajax提交数据
+		$('#form_cainiao').form('submit',{
+			//url : appId + "/actions/cainiao/insertCn.do?actionId=cainiao_addData",
+			url:appId + "/actions/cainiao/importData.do?actionId=cainiao_importData",
+		 	//contentType: "application/json",
+			onSubmit : function(param) {
+				param.search_condition = JSON.stringify(jsonData);
+			},
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data == null || data == "") {
+					$$.showJcdfMessager('提示消息', "上次请求未完成，请稍候！",'warning');
+				} else {
+					var oData = JSON.parse(data);
+					if (oData && oData.errorCode == 0) {
+						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						$$.closeJcdfDialog();
+						$$.refreshJcdfDatagrid(tableId);
+					} else {
+						$$.showJcdfMessager('提示消息', oData.msg + '(' + oData.errorCode	+ ')', 'warning');
+					}
+				}
+			}
+		});
+	};
+	
+	/**
+	*	提交
+	*/
+	function updateData(){
+		
+	    $("#form_cainiao").attr("enctype","application/x-www-form-urlencoded");
+	    $("#form_cainiao").attr("encoding","application/x-www-form-urlencoded");
+	    /* 日期框 */
+		var slcDate=$("#statsDt").datebox("getValue"); 
+		slcDate = slcDate.replace(/-/g,'/'); 
+		var timestampStart = new Date(slcDate).getTime();
+		var timestampToday = new Date().getTime();
+		var result=timestampToday-timestampStart;
+		if(result<0){
+			$$.showJcdfMessager('提示消息', '日期不能大于今天', 'warning');
+			return false;
+		}
+	    
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		 
+		var jsonData = $$.serializeToJson(formTemplate);
+		if(!jsonData) return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+		
+		//ajax提交数据
+		$('#form_cainiao').form('submit',{
+			url:appId + "/actions/cainiao/updateData.do?actionId=cainiao_updateData",
+			onSubmit : function(param) {
+				param.search_condition = JSON.stringify(jsonData);
+			},
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data == null || data == "") {
+					$$.showJcdfMessager('提示消息', "上次请求未完成，请稍候！",'warning');
+				} else {
+					var oData = JSON.parse(data);
+					if (oData && oData.errorCode == 0) {
+						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						$$.closeJcdfDialog();
+						$$.refreshJcdfDatagrid(tableId);
+					} else {
+						$$.showJcdfMessager('提示消息', oData.msg + '(' + oData.errorCode	+ ')', 'warning');
+					}
+				}
+			}
+		});
+	};
+	
+</script>
+</head>
+<body>
+	<form id="form_cainiao" class="form" method="post" action="#" enctype="multipart/form-data" accept-charset="UTF-8">
+		<input type="hidden" id="entrPers" name="entrPers">
+		<table>
+				<tr>
+					<td class="right"><label for="">统计日期:</label></td>
+					<td class="left"><input type="text" id="statsDt" class="easyui-datebox"
+						name="statsDt" style="width:220px;height:26px" data-options="required:true" />
+						<span id="tjrishow" style="display: none; font-size:14px;color:red">统计日期不可修改</span>
+					</td>
+				</tr>
+				<tr id="importFileTr" >
+					<td class="right"><label for="">导入文件(省-省):</label></td>
+					<td class="left">
+						<input type="file" id="importFile"  name="importFile"  class="easyui-validatebox" 
+						data-options="required:true" />
+					</td>
+				</tr>
+				<tr id="importFileShiTr" >
+					<td class="right"><label for="">导入文件(市-市):</label></td>
+					<td class="left">
+						<input type="file" id="importFileShi"  name="importFileShi"  class="easyui-validatebox" 
+						data-options="required:true" />
+					</td>
+				</tr>
+				<tr>
+					<td class="right"><label for="">全链路排名:</label></td>
+					<td class="left"><input type="text" id="fullPathNm"
+						name="fullPathNm" style="width:220px;height:26px" class="easyui-numberbox" 
+						min="0" max="9999999999" required="true" missingMessage="必须填写整数数字" 
+						data-options="required:true" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="code_name">全链路时效:</label></td>
+					<td class="left"><input type="text" id="fullPathTlns"
+						name="fullPathTlns" style="width:220px;height:26px" class="easyui-numberbox"
+						min="0" max="100" precision="2" required="true" missingMessage="必须填写数字,保留两位小数" 
+						data-options="required:true" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="code_name">行业平均时效:</label></td>
+					<td class="left"><input type="text" id="industAvgTlns"
+						name="industAvgTlns" style="width:220px;height:26px" class="easyui-numberbox"
+						min="0" max="100" precision="2" required="true" missingMessage="必须填写数字,保留两位小数" 
+						data-options="required:true" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="code_name">备注:</label></td>
+					<td class="left">
+						<input type="text" id="rmk"	name="rmk" 
+						style="width:220px;height:52px" class="easyui-validatebox"
+						validType="length[0,50]" invalidMessage="不能超过50个字符！" 
+						data-options="required:false" />
+					</td>
+				</tr>
+			</table>
+		</form>
+	<div class="button-section">
+		<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">提交</a>
+		<a id="btn_update_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+		<a id="btn_cancel" href="#" class="easyui-linkbutton" iconCls="icon-cancel">取消</a>
+	</div>
+</body>
+</html>

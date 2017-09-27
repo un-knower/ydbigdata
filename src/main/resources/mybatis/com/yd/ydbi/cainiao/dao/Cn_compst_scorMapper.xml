@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.cainiao.dao.Cn_compst_scorMapper">
+
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	<!-- Result Map -->
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.cainiao.model.Cn_compst_scor">
+		<result column="stats_dt" property="statsDt" jdbcType="VARCHAR" />
+		<result column="scor" property="scor" jdbcType="DECIMAL" />
+		<result column="indust_avg_scor" property="industAvgScor" jdbcType="DECIMAL" />
+		<result column="indust_nm" property="industNm" jdbcType="INTEGER" />
+		<result column="nm_cnt" property="nmCnt" jdbcType="INTEGER" />
+		<result column="entr_pers_cd" property="entrPersCd" jdbcType="INTEGER" />
+		<result column="entr_tm" property="entrTm" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<!-- 分页查询 -->
+	<select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+	    SELECT
+	     stats_dt,scor,indust_avg_scor,indust_nm,nm_cnt,entr_pers_cd,entr_tm
+	    FROM ydbi.cn_compst_scor
+	    WHERE stats_dt >= #{start_date,jdbcType=DATE}
+	    AND stats_dt <= #{end_date,jdbcType=DATE}
+	]]>
+	</select>
+
+	<!-- 汇总查询 -->
+	<select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+	    COUNT(stats_dt)  indust_nm
+	    FROM ydbi.cn_compst_scor
+	    WHERE stats_dt >= #{start_date,jdbcType=DATE}
+	    AND stats_dt <= #{end_date,jdbcType=DATE}
+	]]>
+	</select>
+	
+	<!-- 新增 -->
+	<insert id="addData" parameterType="java.util.Map">
+	    INSERT INTO ydbi.cn_compst_scor(stats_dt, scor, indust_avg_scor, indust_nm, nm_cnt, entr_pers_cd)
+        VALUES(#{stats_dt,jdbcType=DATE},#{scor,jdbcType=DECIMAL},#{indust_avg_scor,jdbcType=DECIMAL},#{indust_nm,jdbcType=INTEGER},#{nm_cnt,jdbcType=INTEGER},#{entr_pers_cd,jdbcType=INTEGER})
+	</insert>
+	
+	<!-- 修改 -->
+	<update id="updateData" parameterType="java.util.Map">
+	    UPDATE ydbi.cn_compst_scor
+		SET scor=#{scor,jdbcType=DECIMAL}, indust_avg_scor=#{indust_avg_scor,jdbcType=DECIMAL}, indust_nm=#{indust_nm,jdbcType=INTEGER}, nm_cnt=#{nm_cnt,jdbcType=INTEGER}, entr_pers_cd=#{entr_pers_cd,jdbcType=INTEGER}
+		WHERE stats_dt=#{stats_dt,jdbcType=DATE}
+	</update>
+
+</mapper>   

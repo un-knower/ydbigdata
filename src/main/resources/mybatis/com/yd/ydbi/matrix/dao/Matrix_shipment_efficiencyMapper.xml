@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.matrix.dao.Matrix_shipment_efficiencyMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.matrix.model.Matrix_shipment_efficiency" >
+    <result column="dbct_name" property="dbctName" jdbcType="VARCHAR" />
+    <result column="oper_typ" property="operTyp" jdbcType="SMALLINT" />
+    <result column="spen_time" property="spenTime" jdbcType="DATE" />
+    <result column="eqpt_id" property="eqptId" jdbcType="VARCHAR" />
+    <result column="hei_oper_cnt" property="heiOperCnt" jdbcType="BIGINT" />
+    <result column="eqpt_rate" property="eqptRate" jdbcType="VARCHAR" />
+    <result column="ln_id" property="lnId" jdbcType="VARCHAR" />
+    <result column="ln_oper_cnt" property="lnOperCnt" jdbcType="BIGINT" />
+    <result column="ln_rate" property="lnRate" jdbcType="VARCHAR" />
+    <result column="ph_port_id" property="phPortId" jdbcType="VARCHAR" />
+    <result column="port_oper_cnt" property="portOperCnt" jdbcType="BIGINT" />
+    <result column="port_rate" property="portRate" jdbcType="VARCHAR" />
+  </resultMap>
+ 
+  <select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+		    SELECT 
+				CONCAT(g.mc,'(',d.dbct_cd,')') AS dbct_name,
+				if(d.oper_typ = 0,'矩阵发出','矩阵到达') AS oper_typ,
+				TIMESTAMPDIFF(HOUR,#{start_dt,jdbcType=DATE},#{end_dt,jdbcType=DATE}) AS spen_time,
+				d.eqpt_id AS eqpt_id,
+				SUM(d.hei_oper_cnt) AS hei_oper_cnt,
+				FORMAT(SUM(d.hei_oper_cnt)/TIMESTAMPDIFF(HOUR,#{start_dt,jdbcType=DATE},#{end_dt,jdbcType=DATE}),2) AS eqpt_rate,
+				d.ln_id AS ln_id,
+				SUM(d.ln_oper_cnt) AS ln_oper_cnt,
+				FORMAT(SUM(d.ln_oper_cnt)/TIMESTAMPDIFF(HOUR,#{start_dt,jdbcType=DATE},#{end_dt,jdbcType=DATE}),2) AS ln_rate,
+				d.phys_port_cd AS ph_port_id,
+				SUM(d.port_oper_cnt) AS port_oper_cnt,
+				FORMAT(SUM(d.port_oper_cnt)/TIMESTAMPDIFF(HOUR,#{start_dt,jdbcType=DATE},#{end_dt,jdbcType=DATE}),2) AS port_rate	
+			FROM
+				matrix.daw_s_hei_dbct_oper_rt_v d
+			LEFT JOIN
+				ydserver.gs g
+			ON
+				d.dbct_cd = g.bm
+			WHERE
+				d.stats_tm >=DATE_FORMAT(#{start_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND
+				d.stats_tm <= DATE_FORMAT(#{end_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND
+				d.dbct_cd = if(#{sel_dbct_id,jdbcType=INTEGER}=0,d.dbct_cd,#{sel_dbct_id,jdbcType=INTEGER})
+			AND
+				d.oper_typ = if(#{oper_typ,jdbcType=INTEGER}=0,d.oper_typ,#{oper_typ,jdbcType=INTEGER}-1)
+			group by 1,4,7,10
+			order by 1
+			LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+			
+		]]>
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+		   SELECT COUNT(*) AS dbct_name FROM
+		   (SELECT 
+				CONCAT(g.mc,'(',d.dbct_cd,')') AS dbct_name,
+				d.eqpt_id AS eqpt_id,
+				d.ln_id AS ln_id,
+				d.phys_port_cd AS ph_port_id
+			FROM
+				matrix.daw_s_hei_dbct_oper_rt_v d
+			LEFT JOIN
+				ydserver.gs g
+			ON
+				d.dbct_cd = g.bm
+			WHERE
+				d.stats_tm >=DATE_FORMAT(#{start_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND
+				d.stats_tm <= DATE_FORMAT(#{end_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND
+				d.dbct_cd = if(#{sel_dbct_id,jdbcType=INTEGER}=0,d.dbct_cd,#{sel_dbct_id,jdbcType=INTEGER})
+			AND
+				d.oper_typ = if(#{oper_typ,jdbcType=INTEGER}=0,d.oper_typ,#{oper_typ,jdbcType=INTEGER}-1)
+			group by 1,2,3,4) b
+		]]>
+  </select>
+</mapper>

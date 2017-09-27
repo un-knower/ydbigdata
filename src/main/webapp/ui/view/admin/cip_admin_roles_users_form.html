@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	    var objectName = '角色信息';
+		var listTemplate = '#cip_admin_roles_list';
+		var leftListId = "hasAttrDataGrid";
+		var rightListId ="noAttrDataGrid";
+		var listId = "cip_admin_roles_list";
+		var formSearchTemplate = '#cip_admin_roles_searchForm';
+		var searchFormId = "cip_admin_roles_searchForm";
+		var gridMenuId = '#cip_admin_roles_list_menu';
+		var leftPageId = 'hasAttrDataGrid';
+		var rightPageId = 'noAttrDataGrid';
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		var isDatagridLoaded = false;
+		var copyData = null;		
+		var today = getToday();	
+		var role_id;
+		var urlSearchLeft = appId + '/actions/admin_role_2_user/searchData.do?actionId=cip_admin_role_2_user_searchData';
+        var urlSearchRight = appId + '/actions/admin_role_2_user/searchUser.do?actionId=cip_admin_role_2_user_searchUser';
+	$(function() {
+		init();
+		getAuthButtons(leftPageId, rightPageId, authActions);
+		loadDatagridLeft();
+		loadDatagridRight();
+	});
+	function init() {
+		role_id = $$.QueryString("role_id");//获取选中的角色id
+		//	alert(role_id);
+	};
+      
+	function doAction(leftPageId,rightPageId,buttonId,actionUrl){
+		if(authActions.hasOwnProperty(buttonId)){
+			if(buttonId.indexOf('searchData')>0){
+				searchData(buttonId,appId+actionUrl);
+			}if(buttonId.indexOf('searchUser')>0){
+				searchUser(buttonId,appId+actionUrl);
+			}
+			else {
+				//默认操作
+				var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"+objectName);
+
+		    	if(selectRow){
+					var tempUrl = '';
+						tempUrl = tempUrl+'&role_id='+selectRow.role_id;
+	   				tempUrl += "&actionUrl="+appId+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+		    		$$.openJcdfDialog(urlActionForm+tempUrl, '操作'+objectName, 500, 600);
+		    	}					
+			}
+		}
+		else {
+			$$.showJcdfMessager('提示消息','当前用户没有该操作授权!','warning');
+		//	alert('当前用户没有该操作授权!');
+		}
+	};
+	//添加未分配角色用户
+	 function moveIn() {
+		var checkeds = $('#noAttrDataGrid').datagrid('getChecked');
+		var length = checkeds.length;
+		var addUserAry=[];	
+		for ( var i = 0; i < length; i++) {
+			var user_id = checkeds[i].user_id;
+			addUserAry.push(user_id);
+		}
+		if (length == 0) {
+			$$.showJcdfMessager('提示消息','请选择要移入的用户','warning');
+			//alert("请选择要移入的用户");
+			return;
+		}
+
+		parent.$.messager.confirm('询问', '您是否要执行该操作？', function(b) {
+			if (b) {
+				var urlAddUser = appId+ '/actions/admin_role_2_user/addUser.do?actionId=cip_admin_role_2_user_addUser&id=';
+				 $.ajax({
+						type : "POST",
+						url : urlAddUser += role_id,				
+						dataType : "json",
+						data : JSON.stringify(addUserAry), 
+						contentType : "application/json",
+						success : function(data) {
+						$$.closeProcessingDialog();
+							if (data&& data.errorCode == 0) {
+									$$.showJcdfMessager('提示消息', '操作成功', 'info');
+									$$.refreshJcdfDatagrid(leftListId);
+									$$.refreshJcdfDatagrid(rightListId);
+								} else {
+									$$.showJcdfMessager('提示消息', data.msg,'warning');
+								}
+						  }
+					});
+			}
+		});
+
+	}
+	//移除已经分配角色用户
+	function moveOut() {
+		var checkeds = $('#hasAttrDataGrid').datagrid('getChecked');
+		var length = checkeds.length;
+		var moveUserAry=[];	
+		for ( var i = 0; i < length; i++) {
+			var user_id = checkeds[i].user_id;
+			moveUserAry.push(user_id);
+		}
+		if (length == 0) {
+			$$.showJcdfMessager('提示消息','请选择要移出的用户','warning');
+		//	alert("请选择要移出的用户");
+			return;
+		}
+
+		parent.$.messager.confirm('询问', '您是否要执行该操作？', function(b) {
+			if (b) {
+				var urlMoveUser = appId+ '/actions/admin_role_2_user/moveUser.do?actionId=cip_admin_role_2_user_move&id=';	
+				  $.ajax({
+						type : "POST",
+						url : urlMoveUser += role_id,				
+						dataType : "json",
+						data : JSON.stringify(moveUserAry), 
+						contentType : "application/json",
+						success : function(data) {
+						$$.closeProcessingDialog();
+							if (data&& data.errorCode == 0) {								
+								$$.showJcdfMessager('提示消息', '操作成功', 'info');	
+								$$.refreshJcdfDatagrid(leftListId);
+								$$.refreshJcdfDatagrid(rightListId);
+								} else {
+									$$.showJcdfMessager('提示消息', data.msg,'warning');
+								}
+						  }
+					});
+			}
+		});
+	}
+	
+	function loadDatagridLeft() {
+		 var params = {
+					role_id : role_id
+				};
+		var json = {
+					"search_condition" : JSON.stringify(params)
+				};
+		$('#hasAttrDataGrid').datagrid({
+			url : urlSearchLeft,
+			height : $$.getDatagridHeight(),
+			width : $$.getDatagridWidth(),
+			border : true,
+			nowrap : true,
+			striped : true,
+			fitColumns : true,
+			idField : '',
+			columns : [ [ {
+				field : 'ck',
+				checkbox : true,
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'user_id',
+				title : '用户id',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'user_name',
+				title : '用户名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, ] ],
+			onBeforeLoad : function() {
+				$$.clearSelect(listId);
+			},
+			queryParams : json,
+			pagination : true,
+			rownumbers : true,
+			singleSelect : false,
+			pageSize : 20,
+			pageList : $$.pageList,
+			loadFilter : function(data) {
+				if (data != null && data.errorCode > 0) {
+					if (data.msg != null && data.msg != "") {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+				}
+				return data;
+			}
+		});
+	};
+
+	function loadDatagridRight() {
+		var params = {
+				role_id : role_id
+			};
+	    var json = {
+				"search_condition" : JSON.stringify(params)
+			};
+		$('#noAttrDataGrid').datagrid({
+			url : urlSearchRight,
+			height : $$.getDatagridHeight(),
+			width : $$.getDatagridWidth(),
+			border : true,
+			nowrap : true,
+			striped : true,
+			fitColumns : true,
+			idField : '',
+			columns : [ [ {
+				field : 'ck',
+				checkbox : true,
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'user_id',
+				title : '用户id',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'user_name',
+				title : '用户名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, ] ],
+			onBeforeLoad : function() {
+				$$.clearSelect(listId);
+			},
+			queryParams : json,
+			pagination : true,
+			rownumbers : true,
+			singleSelect : false,
+			pageSize : 20,
+			pageList : $$.pageList,
+			loadFilter : function(data) {
+				if (data != null && data.errorCode > 0) {
+					if (data.msg != null && data.msg != "") {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+				}
+				return data;
+			}
+		});
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	<div class="easyui-layout" data-options="fit:true,border:false" >
+  <!-- <div data-options="region:'north'" style="height:40px">
+    <h1>类别 :</h1>
+  </div> -->
+  <div data-options="region:'west',split:true,collapsible:false" style="width:450px;">
+   <div class="area">
+       <div class="area-title">已分配当前角色用户</div>
+           <div class="area-body autoAdapt">
+                <table id="hasAttrDataGrid" data-options="fit:true,border:false"></table>
+            </div>
+        </div>    
+  </div>
+    
+  <div data-options="region:'center'" style="padding-top:182px; padding-left:12px;">
+    <a href="javascript:void(0)" class="easyui-linkbutton c1" style="width:60px; margin-bottom:20px;" onclick="moveIn()">《 移入</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton c5" style="width:60px" onclick="moveOut()">移出 》</a>
+  </div>
+ <!--  <div  class="area" >
+		<div class="area-title">主页快速工具列表</div>
+				<div class="area-body autoAdapt">		
+		             <div id="cip_admin_user2res_list_menu"></div>
+		             <table id="cip_admin_user2res_list" fit="true"></table> 
+		       </div>
+		</div> -->
+    <div data-options="region:'east',split:true," style="width:450px;">
+    <div class="area">
+       <div class="area-title">未分配当前角色用户</div>
+           <div class="area-body autoAdapt">
+             <table id="noAttrDataGrid" data-options="fit:true,border:false"></table>
+           </div>  
+        </div>  
+  </div>
+</div>
+</body>
+</html>

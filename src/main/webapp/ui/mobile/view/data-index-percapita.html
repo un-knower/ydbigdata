@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>人均件量</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <div class="aging-top-area">
+            <div class="aging-top-time" id="info-time"></div>
+        </div>
+        <div class="pickup-top-info">
+            <div class="percapita-top-detail">
+                <div class="percapita-top-num">
+                    <p class="percapita-top-num-title">人均件量(件/天)</p>
+                    <p class="percapita-top-num-info" id="all-num">---</p>
+                </div>
+                <div class="percapita-item-right" id="all-detail">
+                    <p class="pickup-item-ratio">日环比
+                        <span>
+                            <span class="volume-ratio-info ratio-down-num">---</span>
+                            <span class="volume-ratio-img ratio-img-top-down"></span>
+                        </span>
+                    </p>
+                    <p class="pickup-item-ratio" style="margin-top: 4px;">周同比
+                        <span>
+                            <span class="volume-ratio-info ratio-up-num">---</span>
+                            <span class="volume-ratio-img ratio-img-top-up"></span>
+                        </span>
+                    </p>
+                </div>
+                <div class="percapita-top-num">
+                    <p class="percapita-top-num-title">全国人均(件/天)</p>
+                    <p class="percapita-top-num-info" id="all-county-num">---</p>
+                </div>
+            </div>
+            <div class="stage-info">
+                <div class="stage-info-4">
+                    <p class="stage-percapita-num left-percapita">超过人均1000</p>
+                    <p class="stage-percapita-num left-percapita">超过全国平均</p>
+                    <p class="stage-percapita-num left-percapita">低于全国平均</p>
+                </div>
+                <div class="stage-info-4">
+                    <p class="stage-percapita-num center-percapita" id="over1000-num">---</p>
+                    <p class="stage-percapita-num center-percapita" id="up-perv-num">---</p>
+                    <p class="stage-percapita-num center-percapita" id="down-perv-num">---</p>
+                </div>
+                <div class="stage-info-4">
+                    <p class="stage-percapita-num right-percapita" id="over1000-ratio">---</p>
+                    <p class="stage-percapita-num right-percapita" id="up-perv-ratio">---</p>
+                    <p class=" stage-percapita-num right-percapita" id="down-perv-ratio">---</p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab">
+                    <div class="echart-tab-item">
+                        <span class="echart-name echart-tab-yel">周同期<span style="opacity: 0">占</span></span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item margin-top-5">
+                        <span class="echart-name ratio-up-num">人均件量</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="day"  class="echart-tab-list-active">日趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="area-detail-menu water-remark-area">
+        <div class="area-detail-tab-list">
+            <ul class="area-detail-ul">
+                <li class="area-tab-li-active" data-arrow="up" data-active="0"><span>人均量排名前5名</span><span class="arrow-up"></span></li>
+                <li data-arrow="down" data-active="0"><span>周环比涨幅排名</span><span class="arrow-up"></span></li>
+            </ul>
+            <div class="area-detail-active-show"></div>
+        </div>
+        <div class="percapita-detail">
+            <ul class="percapita-detail-title">
+                <li>
+                    <p  class="percapita-float-info echart-tab-yel">人均量排名前5名</p>
+                </li>
+                <li>
+                    <p class="percapita-float-info">人均量排名后5名</p>
+                </li>
+                <li>
+                    <p class="percapita-float-info">全部人均量排名</p>
+                </li>
+            </ul>
+            <ul class="percapita-detail-title-ratio">
+                <li>
+                    <p  class="percapita-float-info echart-tab-yel">周环比排名前5名</p>
+                </li>
+                <li>
+                    <p class="percapita-float-info">周环比排名后5名</p>
+                </li>
+                <li>
+                    <p class="percapita-float-info">全部周环比排名</p>
+                </li>
+            </ul>
+        </div>
+        <table class="area-detail-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead">
+            <tr>
+                <td width="25%">分拨中心</td>
+                <td width="25%">人均件量</td>
+                <td width="25%">峰值</td>
+                <td width="25%">周环比</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody" id="table-info">
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getPervInfoURL = appId + "/action/homepage/pceheader.do";
+    var getEchartInfoURL = appId + "/action/homepage/pcetrend.do";
+    var getpcetop5InfoURL = appId + "/action/homepage/pcetop5.do";
+    var showInfo = "day";
+    var orgType = YDM.QueryString("sendType");
+    var orgId = YDM.QueryString("dataOrg");
+    var remarkBask = {};
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs();
+        refreshInfo();  //刷新页面内容
+        refreshCtrl();
+        commonFun(); //公用方法
+        getData();  //获取echart值
+    }
+    function refreshInfo() {
+        getDetailInfo();  //头部缓存信息
+        getDayPrevInfo(dataTime);  //获取echart信息
+        getRemarkInfo(1);  //按人均件量
+        getRemarkInfo(0);  //按周环比件量
+    }
+
+    function getRemarkInfo(remarkType) {
+        $.showLoading("加载中");
+        var conditonStr;
+        if(orgType == "area_id") {
+            conditonStr = "{'area_id':'" + orgId +"'}"
+        }else if(orgType == "prov_id") {
+            conditonStr = "{'prov_id':'" + orgId +"'}"
+        }else if(orgType == "com_id") {
+            conditonStr = "{'com_id':'" + orgId +"'}"
+        }
+        var survParams = {
+            "date_time": dataTime,
+            "pcetype" : remarkType + '',
+            "conditonStr":conditonStr
+        };
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getpcetop5InfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    remarkBask[remarkType] = {
+                        0 : oData.data.top5,
+                        1 : oData.data.low5,
+                        2 : oData.data.all
+                    };
+                    if(remarkType == 1) {
+                        changeTableInfo(0,0)
+                    }
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function getDayPrevInfo(date, ajaxName) {
+        $.showLoading("加载中");
+        var conditonStr;
+        if(orgType == "area_id") {
+            conditonStr = "{'area_id':'" + orgId +"'}"
+        }else if(orgType == "prov_id") {
+            conditonStr = "{'prov_id':'" + orgId +"'}"
+        }else if(orgType == "com_id") {
+            conditonStr = "{'com_id':'" + orgId +"'}"
+        }
+        var survParams = {
+            "date_time": date,
+            "conditonStr":conditonStr
+        };
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getEchartInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addEchartBashInfo(oData.data, ajaxName);
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addEchartBashInfo(data, ajaxName) {
+    	prepareEchartData(data, ajaxName)
+    }
+
+    function getDetailInfo() {
+        $.showLoading("加载中");
+        var conditonStr;
+        if(orgType == "area_id") {
+            conditonStr = "{'area_id':'" + orgId +"'}"
+        }else if(orgType == "prov_id") {
+            conditonStr = "{'prov_id':'" + orgId +"'}"
+        }else if(orgType == "com_id") {
+            conditonStr = "{'com_id':'" + orgId +"'}"
+        }
+        var survParams = {
+            "date_time": dataTime,
+            "conditonStr":conditonStr
+        };
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getPervInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addBashInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addBashInfo(data) {
+        $("#all-num").html(changeData(data.allcountry,"abs")).removeClass("ratio-up-num ratio-down-num").addClass("ratio-"+ changeData(data.allcountryDailyChain,'symbol') +"-num");
+        $("#all-county-num").html(changeData(data.allcity,"abs"));
+        $("#over1000-num").html(changeData(data.upAllcountrythousand,"abs","家"));
+        $("#up-perv-num").html(changeData(data.upAllcountryAverange,"abs","家"));
+        $("#down-perv-num").html(changeData(data.lowAllcountryAverange,"abs","家"));
+        $("#over1000-ratio").html(changeData(data.upAllcountrythousandi,"abs","%"));
+        $("#up-perv-ratio").html(changeData(data.upAllcountryAverangei,"abs","%"));
+        $("#down-perv-ratio").html(changeData(data.lowAllcountryAverangei,"abs","%"));
+        var str = "<p class='pickup-item-ratio'>日环比<span><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.allcountryDailyChain,"symbol") +"-num'>"+ changeData(data.allcountryDailyChain,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.allcountryDailyChain,"symbol") +"'></span></span></p><p class='pickup-item-ratio' style='margin-top: 5px'>周同比<span><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.allcountryCycleRing,"symbol") +"-num'>"+ changeData(data.allcountryCycleRing,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.allcountryCycleRing,"symbol") +"'></span></span></p>";
+        $("#all-detail").empty().append(str);
+    }
+
+
+    function viewJs() {
+        $("#info-time").text(dataTime);
+        $(".area-detail-ul li").on("click",function() {
+            var index = $(this).index();
+            var dataActive = $(this).attr("data-active");
+            var arrow = $(this).attr("data-arrow");
+            if(arrow == "down") {
+                $(this).attr("data-arrow","up").addClass("area-tab-li-active").find("span").removeClass("arrow-down").end().siblings().removeClass("area-tab-li-active").attr("data-arrow","down");
+                $(".area-detail-active-show").animate({"left":(50*index+10) + "%"},100);
+                $(".percapita-detail").slideUp(200,function() {
+                    $(".percapita-detail").children().eq(index).show().siblings().hide();
+                });
+                changeTableInfo(index,dataActive)
+            }else if(arrow == "up") {
+                $(this).attr("data-arrow","down").find("span").addClass("arrow-down");
+                $(".percapita-detail").slideDown(200);
+            }
+
+        });
+        $(".percapita-float-info").on("click",function() {
+            $(this).addClass("echart-tab-yel").parent().siblings().children().removeClass("echart-tab-yel");
+            var showInfo = $(this).text();
+            var index = $(this).parent().index();
+            var eleName = $(this).parents("ul");
+            $(".area-detail-ul").children().eq(eleName.index()).attr("data-active",index).children().eq(0).text(showInfo).end().end().trigger("click")
+        })
+    }
+    function changeTableInfo(index,dataActive) {
+        var changeIndex = Math.abs(index-1);
+        $("#table-info").empty();
+        var data = remarkBask[changeIndex][dataActive];
+        if(data == null) {
+            return false;
+        }
+        $.each(data,function(index,val) {
+            var str = "<tr><td>"+ val.fb_code +"</td><td>"+ val.p_num +"</td><td>"+ val.top_num +"</td><td><span class='pick-ratio-num ratio-"+ changeData(val.week_cycle,"symbol") +"-num'>"+ changeData(val.week_cycle,"abs","%") +"</span><span class='pick-ratio-img ratio-img-top-"+ changeData(val.week_cycle,"symbol") +"'></span></td></tr>";
+            $("#table-info").append(str);
+        })
+
+    }
+    
+    /** 初始化chart数据*/
+    function getData() {
+    	var xDataNum = 15;
+    	
+    	var getXFormatter = prepareXFormatter();    	
+    	var getYFormatter = prepareYFormatter();
+    	var seriesName = ['人均件量', '周同期'];
+    	var initoptions = {
+			//getNextData: getNextSendCarInfo,
+			getPreviousData: getPreviousDayPrevInfo,
+			xDataNum: xDataNum,
+			chartFieldId: "chartDv",
+			getXFormatter:getXFormatter,
+			getYFormatter: getYFormatter,
+			trendType:'week',
+			yMargin:5,
+			seriesName:seriesName
+    	} 
+        BDC.doChart(initoptions);
+    }
+    /**准备Y轴的坐标格式*/
+    function prepareYFormatter() {
+    	return function (value) {
+    		return value;
+    	}
+    }
+    /**准备X轴的坐标格式*/
+    function prepareXFormatter() {
+    	return function (value) {
+			if (value) {
+				return value.split('-')[2];
+			}
+		};
+    }
+    /** 处理chart数据*/ 
+    function prepareEchartData (altrend, ajaxName) {
+    	if (altrend.length < 0) {
+    		return;
+    	}
+    	var weekRequestDate = '';
+    	var xData = [];
+    	var yData = [];
+    	var allcountryAverange = [];
+    	var allcountryCycleRing = []
+    	yData.push(allcountryAverange);
+    	yData.push(allcountryCycleRing);
+    	$.each(altrend, function (index, altrendData) {
+            
+            if (altrendData.allcountryAverange || altrendData.allcountryAverange) {
+            	xData.unshift(altrendData.date_time);
+            	yData[0].unshift(altrendData.allcountryAverange);
+        		yData[1].unshift (altrendData.allcountryCycleRing);
+            }
+            weekRequestDate = altrendData.date_time;
+    		
+    		
+    	});
+    	if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData, weekRequestDate);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+    	} 
+    }
+    /** 拿到previous的chart数据*/
+    var getPreviousDayPrevInfo = function (date) {
+        var ajaxName = 'previous';
+        console.log(date);
+        getDayPrevInfo(date, ajaxName);
+    }
+</script>
+</body>
+</html>

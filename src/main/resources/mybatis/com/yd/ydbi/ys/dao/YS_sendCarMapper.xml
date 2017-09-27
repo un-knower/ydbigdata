@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.ys.dao.YS_sendCarMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	<!-- 计算发车数量 -->
+	<select id="findSendCars" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.DB_SendCar">
+		SELECT
+			"today" as "timezone",
+			SUM(dept_cnt) AS sCnum
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND	stats_dt = date_format(#{date_time},'%Y-%c-%d') 
+		
+		UNION
+		SELECT "yestoday",SUM(dept_cnt) AS sCnum FROM bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND	stats_dt = DATE_ADD( date_format(#{date_time},'%Y-%c-%d'),INTERVAL -1 day)
+			
+			
+		UNION
+		SELECT 
+			 "lastweek",
+			SUM(dept_cnt) AS sCnum
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/> 
+		AND	stats_dt = DATE_ADD( date_format(#{date_time},'%Y-%c-%d'),INTERVAL -1 WEEK)
+			
+			
+		UNION
+		SELECT
+			"tokb",
+			SUM(dept_cnt_cb) AS sCnum
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND	stats_dt =  date_format(#{date_time},'%Y-%c-%d')
+			
+		UNION
+		SELECT 
+			"ytkb",
+			SUM(dept_cnt_cb) AS sCnum
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND	stats_dt = DATE_ADD( date_format(#{date_time},'%Y-%c-%d'),INTERVAL -1 day)
+			
+		UNION
+		SELECT 
+			 "lwkb",
+			SUM(dept_cnt_cb) AS sCnum
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND	stats_dt = DATE_ADD( date_format(#{date_time},'%Y-%c-%d'),INTERVAL -1 WEEK)
+	</select>
+	<!-- 计算各发车详情 -->
+	<select id="findEachFB" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_Detail">
+		SELECT DISTINCT
+			sum(dept_cnt_tl) AS zbCars,
+			sum(dept_cnt_cb) AS kbCars,
+			k.org_nm AS fbcode
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/> 
+	    AND	bas_t_bigdata_trans_dept.stats_dt = date_format(#{date_time},'%Y-%c-%d')
+		GROUP BY strt_site
+	</select>
+	<!-- 日趋势-->
+	<select id="finddaytrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+			SUM(dept_cnt) AS realnum,
+			(
+				SELECT
+					SUM(dept_cnt)
+				FROM
+					bas_t_bigdata_trans_dept
+				<include refid="in_join_where"/>
+	   		 	AND stats_dt =
+	   		 		DATE_ADD(
+						date_format(#{date_time},'%Y-%c-%d'),
+						INTERVAL - 1 WEEK
+					)
+			) AS onsamenum,
+			stats_dt AS startdate
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND stats_dt = date_format(#{date_time},'%Y-%c-%d')
+	</select>
+	<!-- 日卡班车趋势 -->
+	<select id="findkbdaytrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+			SUM(dept_cnt_cb) AS realnum,
+			(
+				SELECT
+					SUM(dept_cnt_cb)
+				FROM
+					bas_t_bigdata_trans_dept
+				WHERE
+					bas_t_bigdata_trans_dept.stats_dt  = DATE_ADD(
+						date_format(#{date_time},'%Y-%c-%d'),
+						INTERVAL - 1 WEEK
+					)
+			) AS onsamenum,
+			bas_t_bigdata_trans_dept.stats_dt  AS startdate
+		FROM
+			bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+	    AND bas_t_bigdata_trans_dept.stats_dt  = date_format(#{date_time},'%Y-%c-%d')
+	</select>	
+	<!-- 周总趋势 -->
+	<select id="findweektrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+	SELECT
+		<choose>
+			<when test="kbgflag!=null and kbgflag.trim()!=''">
+				SUM(dept_cnt)
+			</when>
+			<otherwise>
+				SUM(dept_cnt_cb)
+			</otherwise>
+		</choose> AS realnum,
+		(
+			SELECT
+				<choose>
+					<when test="kbgflag!=null and kbgflag.trim()!=''">
+						SUM(dept_cnt)
+					</when>
+					<otherwise>
+						SUM(dept_cnt_cb)
+					</otherwise>
+				</choose>
+			FROM
+            bas_t_bigdata_trans_dept
+            <include refid="in_join_where"/>
+			AND	 stats_dt BETWEEN BINARY DATE_ADD( date_format(#{date_first},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+			AND BINARY DATE_ADD(date_format(#{date_final},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+		) AS onsamenum,
+		date_format(#{date_first},'%c-%d') AS startdate,
+		date_format(#{date_first},'%Y-%c-%d') AS enddate
+		FROM bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND stats_dt BETWEEN BINARY date_format(#{date_first},'%Y-%c-%d')
+		AND BINARY date_format(#{date_final},'%Y-%c-%d')
+	</select>
+	<!-- 月趋势 -->
+	<select id="findmonthtrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+			<choose>
+				<when test="kbgflag!=null and kbgflag.trim()!=''">
+					SUM(dept_cnt)
+				</when>
+				<otherwise>
+					SUM(dept_cnt_cb)
+				</otherwise>
+			</choose> AS realnum,
+			(
+				SELECT
+				<choose>
+					<when test="kbgflag!=null and kbgflag.trim()!=''">
+						SUM(dept_cnt)
+					</when>
+					<otherwise>
+						SUM(dept_cnt_cb)
+					</otherwise>
+				</choose>
+				FROM bas_t_bigdata_trans_dept
+				<include refid="in_join_where"/>
+				AND stats_dt BETWEEN BINARY DATE_ADD(date_format(#{date_first},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+				AND BINARY DATE_ADD(date_format(#{date_final},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+			) AS onsamenum,
+			date_format(#{date_final},'%Y-%c-%d') AS startdate,
+			date_format(#{date_first},'%Y-%c-%d') AS enddate
+			FROM bas_t_bigdata_trans_dept
+			<include refid="in_join_where"/>
+			AND stats_dt BETWEEN BINARY date_format(#{date_first},'%Y-%c-%d')
+			AND BINARY date_format(#{date_final},'%Y-%c-%d')
+	</select>
+	<!-- 季度趋势 -->
+	<select id="findseasontrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+	SELECT
+		<choose>
+			<when test="kbgflag!=null and kbgflag.trim()!=''">
+				SUM(dept_cnt)
+			</when>
+			<otherwise>
+				SUM(dept_cnt_cb)
+			</otherwise>
+		</choose> AS realnum,
+		(
+			SELECT
+			<choose>
+				<when test="kbgflag!=null and kbgflag.trim()!=''">
+					SUM(dept_cnt)
+				</when>
+				<otherwise>
+					SUM(dept_cnt_cb)
+				</otherwise>
+			</choose>
+			FROM bas_t_bigdata_trans_dept
+			<include refid="in_join_where"/>
+			AND stats_dt BETWEEN BINARY DATE_ADD( date_format(#{date_first},'%Y-%c-%d'), INTERVAL - 1 YEAR )
+			AND BINARY DATE_ADD( date_format(#{date_final},'%Y-%c-%d'), INTERVAL - 1 YEAR )
+		) AS onsamenum,
+		date_format(#{date_final},'%Y-%c-%d') AS startdate,
+		date_format(#{date_first},'%Y-%c-%d') AS enddate
+		FROM bas_t_bigdata_trans_dept
+		<include refid="in_join_where"/>
+		AND stats_dt BETWEEN BINARY date_format(#{date_first},'%Y-%c-%d')
+		AND BINARY date_format(#{date_final},'%Y-%c-%d')
+	</select>
+	<sql id="in_join_where">  
+		INNER JOIN org_inf k
+		ON strt_site = k.Org_Cd
+		<where>
+			<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+			AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+		</if>
+			<if test='sel_level!=null and sel_level == "1" '>
+				AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "2" '>
+				AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "3" '>
+				AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+			</if>
+		</where>
+		AND bas_t_bigdata_trans_dept.stats_dt <![CDATA[ >= ]]> k.start_tm		
+		AND bas_t_bigdata_trans_dept.stats_dt <![CDATA[ <  ]]> k.end_tm
+		AND k.org_typ = '3'		
+ 	</sql>
+</mapper>

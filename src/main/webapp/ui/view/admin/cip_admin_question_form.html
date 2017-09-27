@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var id_question_id = "";
+
+	var pageId = 'cip_admin_question_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_question/getData.do?actionId=cip_admin_question_getData";
+	var formTemplate = "#form_cip_admin_question";
+	var listId = "cip_admin_question_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+	var isAdmin;
+
+	$(function() {
+		init();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			submitData();
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+	});
+
+	function init() {
+		isAdmin = $$.QueryString("isAdmin");
+		id_question_id = $$.QueryString("question_id");
+
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+		loadCombobox('queston_type', 'queston_type');
+		loadCombobox('handle_flag', 'handle_flag');
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		if (mode == "edit") {
+			loadEditData();
+			$('#question_id').attr({
+				"readonly" : "readonly"
+			});
+			$(".showInfo").css("display", "none");
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+		} else if (mode == "add") {
+			$('#question_id').val('');
+
+			$('#question_id').val('');
+			$('#question_title').val('');
+			$('#queston_type').combobox('setValue', '');
+			$('#question_desc').val('');
+			$('#creater').val('');
+			$('#question_reply').val('');
+			$('#handle_flag').combobox('setValue', '');
+			$('#operater').val('');
+			$(".showInfo").css("display", "none");
+		} else if (mode == "handle") {
+			loadEditData();
+			$('#question_id').attr({
+				"readonly" : "readonly"
+			});
+			$('#question_title').attr({
+				"readonly" : "readonly"
+			});
+			$('#queston_type').combobox("readonly");
+			$('#question_desc').attr({
+				"readonly" : "readonly"
+			});
+			$(".showInfo").css("display", "none");
+			$("#show_question_reply").css("display", "table-row");
+		}
+
+	};
+
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"question_id" : id_question_id
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		if (mode == "handle"
+				&& (jsonData.question_reply == null || jsonData.question_reply == "")) {
+			$$.showJcdfMessager('提示消息', '回复不能为空', 'warning');
+			return;
+		}
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					if (isAdmin == null) {
+						$$.refreshJcdfDatagrid(tableId);
+					}
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_question" class="form">
+			<input type="hidden" id="question_id" name="question_id" />
+			<table>
+				<!-- 			<tr>
+				<td class="right">
+					<label for="question_id">问题ID:</label>
+				</td>
+				<td class="left">
+					<input type="text" id="question_id" name="question_id" style="width:70%;" class="easyui-validatebox" 
+						data-options="required:true,validType:'length[0,20]'" /> 
+				</td>
+			</tr> -->
+				<tr>
+					<td class="right"><label for="question_title">问题标题:</label></td>
+					<td class="left"><input type="text" id="question_title"
+						name="question_title" style="height:26px;width:220px"
+						class="easyui-validatebox"
+						data-options="required:false,validType:'length[0,20]'" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="queston_type">问题类型:</label></td>
+					<td class="left"><input type="text" id="queston_type"
+						name="queston_type" style="height:28px;width:232px" class="easyui-combobox"
+						data-options="required:false" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="question_desc">问题描述:</label></td>
+					<td class="left"><textarea type="text" id="question_desc"
+							name="question_desc" style="height:50px;width:220px"
+							class="easyui-validatebox"
+							data-options="required:false,validType:'length[0,500]'"></textarea></td>
+				</tr>
+				<tr class="showInfo">
+					<td class="right"><label for="creater">提出人:</label></td>
+					<td class="left"><input type="text" id="creater"
+						name="creater" style="height:26px;width:220px" class="easyui-validatebox"
+						data-options="required:false,validType:'length[0,10]'" /></td>
+				</tr>
+				<tr class="showInfo" id="show_question_reply">
+					<td class="right"><label for="question_reply">问题答复:</label></td>
+					<td class="left"><textarea type="text" id="question_reply"
+							name="question_reply" style="height:50px;width:220px"
+							class="easyui-validatebox"
+							data-options="required:false,validType:'length[0,500]'"></textarea></td>
+				</tr>
+				<tr class="showInfo">
+					<td class="right"><label for="handle_flag">处理标志:</label></td>
+					<td class="left"><input type="text" id="handle_flag"
+						name="handle_flag" style="height:28px;width:232px" class="easyui-combobox"
+						data-options="required:false" /></td>
+				</tr>
+				<tr class="showInfo">
+					<td class="right"><label for="operater">操作人:</label></td>
+					<td class="left"><input type="text" id="operater"
+						name="operater" style="height:26px;width:220px" class="easyui-validatebox"
+						data-options="required:false,validType:'length[0,10]'" /></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<div class="button-section">
+		<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+		<a id="btn_cancel" href="#" class="easyui-linkbutton"
+			iconCls="icon-cancel">取消</a>
+	</div>
+
+</body>
+</html>

@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.ys.dao.YS_RURateMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	
+	<!-- 即到即卸率head -->
+	<select id="findlrhead" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.LR_2">
+		SELECT
+			"to" AS "LR",
+			ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			) AS num
+		FROM
+			bas_t_bigdata_effect_uload
+		WHERE
+			stats_dt = #{date_time}
+		UNION
+		SELECT
+			"ye",
+			ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			) AS num
+		FROM
+			ys_right_unload_rate
+		WHERE
+			date_time = DATE_ADD(#{date_time}, INTERVAL - 1 DAY)
+		UNION
+		SELECT
+			"lw",
+			ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			) AS num
+		FROM
+			ys_right_unload_rate
+		WHERE
+			date_time = DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 WEEK
+			)
+			<!--  
+		UNION
+		SELECT
+			"yj",
+			ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			) AS num
+		FROM
+			ys_right_unload_rate
+		WHERE
+			DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 MONTH
+			) &lt; date_time <![CDATA[ <= ]]> #{date_time}
+		UNION
+		SELECT
+			"zj",
+			ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			) AS num
+		FROM
+			ys_right_unload_rate
+		WHERE
+			DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 WEEK
+			) &lt; date_time <![CDATA[ <= ]]>  #{date_time}
+		-->
+	</select>
+	
+	
+	<!-- 详情 -->
+	<select id="finddetail" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.CLR_Detail">
+		SELECT t.fb_code fb_code,ROUND((t.arr_car-t.arr_right_unload)/t.arr_car,2)  lr,
+			ROUND((1  -((y.arr_car-y.arr_right_unload)*t.ex_send_car)/((t.arr_car-t.arr_right_unload)*y.arr_car)),2) dlr,
+			ROUND((1  -((w.arr_car-w.arr_right_unload)*t.ex_send_car)/((t.arr_car-t.arr_right_unload)*w.arr_car)),2) wlr
+			FROM 
+			(SELECT
+				*
+			FROM
+				ys_right_unload_rate
+			WHERE
+				date_time = #{date_time}) t
+			LEFT JOIN 
+			(SELECT
+				*
+			FROM
+				ys_right_unload_rate
+			WHERE
+				date_time = DATE_ADD(#{date_time}, INTERVAL - 1 DAY))  y
+			
+			on t.fb_code=y.fb_code 
+			LEFT JOIN 
+			(SELECT
+				*
+			FROM
+				ys_right_unload_rate
+			WHERE
+				date_time = DATE_ADD(#{date_time}, INTERVAL - 1 WEEK))  w
+			
+			on t.fb_code=w.fb_code
+		ORDER BY
+			t.fbcode
+	</select>
+	
+	<!-- 日卡班车趋势 -->
+	<select id="findkbdaytrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+			ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			) AS realnum,
+			(
+				SELECT
+					ROUND(
+						SUM(arr_car-arr_right_unload) / SUM(arr_car),
+						2
+					)
+				FROM
+					ys_right_unload_rate
+				WHERE
+					date_time = DATE_ADD(
+						#{date_time},
+						INTERVAL - 1 YEAR
+					)
+			) AS onsamenum,
+			date_time AS startdate
+		FROM
+			ys_right_unload_rate
+		WHERE
+			date_time = #{date_time}
+	</select>
+	
+	<!-- 周总趋势 -->
+	<select id="findweektrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+	SELECT
+		ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			)
+		 AS realnum,
+		(
+			SELECT
+				
+				ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			)
+			FROM
+				ys_right_unload_rate
+			WHERE
+				DATE_ADD(
+					DATE_ADD(
+						#{date_time},
+						INTERVAL - 1 YEAR
+					),
+					INTERVAL - 1 WEEK
+				) &lt;   date_time &lt; DATE_ADD(
+					#{date_time},
+					INTERVAL - 1 YEAR
+				)
+			) AS onsamenum,
+			date_time AS startdate,
+			DATE_ADD(
+							#{date_time},
+							INTERVAL - 1 YEAR
+						) AS enddate
+		FROM
+			ys_right_unload_rate
+		WHERE
+			DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 WEEK
+			)&lt;  date_time &lt;  #{date_time}
+	</select>
+	<!-- 月趋势 -->
+	<select id="findmonthtrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+		ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			)
+		 AS realnum,
+		(
+			SELECT
+				
+				ROUND(
+				SUM(ex_send_car-real_send_car) / SUM(ex_send_car),
+				2
+			)
+			FROM
+				ys_right_unload_rate
+			WHERE
+				DATE_ADD(
+					DATE_ADD(
+						#{date_time},
+						INTERVAL - 1 YEAR
+					),
+					INTERVAL - 1 MONTH
+				) &lt; date_time &lt; DATE_ADD(
+					#{date_time},
+					INTERVAL - 1 YEAR
+				)
+		) AS onsamenum,
+		date_time AS startdate,
+		DATE_ADD(
+						#{date_time},
+						INTERVAL - 1 YEAR
+					) AS enddate
+		FROM
+			ys_right_unload_rate
+		WHERE
+			DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 MONTH
+			) &lt; date_time &lt; #{date_time}
+	</select>
+	<!-- 季度趋势 -->
+	<select id="findseasontrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+		ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			)
+		 AS realnum,
+		(
+			SELECT
+				
+				ROUND(
+				SUM(arr_car-arr_right_unload) / SUM(arr_car),
+				2
+			)
+			FROM
+				ys_right_unload_rate
+			WHERE
+				DATE_ADD(
+					DATE_ADD(
+						#{date_time},
+						INTERVAL - 1 YEAR
+					),
+					INTERVAL - 1 MONTH
+				) &lt; date_time &lt; DATE_ADD(
+					#{date_time},
+					INTERVAL - 1 YEAR
+				)
+		) AS onsamenum,
+		date_time AS startdate,
+		DATE_ADD(
+						#{date_time},
+						INTERVAL - 1 YEAR
+					) AS enddate
+		FROM
+			ys_right_unload_rate
+		WHERE
+			DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 MONTH
+			) &lt; date_time &lt; #{date_time}
+	</select>
+</mapper>

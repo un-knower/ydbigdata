@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.business.dao.BasSBusiSndTmp0Mapper" >
+  <resultMap id="BasSBusiSndTmp0Map" type="com.yd.ydbi.business.model.BasSBusiSndTmp0" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="snd_dt_24" property="sndDt24" jdbcType="DATE" />
+    <result column="snd_dbct_24" property="sndDbct24" jdbcType="INTEGER" />
+    <result column="snd_site_24" property="sndSite24" jdbcType="INTEGER" />
+    <result column="snd_cnt" property="sndCnt" jdbcType="BIGINT" />
+    <result column="snd_quart" property="sndQuart" jdbcType="INTEGER" />
+    <result column="snd_week" property="sndWeek" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, snd_dt_24, snd_dbct_24, snd_site_24, snd_cnt, snd_quart, snd_week
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BasSBusiSndTmp0Map" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from bas_s_busi_snd_tmp0
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  
+</mapper>

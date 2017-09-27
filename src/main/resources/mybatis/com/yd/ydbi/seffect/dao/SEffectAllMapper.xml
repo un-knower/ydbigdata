@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.seffect.dao.SEffectAllMapper" >
+  	<sql id="condition_filter">
+		<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+			AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "1" '>
+			AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "2" '>
+			AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "3" '>
+			AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "5" '>
+			AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+		</if>
+		and a.stats_dt >= k.start_tm
+		and a.stats_dt &lt; k.end_tm
+	</sql>
+	<!-- #全程时效_日环比_周同比 -->
+	<select id="getSeffectAll" parameterType="map" resultType="map">
+		#全程时效_日环比_周同比
+		select 
+		FORMAT(round(a.all_effect,2),2) effect,
+		FORMAT(IFNULL((round(a.all_effect,2) - round(b.all_effect_lastday,2))/round(b.all_effect_lastday,2)*100,0),2) dayFrom,
+		FORMAT(IFNULL((round(a.all_effect,2) - round(c.all_effect_lastweek,2))/round(c.all_effect_lastweek,2)*100,0),2) weekFrom
+		from 
+			(select 
+			a.stats_dt,
+			0 as st,
+			sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) all_effect
+			from bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+			<where> a.stats_dt = #{curDate}
+			<include refid="condition_filter"/>
+    		</where>
+			GROUP BY 1 union all select 0,0,0
+			limit 1)a LEFT JOIN 
+			(select 
+			DATE_ADD(a.stats_dt,INTERVAL 1 DAY) stats_dt,
+			0 as st,
+			sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) all_effect_lastday
+			from bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+			<where> a.stats_dt = DATE_SUB(#{curDate},INTERVAL 1 DAY)
+			<include refid="condition_filter"/>
+    		</where>
+			GROUP BY 1
+			union all select 0,0,0
+			limit 1
+		  ) b on a.st = b.st LEFT JOIN 
+			(select 
+			DATE_ADD(a.stats_dt,INTERVAL 1 WEEK) stats_dt,
+			0 as st,
+			sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) all_effect_lastweek
+			from bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+			<where> a.stats_dt = DATE_SUB(#{curDate},INTERVAL 1 WEEK)
+			<include refid="condition_filter"/>
+    		</where>
+			GROUP BY 1
+			union all select 0,0,0
+			limit 1
+		  ) c on b.st = c.st
+		  
+		  
+	</select>
+	
+	<!-- # 全程时效_日月周平均 -->
+	<select id="selectDwmAvgAmount" parameterType="map" resultType="map">
+		# 全程时效_日月周平均
+		select 
+			FORMAT(IFNULL(a.effect_All_last_day,0),2) last_day, 
+			FORMAT(IFNULL(b.effect_All_week_avg,0),2) week_avg,
+			FORMAT(IFNULL(c.effect_All_month_avg,0),2) month_avg
+		FROM
+			(select 
+				stats_dt,
+				0 as st,
+			sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) effect_All_last_day
+			from bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+			<where> a.stats_dt = DATE_SUB(#{curDate},INTERVAL 1 DAY)
+			<include refid="condition_filter"/>
+	   		</where>
+			GROUP BY 1
+			union all select 0,0,0
+    		limit 1
+			) a LEFT JOIN 
+			(SELECT 0 as st,
+				 DATE_FORMAT(DATE_SUB(stats_dt,INTERVAL 1 DAY),'%X-%V') ymw,
+				sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) effect_All_week_avg
+			FROM
+				bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+			<where> a.stats_dt >= DATE_SUB(subdate(#{curDate},if(date_format(#{curDate},'%w')=0,7,date_format(#{curDate},'%w'))-1),INTERVAL 1 WEEK)
+			and a.stats_dt &lt;= DATE_SUB(subdate(#{curDate},if(date_format(#{curDate},'%w')=0,7,date_format(#{curDate},'%w'))-7),INTERVAL 1 WEEK)
+			<include refid="condition_filter"/>
+	    	</where>
+			GROUP BY ymw
+			union all select 0,0,0
+    		limit 1
+			) b on a.st = b.st LEFT JOIN 
+			(SELECT
+			 date_format(a.stats_dt, '%Y-%m'), 
+			 0 as st,
+			 sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) effect_All_month_avg
+		FROM
+			bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where>
+			 a.stats_dt >= date_format(#{curDate}, '%Y-%m-%01')
+				AND a.stats_dt &lt;= last_day(#{curDate})
+		<include refid="condition_filter"/>
+	    </where>
+		GROUP BY 1
+		union all select 0,0,0
+    	limit 1
+		) c on b.st = c.st
+	</select>
+	
+	<!-- 全程时效_日趋势图 -->
+	<select id="seffectAllDTrend" parameterType="map" resultType="map">
+	
+	SELECT
+			a.ymd dateline,
+			round(IFNULL(SUM(a.effect_All),0),2) active_val,
+			round(IFNULL(SUM(b.effect_All_last_week),0),2) same_time_val
+		FROM
+			(
+				SELECT
+					a.stats_dt ymd,
+					sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) AS effect_All
+				FROM
+					bas_s_bigdata_effect_start a
+				INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+				<where>
+					a.stats_dt > DATE_ADD(#{curDate}, INTERVAL - 15 DAY)
+				AND a.stats_dt &lt;= #{curDate}
+				<include refid="condition_filter"/>
+	   			</where>
+				GROUP BY
+					ymd
+			) a
+		LEFT JOIN (
+			SELECT
+				date_add(a.stats_dt, INTERVAL 7 DAY) AS ymd,
+				sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt) AS effect_All_last_week
+			FROM
+				bas_s_bigdata_effect_start a
+			INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+			<where>
+				a.stats_dt > date_add(
+					DATE_ADD(#{curDate}, INTERVAL - 15 DAY),
+					INTERVAL - 7 DAY
+				)
+			AND a.stats_dt &lt;= date_add(#{curDate}, INTERVAL - 7 DAY)
+			<include refid="condition_filter"/>
+	   		</where>
+			GROUP BY
+				ymd
+		) b ON a.ymd = b.ymd
+		GROUP BY 1
+	</select>
+	
+	 <!-- 全程时效(周度趋势) -->
+	 <select id="seffectAllWTrend" parameterType="map" resultType="map">
+		SELECT
+			DATE_FORMAT(DATE_SUB(stats_dt,INTERVAL 1 DAY),'%X-%V') dateline,
+			format(ifnull(round(sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt),2),0),2) as active_val,
+			DATE_SUB(stats_dt,INTERVAL 1 WEEK) theDate
+		from bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k
+		  			ON a.dbct_site = k.Org_Cd
+		<where>
+			DATE_FORMAT(DATE_SUB(stats_dt,INTERVAL 1 DAY),'%X-%V') BETWEEN DATE_FORMAT(DATE_SUB(DATE_SUB(#{curDate},INTERVAL 1 DAY),INTERVAL 7 WEEK),'%X-%V')
+		AND  DATE_FORMAT(DATE_SUB(#{curDate},INTERVAL 1 DAY),'%X-%V')
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY
+			1
+		ORDER BY 1 
+	 </select>
+	 
+	<!-- 全程时效(月度趋势) -->
+	<select id="seffectAllMTrend" parameterType="map" resultType="map">
+		select 
+			a.ym dateline,
+			CONCAT(a.ym,'-','01') theDate,
+			format(round(a.effect_All_active,2),2) active_val,
+			format(round(IFNULL(b.effect_All_sameDate,0),2),2) same_time_val
+		from 
+			(SELECT
+				DATE_FORMAT(stats_dt, '%Y-%m') ym,
+			 sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt)  effect_All_active
+			FROM
+			ydbi.bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.Org_Cd
+			<where>
+					a.stats_dt >= DATE_SUB(date_format(#{curDate}, '%Y-%m-%01'),INTERVAL 5 MONTH)
+					AND a.stats_dt &lt;= last_day(#{curDate})
+			<include refid="condition_filter"/>
+			</where>
+			GROUP BY ym
+			) a LEFT JOIN
+		(select 
+			DATE_ADD(a.ym,INTERVAL 1 YEAR) ym,
+			a.effect_All_sameDate
+			from
+			( SELECT
+				DATE_FORMAT(stats_dt, '%Y-%m') ym,
+			sum(a.all_effect*a.ship_cnt)/sum(a.ship_cnt)  effect_All_sameDate
+			FROM
+			ydbi.bas_s_bigdata_effect_start a INNER JOIN org_inf k ON a.dbct_site = k.Org_Cd
+			<where>
+			 a.stats_dt >= DATE_SUB(DATE_SUB(date_format(#{curDate}, '%Y-%m-%01'),INTERVAL 5 MONTH),INTERVAL 1 YEAR)
+			 AND a.stats_dt &lt;= DATE_SUB(last_day(#{curDate}),INTERVAL 1 YEAR)
+			<include refid="condition_filter"/>
+			</where>
+			GROUP BY ym 
+			) a 
+		) b
+		on a.ym = b.ym
+	  </select>
+	  
+   <!-- 全程时效_件量占比 -->
+  <select id="getCntProportion" parameterType="map" resultType="map">
+	SELECT
+		 a.stats_dt,
+		'0-12小时' effect_scope,
+		FORMAT(sum(`all_len_low_12`)/sum(a.ship_cnt)*100,2) proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL 
+		SELECT
+		 a.stats_dt,
+		'12-24小时' effect_scope,
+		FORMAT(sum(`all_len_low_24`)/sum(a.ship_cnt)*100,2) proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL 
+		SELECT
+		 a.stats_dt,
+		'24-36小时'effect_scope,
+		FORMAT(sum(`all_len_low_36`)/sum(a.ship_cnt)*100,2) proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL 
+		SELECT
+		 a.stats_dt,
+		'36-48小时' effect_scope,
+		FORMAT(sum(`all_len_low_48`)/sum(a.ship_cnt)*100,2) proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL 
+		SELECT
+		 a.stats_dt,
+		'48-60小时' effect_scope,
+		FORMAT(sum(`all_len_low_60`)/sum(a.ship_cnt)*100,2) proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL 
+		SELECT
+		 a.stats_dt,
+		'60-72小时' effect_scope,
+		FORMAT(sum(`all_len_low_72`)/sum(a.ship_cnt)*100,2)  proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL 
+		SELECT
+		 a.stats_dt,
+		'大于72小时' effect_scope,
+		FORMAT(sum(`all_len_up_72`)/sum(a.ship_cnt)*100,2)  proportion
+		FROM bas_s_bigdata_effect_start a
+		INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+  </select>
+   <!-- 全程时效_最慢10省线 -->
+  <select id="getSlowly10ProvLine" parameterType="map" resultType="map">
+  		select 
+		a.stats_dt,
+		a.start_prov_id,
+		a.ProvinceName_start,
+		a.end_prov_id,
+		a.ProvinceName_end,
+		FORMAT(a.useTime,2) useTime,
+		CASE 
+					WHEN @preRank = a.useTime THEN @curRank 
+					WHEN @preRank := a.useTime THEN @curRank := @curRank - 1 
+					END AS rank 
+		from (
+		SELECT
+		 a.stats_dt,
+		 a.start_prov_id,
+		 b.ProvinceName ProvinceName_start,
+		 a.end_prov_id,
+		 p.ProvinceName ProvinceName_end,
+		round(sum(a.all_len)/sum(a.ship_cnt),2) useTime
+		FROM bas_s_bigdata_effect_prov a
+		INNER JOIN org_inf k 
+		ON a.dbct_site = k.org_cd 
+		LEFT JOIN ydserver.province p  
+		on a.end_prov_id = p.ProvinceID
+		LEFT JOIN ydserver.province b
+		on a.start_prov_id = b.ProvinceID
+		<where> a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1,2,4
+		ORDER BY 6 desc
+		LIMIT 10)a, (SELECT @curRank := 11, @preRank := NULL ) t 
+		ORDER BY a.useTime	
+  </select>
+  <!-- 全程时效_最慢10市线 -->
+  <select id="getSlowly10CityLine" parameterType="map" resultType="map">
+		SELECT
+			d.start_city_id,
+			d.end_city_id,
+			d.CityName_start,
+			d.CityName_end,
+			format(round(d.useTime,2),2) useTime,
+			CASE
+		WHEN @preRank = useTime THEN
+			@curRank
+		WHEN @preRank := useTime THEN
+			@curRank := @curRank - 1
+		END AS rank
+		FROM
+		(
+		SELECT
+			b.start_city_id,
+			b.end_city_id,
+			b.cityName CityName_start,
+			c.cityName CityName_end,
+			b.useTime
+		FROM
+			(
+				SELECT
+					a.stats_dt,
+					a.start_city_id,
+					a.end_city_id,
+					a.useTime,
+					b.cityName
+				FROM
+					(
+						SELECT
+							a.stats_dt,
+							a.start_city_id,
+							a.end_city_id,
+						#	sum(a.trans_len) / sum(a.ship_cnt) useTime 
+							sum(a.all_len) / sum(a.ship_cnt) useTime
+						FROM
+							bas_s_bigdata_effect_city a
+						INNER JOIN org_inf k ON a.dbct_site = k.org_cd
+						<where> a.stats_dt = #{curDate}
+						<include refid="condition_filter"/>
+					   	</where>
+						GROUP BY
+							1,
+							2,
+							3
+						ORDER BY
+							4 DESC
+						LIMIT 10
+					) a
+				LEFT JOIN (
+					SELECT
+						a.CityID cityId,
+						a.CityName cityName
+					FROM
+						ydserver.city a
+					UNION
+						SELECT
+							b.CountyID cityId,
+							b.CountyName cityName
+						FROM
+							ydserver.county b
+				) b ON a.start_city_id = b.cityId
+			) b
+		LEFT JOIN (
+			SELECT
+				a.CityID cityId,
+				a.CityName cityName
+			FROM
+				ydserver.city a
+			UNION
+				SELECT
+					b.CountyID cityId,
+					b.CountyName cityName
+				FROM
+					ydserver.county b
+		) c ON b.end_city_id = c.cityId) d,
+		 (
+			SELECT
+				@curRank := 11,
+				@preRank := NULL
+		) t
+		ORDER BY
+			useTime +0
+  </select>
+</mapper>

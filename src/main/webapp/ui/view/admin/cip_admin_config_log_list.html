@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var objectName = '系统日志级别';
+	var listTemplate = '#cip_admin_op_log_list';
+	var listId = "cip_admin_op_log_list";
+	var formSearchTemplate = '#cip_admin_op_log_searchForm';
+	var searchFormId = "cip_admin_op_log_searchForm";
+	
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var today = getToday();
+	$(function() {
+		//loadCompanyCombobox();
+		//loadCombobox();
+		//getAuthButtons(pageId, gridMenuId, authActions, expellActions);
+	});
+
+	/* function doAction(pageId, buttonId, actionUrl) {
+		if (authActions.hasOwnProperty(buttonId)) {
+			if (buttonId.indexOf('addData') > 0) {
+				addData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('updateData') > 0) {
+				updateData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('deleteData') > 0) {
+				deleteData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('getData') > 0) {
+				getData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('searchData') > 0) {
+				searchData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('refresh') > 0) {
+				refresh(buttonId, appId + actionUrl);
+			} else {			
+			}
+		} else {
+			alert('当前用户没有该操作授权!');
+		}
+	}; */
+
+	function configLog(){
+	 //获取日志输出等级
+	var leval = $('#log_level').combobox('getValue');
+	var actionUrl = appId + "/actions/admin_config_log/configLogLeval.do?actionId=cip_admin_config_log_leval&leval=";
+	$.ajax({
+			type : "POST",
+			url : actionUrl + leval,
+			dataType : "json",
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+
+	};
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'center', split:false, border:false">
+		<div class="area">
+			<div class="area-title">系统日志记录级别配置列表</div>
+			<div class="area-body autoAdapt">
+			<form id="cip_admin_config_log_list" class="search-form">
+		       <table>
+			        <tr>	
+				       <td class="left">
+					   <label for="level">日志记录级别:</label>
+				       </td>
+				      <td class="right">
+					<select id="log_level" name="log_level"  class="easyui-combobox" style="width:232px;height:28px"
+						data-options="required:true">
+						<option>ALL</option> 
+						<option>DEBUGE</option>   
+                        <option>INFO</option>  
+                        <option>WARN</option>   
+                        <option>ERROR</option>    
+					</select>	 											
+				</td>
+				<td><a class="easyui-linkbutton" iconCls="icon-action" onclick="configLog()">配置</a></td>
+			</tr>
+			</table>
+			</form>
+				
+			</div>
+		</div>
+	</div>
+</body>
+</html>

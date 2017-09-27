@@ -1,0 +1,212 @@
+body {
+    font-family:"Microsoft YaHei",Î¢ÈíÑÅºÚ;
+    -webkit-text-size-adjust: none;
+    overflow-x:hidden;
+    background-color: #eeeeee;
+}
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, p, blockquote, th, td {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+a {
+    text-decoration: none;
+}
+input[type="button"], input[type="submit"], input[type="reset"] ,input[type="text"],input{
+    -webkit-appearance: none;
+    border-radius: 0;
+    outline:none;
+    box-shadow:none;
+}
+ol,ul {
+    list-style:none;
+}
+header{
+    height: 2.8rem;
+    line-height: 2.8rem;
+    text-align: center;
+    background-color: #dd2638;
+    color: #fff;
+}
+/**tab±êÇ©ÑùÊ½*/
+#outer {width:100%;}
+#tab {overflow:hidden;zoom:1;background:#000;background-color: #fff;}
+#tab li {float:left;width: 33.33%;height:3em;line-height:3em;color:#000;text-align: center;cursor:pointer;}
+#tab li.current {border-bottom: 2px solid #b81a27;color:#000;}
+.tab{display: none;}
+.tab input{padding-left:1em;width: 60%;border: 0;}
+.ydui_line_li{
+    height: auto;
+    line-height: 3em;
+    background-color: #eeeeee;
+    border-bottom: 1px solid #fff;
+}
+.ydui_line_icon1{
+    color: #b4424a;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-left: 0.3em;
+}
+.ydui_line_text1{
+    font-weight: normal;
+    color: #000;
+    font-size: 0.8em;
+   /* margin-left: -0.5em;*/
+}
+.ydui_line_text2{
+    float: right;
+    line-height: 3em;
+    margin-right: 0.5em;
+    color: #b4444d;
+}
+.major_areas{
+    text-align: center;
+    line-height: 1.5em;
+}
+.ydui_prov_layout{
+    border-top: 1px solid #fff;
+    display: block;
+    text-align: center;
+    height: 3em;
+}
+.ydui_prov_left{
+    float: left;
+    margin-left: 1em;
+    line-height: 1.5em;
+    text-align: left;
+    display: inline-block;
+    width: 8em;
+}
+.ydui_prov_right{
+    float: right;margin-right: 0.5em;color: #e3022f;/*display: inline-block;width: 6em;*/text-align: right;
+}
+.ydui_an_left{
+    float: left;margin-left: 1em;display: inline-block;width: 8em;text-align: left;
+}
+.ydui_an_right{
+    float: right;margin-right: 1em;color: #11e345;display: inline-block;width: 6em;text-align: right;
+}
+/**footer*/
+.ydui_tabbar {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #b2b2b2;
+    text-align: center;
+}
+.ydui_tabbar::before {
+    content: " ";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 1px;
+    border-top: 1px solid #979797;
+    color: #979797;
+    -webkit-transform-origin: 0 0;
+    transform-origin: 0 0;
+    -webkit-transform: scaleY(.5);
+    transform: scaleY(.5);
+}
+.ydui_tabbar_item {
+    display: block;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    padding: 7px 0 0;
+    -webkit-tap-highlight-color: transparent;
+    color: #000;
+}
+.ydui_bar_item_on{
+    color: #d91e2e;
+}
+.ydui_tabbar_icon {
+    margin: 0 auto;
+    font-size: 1.5em;
+}
+.ydui_tabbar_label {
+    text-align: center;
+    /*color: #888;*/
+    font-size: 0.8em;
+}
+.ydui_tabbar_icon + .ydui_tabbar_label {
+    margin-top: 3px;
+}
+.ydui_four_place {
+    padding: 0px 2.8px 0px 2.8px;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: -5px;
+}
+.ydui_four {
+    position: relative;
+    float: left;
+    width: 33.33%;
+    box-sizing: border-box;
+    background-color: #dfdfdf;
+    border: 1px solid #fff;
+}
+.ydui_text1{
+    font-size: 0.8em
+}
+.ydui_text2{
+    font-size: 1.5em;color: #e3022f;
+}
+@media only screen and (min-width: 320px) and (max-width: 767px){
+    .ydui_text3{
+        transform:scale(0.875);
+        font-size-adjust: 0.50;
+        color: #e3022f;
+        font-size: 0.6em;
+    }
+}
+@media only screen and (max-width: 320px) {
+    .ydui_text3{
+        transform:scale(0.875);
+        font-size-adjust: 0.50;
+        color: #e3022f;
+        font-size: 0.5em;
+    }
+}
+.ydui_text4{
+    color: #e3022f;
+    font-size: 0.8em;
+}
+.tab_button{
+    width: 10%;height: 3em;width: 10%;float: right;background-color: #fff;line-height: 3em;text-align: center;color: #dd2638;
+}
+.tab_div{
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    z-index: 10;
+    cursor: pointer;
+    background-color: #fff;
+}
+.tab_div_text{
+    width: 90%;
+    display: inline-block;
+    padding-left: 1em;
+    height: 3em;
+    line-height: 3em;
+    background-color: #eee;
+}
+#tab_a{
+    padding: 5px;
+}
+#tab_a a{
+    width: auto;
+    display: inline-block;
+    margin-top: 10px;
+    padding: 3px;
+}

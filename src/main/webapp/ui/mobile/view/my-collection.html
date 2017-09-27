@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>我的收藏</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body class="back-body">
+<div class="container">
+    <div class="business-area">
+        <div class="business-menu">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">业务量</span>
+            </div>
+            <div class="business-menu-content my-collec-menu">
+                <div class="business-menu-item">
+                    <div class="my-collec-hd">揽件量(件)</div>
+                    <div class="my-collec-bd ratio-up-num">8888888888</div>
+                </div>
+                <div class="business-menu-item">
+                    <div class="my-collec-hd">签收量(件)</div>
+                    <div class="my-collec-bd ratio-up-num">99999999999</div>
+                </div>
+            </div>
+        </div>
+        <div class="business-menu">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">目标值</span>
+            </div>
+            <div class="business-menu-content my-collec-menu">
+                <div class="business-menu-item">
+                    <div class="my-collec-hd">集团(%)</div>
+                    <div class="my-collec-bd ratio-up-num">99.75</div>
+                </div>
+                <div class="business-menu-item">
+                    <div class="my-collec-hd">签收量(%)</div>
+                    <div class="my-collec-bd ratio-up-num">112.76</div>
+                </div>
+            </div>
+        </div>
+        <div class="business-menu">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">运输</span>
+            </div>
+            <div class="business-menu-content my-collec-menu">
+                <div class="business-menu-item">
+                    <div class="my-collec-hd">集团(%)</div>
+                    <div class="my-collec-bd ratio-up-num">99.75</div>
+                </div>
+                <div class="business-menu-item">
+                    <div class="my-collec-hd">签收量(%)</div>
+                    <div class="my-collec-bd ratio-up-num">112.76</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="person-center-bottom-area">
+    <div class="person-center-bottom-btn"><span class="add-remark"></span><span class="add-remarn-info"> 新增收藏</span></div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs();
+    }
+    function viewJs() {
+        //设置tab滚动
+        var windowWid = $(window).width();
+        var listIndex = $(".tab-list").length;
+        $(".tab-all").css("width",listIndex*windowWid/5).children().css("width",windowWid/5);
+        //下拉展现数据
+        $(".business-menu-top").on("click",function() {
+            if($(this).attr("data-show") == "false") {
+                $(this).attr("data-show","true").children(".business-menu-img").removeClass("business-menu-img-down").addClass("business-menu-img-up").end().next().slideDown(200);
+             //   $(this).parent(".business-menu").siblings().find(".business-menu-top").attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);   //可以出发其他关闭
+            }else {
+                $(this).attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);
+            }
+        });
+
+        //为了使第一个展开
+        $(".business-menu-top").eq(0).trigger("click");
+        var bottomHei = $(".person-center-bottom-area").outerHeight(true);
+        $(".business-area").css("padding-bottom",bottomHei);
+        //点击进入详情
+        $(".business-menu-item-detail").on("click",function() {
+
+        })
+    }
+</script>
+</body>
+</html>

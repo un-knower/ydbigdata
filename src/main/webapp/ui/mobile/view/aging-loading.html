@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>装车时效</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <div class="aging-top-area">
+            <div class="aging-top-time">2017-10-11</div>
+        </div>
+        <div class="area-detail-all">
+            <div class="area-detail-left">
+                <p class="area-detail-name">单件平均时效</p>
+                <p class="area-detail-value">8.0秒</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio">
+                       <span class="area-ratio-area ratio-down-num">日环比
+                            <span class="area-ratio-info">0.55%</span>
+                            <span class="area-ratio-img ratio-img-top-down"></span>
+                        </span>
+                        <span class="area-ratio-area ratio-down-num" style="margin-left: 4px;">周同比
+                            <span class="area-ratio-info">1.19%</span>
+                            <span class="area-ratio-img ratio-img-top-down"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="area-detail-right">
+                <p class="area-detail-name">单车平均时效</p>
+                <div class="aging-file-top-info">
+                    <p class="aging-file-value">15.0分钟</p>
+                    <span class="aging-file-prev">上一日6.7秒</span>
+                </div>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio">
+                        <span class="area-ratio-area">周均6.7秒</span>
+                        <span class="area-ratio-area" style="margin-left: 4px;">月均6.1秒</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab">
+                    <div class="echart-tab-item">
+                        <span class="echart-name echart-tab-yel">同期值</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item">
+                        <span class="echart-name ratio-up-num">实际值</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="day" >日趋势</li>
+                        <li data-value="week">周趋势</li>
+                        <li data-value="month">月趋势</li>
+                        <li data-value="carLine"  class="echart-tab-list-active">单车趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="dispatch-detail-menu">
+        <table class="area-detail-table" cellspacing="0" cellpadding="0">
+            <thead class="traffic-volume-detail-thead">
+            <tr>
+                <td width="20%">分拨中心</td>
+                <td width="30%">单价时效(秒)</td>
+                <td width="30%">单车时效(分钟)</td>
+                <td width="20%">排名</td>
+            </tr>
+            </thead>
+            <tbody class="traffic-volume-detail-tbody">
+            <tr>
+                <td>上海</td>
+                <td class="ratio-up-num">8.0</td>
+                <td class="ratio-up-num">8.0</td>
+                <td><span class="aging-car-num aging-num-one">1</span></td>
+            </tr>
+            <tr>
+                <td>北京</td>
+                <td class="ratio-up-num">7.9</td>
+                <td class="ratio-up-num">7.9</td>
+                <td><span class="aging-car-num aging-num-two">2</span></td>
+            </tr>
+            <tr>
+                <td>广州</td>
+                <td class="ratio-up-num">7.8</td>
+                <td class="ratio-up-num">7.8</td>
+                <td><span class="aging-car-num aging-num-three">3</span></td>
+            </tr>
+            <tr>
+                <td>深证</td>
+                <td class="ratio-up-num">7.8</td>
+                <td class="ratio-up-num">7.8</td>
+                <td><span class="aging-car-num">4</span></td>
+            </tr>
+            <tr>
+                <td>西安</td>
+                <td class="ratio-up-num">7.0</td>
+                <td class="ratio-up-num">7.0</td>
+                <td><span class="aging-car-num">5</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    $(function() {
+        init();
+    });
+    function init() {
+        getData();  //获取echart值
+        viewJs();
+    }
+    function getData() {
+        doChart('quarter');
+    }
+    function viewJs() {
+        $(".echart-tab-list li").on("click",function() {
+            $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+            var showInfo = $(this).attr("data-value");
+            doChart(showInfo);
+        })
+    }
+</script>
+</body>
+</html>

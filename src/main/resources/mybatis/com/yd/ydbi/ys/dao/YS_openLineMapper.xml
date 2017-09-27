@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.ys.dao.YS_openLineMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	<!-- 计算开通数量 -->
+	<select id="findlrhead" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.LR_2">
+		SELECT
+			"sum" AS "LR",
+			count(*) AS num
+		FROM bas_t_bigdata_trans_cl
+		<include refid="in_join_where"/>
+		AND stats_dt =  #{date_time}
+	    UNION
+		SELECT
+			"inc",
+			count(*) AS num
+		FROM bas_t_bigdata_trans_cl
+		<include refid="in_join_where"/>
+		AND stats_dt =  DATE_ADD(#{date_time},INTERVAL -1 DAY)
+		 UNION
+		SELECT
+			"dec",
+			count(*) AS num
+		FROM bas_t_bigdata_trans_cl
+		<include refid="in_join_where"/>
+		AND stats_dt =  DATE_ADD(#{date_time},INTERVAL -1 WEEK)
+	</select>   
+	<!-- 开通撤销线路按时间查询 -->
+	<select id="findCarLines" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.DB_CarLine">
+		SELECT
+		*
+		FROM
+		(
+			SELECT
+				COUNT(*) AS car_line
+			FROM bas_t_bigdata_trans_cl
+			<include refid="in_join_where"/>
+			AND	stats_dt = #{date_time}
+		) a
+		LEFT JOIN
+		(
+			SELECT
+				t.start_dot,
+				x.org_nm AS end_dot,
+				"1" AS iod_flag
+			FROM
+				(
+					SELECT
+						dest_site,
+						stats_dt,
+						DATE_FORMAT(vld_tm,"%Y-%m-%d"),
+						k.org_nm AS start_dot,
+						"1" AS iod_flag
+					FROM bas_t_bigdata_trans_cl
+					<include refid="in_join_where"/>
+					AND stats_dt = #{date_time}
+					AND DATE_FORMAT(vld_tm,"%Y-%m-%d") = DATE_FORMAT(#{date_time},"%Y-%m-%d")
+				) t
+			LEFT JOIN org_inf x
+			ON t.dest_site = x.Org_Cd
+			AND  x.start_tm<![CDATA[<=]]> stats_dt
+			AND stats_dt<![CDATA[<]]> x.end_tm
+			<!--AND x.org_typ = '3'-->
+			UNION ALL
+			SELECT
+				t3.start_dot,
+				k.org_nm AS end_dot,
+				"0" AS iod_flag
+			FROM
+			(
+				SELECT
+				org_nm AS start_dot,
+				t2.dest_site,
+				t2.stats_dt
+				FROM
+				(
+					SELECT
+					c1.fst_scan_site,
+					c1.dest_site,
+					c1.stats_dt
+					FROM
+					(
+						SELECT
+						*
+						FROM bas_t_bigdata_trans_cl
+						<include refid="in_join_where"/>
+						and stats_dt = DATE_ADD(#{date_time},INTERVAL -1 DAY)
+						and  DATE_FORMAT(vld_tm,"%Y-%m-%d") <![CDATA[<=]]>  DATE_ADD(DATE_FORMAT(#{date_time},"%Y-%m-%d"),INTERVAL -1 DAY)
+					) c1
+					LEFT JOIN
+					(
+						SELECT
+						*
+						FROM bas_t_bigdata_trans_cl
+						<include refid="in_join_where"/>
+						AND stats_dt = DATE_FORMAT(#{date_time},"%Y-%m-%d")
+						AND DATE_FORMAT(vld_tm,"%Y-%m-%d") <![CDATA[<>]]> DATE_FORMAT(#{date_time},"%Y-%m-%d")
+					) c2
+					ON c1.CAR_LN_CD = c2.CAR_LN_CD
+					-- AND c1.dest_site = c2.dest_site
+					WHERE c2.fst_scan_site IS NULL
+				) t2
+				INNER JOIN org_inf k
+				ON t2.fst_scan_site = k.Org_Cd
+ 			WHERE k.start_tm<![CDATA[<=]]> t2.stats_dt
+ 			AND t2.stats_dt <![CDATA[<]]> k.end_tm
+			) t3
+			INNER JOIN org_inf k
+			ON t3.dest_site = k.Org_Cd
+			WHERE k.start_tm <![CDATA[<=]]> t3.stats_dt
+			AND t3.stats_dt <![CDATA[<]]> k.end_tm
+		) b ON 1 = 1
+
+	</select>
+	<!-- 开通撤销线路趋势查询 -->
+	<select id="findCarTrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.CL_iocTrend">
+		SELECT * FROM (
+			SELECT
+				COUNT( *) AS increase,
+				DATE_FORMAT(vld_tm,"%Y-%m-%d") AS datetime
+			FROM bas_t_bigdata_trans_cl
+			<include refid="in_join_where"/>
+			AND stats_dt = #{date_time}
+			AND DATE_FORMAT(vld_tm,"%Y-%m-%d") = DATE_FORMAT(#{date_time},"%Y-%m-%d")
+		) a LEFT JOIN (
+			SELECT
+				COUNT(*) AS cancle
+			FROM
+			(
+				SELECT
+				*
+				FROM
+				bas_t_bigdata_trans_cl
+				<include refid="in_join_where"/>
+				AND stats_dt = DATE_ADD(#{date_time},INTERVAL -1 DAY)
+				AND DATE_FORMAT(vld_tm,"%Y-%m-%d") <![CDATA[<=]]>  DATE_ADD(DATE_FORMAT(#{date_time},"%Y-%m-%d"),INTERVAL -1 DAY)
+		) c1
+			LEFT JOIN
+			(
+				SELECT
+				*
+				FROM bas_t_bigdata_trans_cl
+				<include refid="in_join_where"/>
+				AND stats_dt = DATE_FORMAT(#{date_time},"%Y-%m-%d")
+				AND  DATE_FORMAT(vld_tm,"%Y-%m-%d") <![CDATA[<>]]> DATE_FORMAT(#{date_time},"%Y-%m-%d")
+			) c2
+			ON c1.car_ln_cd = c2.car_ln_cd
+			AND c1.dest_site = c2.dest_site
+			WHERE c2.fst_scan_site IS NULL
+		)	b	ON 1=1
+	</select>
+	<sql id="in_join_where">
+		INNER JOIN org_inf k
+		ON fst_scan_site = k.Org_Cd
+		<where> 
+			<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+				AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "1" '>
+				AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "2" '>
+				AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "3" '>
+				AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+			</if>
+		</where>
+		AND k.start_tm<![CDATA[<=]]> stats_dt
+		AND stats_dt<![CDATA[<]]> k.end_tm
+		<!--AND k.org_typ = '3'-->
+	</sql>
+</mapper>

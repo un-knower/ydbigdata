@@ -1,0 +1,1779 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.api.quality.dao.YdbiTrendChartMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.api.quality.model.YdbiTrendChart">
+		<result column="rate_flag" property="rate_flag" jdbcType="VARCHAR" />
+		<result column="data_date" property="data_date" jdbcType="VARCHAR" />
+		<result column="org_id" property="org_id" jdbcType="VARCHAR" />
+		<result column="t_data_date" property="t_data_date" jdbcType="VARCHAR" />
+		<result column="org_name" property="org_name" jdbcType="VARCHAR" />
+		<result column="rate_num" property="rate_num" jdbcType="VARCHAR" />
+		<result column="interest_rate" property="interest_rate" jdbcType="VARCHAR" />
+		<result column="day_percent" property="day_percent" jdbcType="VARCHAR" />
+		<result column="date_trend" property="date_trend" jdbcType="VARCHAR" />
+		<result column="goal_vlaues" property="goal_vlaues" jdbcType="VARCHAR" />
+		<result column="month_avg_trend" property="month_avg_trend" jdbcType="VARCHAR" />
+		<result column="quarter_time_trend" property="quarter_time_trend" jdbcType="VARCHAR" />
+		<result column="week_same_term" property="week_same_term" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<!--日趋势-延误-->
+	<select id="selectDelay" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'日趋势-延误'  AS rate_flag,
+			#{daystart} AS data_date,
+			IFNULL(a.dly_rte,0) AS date_trend, 
+			IFNULL(b.dly_rte,0) AS week_same_term,
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT
+			#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+			IFNULL(Round(SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt)*100,2),0) AS dly_rte,
+			Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='1'
+			<where> 
+				AND a.stats_dt = #{daystart}
+				<![CDATA[
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				AND b.org_typ = '3'
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>	
+			) a
+		LEFT JOIN(
+			SELECT
+			#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt)*100,2),0) AS dly_rte
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			<where> 
+				AND a.stats_dt = DATE_SUB(#{daystart},INTERVAL 1 WEEK)
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--日趋势-错发-->
+	<select id="selectWrong" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'日趋势-错发'  AS rate_flag,
+			#{daystart} AS data_date,
+			IFNULL(a.err_rte2,0) AS date_trend, 
+			IFNULL(b.err_rte2,0) AS week_same_term,
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT
+				#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.err_snd_cnt)/SUM(a.oper_cnt)*100,2),0) AS err_rte2,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='2'
+			<where> 
+				AND a.stats_dt = #{daystart}
+				
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>	
+			) a
+		LEFT JOIN (
+			SELECT
+			#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.err_snd_cnt)/SUM(a.oper_cnt)*100,2),0) AS err_rte2
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			<where> 
+				AND a.stats_dt = DATE_SUB(#{daystart},INTERVAL 1 WEEK)
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>
+		)b
+		ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--日趋势-错分-->
+	<select id="selectWrongpoints" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'日趋势-错分'  AS rate_flag,
+			#{daystart} AS data_date,
+			IFNULL(a.err_rte1,0) AS date_trend, 
+			IFNULL(b.err_rte1,0) AS week_same_term,
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT
+				#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)*100,2),0) AS err_rte1,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='3'
+			<where> 
+				AND a.stats_dt = #{daystart}
+				
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>	
+			) a
+		LEFT JOIN(
+			SELECT
+				#{daystart} AS stats_dt,
+				case when #{sel_level} = '1' then b.grtr_dist_cd 
+				when #{sel_level} = '2' then b.prov_cd 
+				when #{sel_level} = '5' then b.org_cd
+				else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)*100,2),0) AS err_rte1
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			<where> 
+				AND a.stats_dt = DATE_SUB(#{daystart},INTERVAL 1 WEEK)
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--日趋势-集错包-->
+	<select id="selectWrongpackage" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'日趋势-集错包'  AS rate_flag,
+			#{daystart} AS data_date,
+			IFNULL(a.err_rte3,0) AS date_trend, 
+			IFNULL(b.err_rte3,0) AS week_same_term,
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT
+				#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.pk_error_num)/SUM(a.pk_tot_num)*100,2),0) AS err_rte3,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='4'
+			<where> 
+				AND a.stats_dt = #{daystart}
+				
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>	
+			) a
+		LEFT JOIN(
+			SELECT
+			#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				IFNULL(Round(SUM(a.pk_error_num)/SUM(a.pk_tot_num)*100,2),0) AS err_rte3
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			<where> 
+				AND a.stats_dt = DATE_SUB(#{daystart},INTERVAL 1 WEEK)
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--日趋势-遗失-->
+	<select id="selectLoss" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'日趋势-遗失'  AS rate_flag,
+			#{daystart} AS data_date,
+			IFNULL(Round(a.lost_rte*10000,2),0) AS date_trend, 
+			IFNULL(Round(b.lost_rte*10000,2),0) AS week_same_term,
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT
+				#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='5'
+			<where> 
+				AND a.stats_dt = #{daystart}
+				
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>	
+			) a
+		LEFT JOIN(
+			SELECT
+				#{daystart} AS stats_dt,
+				case when #{sel_level} = '1' then b.grtr_dist_cd 
+				when #{sel_level} = '2' then b.prov_cd 
+				when #{sel_level} = '5' then b.org_cd
+				else '000000'  end  AS dbct_cd,
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			<where> 
+				AND a.stats_dt = DATE_SUB(#{daystart},INTERVAL 1 WEEK)
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>
+		)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--日趋势-疑似遗失-->
+	<select id="selectRetention" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'日趋势-疑似遗失'  AS rate_flag,
+			#{daystart} AS data_date,
+			IFNULL(Round(a.y_lost_rte*10000,2),0) AS date_trend, 
+			IFNULL(Round(b.y_lost_rte*10000,2),0) AS week_same_term,
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT
+				#{daystart} AS stats_dt,
+			case when #{sel_level} = '1' then b.grtr_dist_cd 
+			 when #{sel_level} = '2' then b.prov_cd 
+			 when #{sel_level} = '5' then b.org_cd
+		     else '000000'  end  AS dbct_cd,
+				Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='6'
+			<where> 
+				AND a.stats_dt = #{daystart}
+				
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>	
+			) a
+		LEFT JOIN(
+			SELECT
+				#{daystart} AS stats_dt,
+				case when #{sel_level} = '1' then b.grtr_dist_cd 
+				when #{sel_level} = '2' then b.prov_cd 
+				when #{sel_level} = '5' then b.org_cd
+				else '000000'  end  AS dbct_cd,
+				Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf b
+			ON a.dbct_cd = b.org_cd
+			<where> 
+				AND a.stats_dt = DATE_SUB(#{daystart},INTERVAL 1 WEEK)
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+				]]>
+					<if test='sel_cd =="0" and sel_level == "0" '>
+						AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+					</if>
+					<if test='sel_level!=null and sel_level == "1" '>
+						AND b.grtr_dist_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "2" '>
+						AND b.prov_cd =#{sel_cd}
+					</if>
+					<if test='sel_level!=null and sel_level == "5" '>
+						AND b.org_cd =#{sel_cd}
+					</if>
+				</where>
+		)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	</select>
+	
+	<!--周趋势-延误-->
+	<select id="selectWeekDelay" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'周趋势-延误'  AS rate_flag,
+			a.dt_year,
+ 			a.dt_week,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			case when WEEKOFYEAR(#{weekstart}) = WEEKOFYEAR(DATE_SUB(#{weekstart},INTERVAL 1 DAY)) 
+			 then subdate(#{weekstart},if(date_format(#{weekstart},'%w')=0,7,date_format(#{weekstart},'%w'))-1)
+		     else #{weekstart}  end AS t_data_date,
+			IFNULL(Round(SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt)*100,2),0) AS date_trend, 
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 
+				DATE_FORMAT(a.stats_dt,'%Y')  AS dt_year,
+      			WEEKOFYEAR(a.stats_dt)        AS dt_week,
+				CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',WEEKOFYEAR(a.stats_dt),'周') AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				SUM(a.dly_snd_cnt) AS dly_snd_cnt,
+				SUM(a.dly_tot_cnt) AS dly_tot_cnt,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='1'
+			where a.stats_dt BETWEEN #{weekstart} AND #{data_date}
+			GROUP BY 1,2,3,4	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[
+			AND o.org_typ = '3'
+			 AND o.start_tm<=#{weekstart} AND o.end_tm >=#{data_date} 
+			 ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3,4,5
+	</select>
+	<!--周趋势-错发-->
+	<select id="selectWeekWrong" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'周趋势-错发'  AS rate_flag,
+			a.dt_year,
+ 			a.dt_week,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			case when WEEKOFYEAR(#{weekstart}) = WEEKOFYEAR(DATE_SUB(#{weekstart},INTERVAL 1 DAY)) 
+			 then subdate(#{weekstart},if(date_format(#{weekstart},'%w')=0,7,date_format(#{weekstart},'%w'))-1)
+		     else #{weekstart}  end AS t_data_date,
+			IFNULL(Round(SUM(a.err_snd_cnt)/SUM(a.oper_cnt)*100,2),0) AS date_trend, 
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 
+				DATE_FORMAT(a.stats_dt,'%Y')  AS dt_year,
+      			WEEKOFYEAR(a.stats_dt)        AS dt_week,
+				CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',WEEKOFYEAR(a.stats_dt),'周') AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				SUM(a.err_snd_cnt) AS err_snd_cnt,
+				SUM(a.oper_cnt) AS oper_cnt,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='2'
+			where a.stats_dt BETWEEN #{weekstart} AND #{data_date}
+			
+			GROUP BY 1,2,3,4	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[
+			AND o.org_typ = '3'
+			 AND o.start_tm<=#{weekstart} AND o.end_tm >=#{data_date} 
+			 ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3,4,5
+	</select>
+	<!--周趋势-错分-->
+	<select id="selectWeekWrongpoints" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'周趋势-错分'  AS rate_flag,
+			a.dt_year,
+ 			a.dt_week,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			case when WEEKOFYEAR(#{weekstart}) = WEEKOFYEAR(DATE_SUB(#{weekstart},INTERVAL 1 DAY)) 
+			 then subdate(#{weekstart},if(date_format(#{weekstart},'%w')=0,7,date_format(#{weekstart},'%w'))-1)
+		     else #{weekstart}  end AS t_data_date,
+			IFNULL(Round(SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)*100,2),0) AS date_trend, 
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 
+				DATE_FORMAT(a.stats_dt,'%Y')  AS dt_year,
+      			WEEKOFYEAR(a.stats_dt)        AS dt_week,
+				CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',WEEKOFYEAR(a.stats_dt),'周') AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				SUM(a.issue_err_sum) AS issue_err_sum,
+				SUM(a.issue_sign_sum) AS issue_sign_sum,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='3'
+			where a.stats_dt BETWEEN #{weekstart} AND #{data_date}
+			GROUP BY 1,2,3,4	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[
+			AND o.org_typ = '3'
+			 AND o.start_tm<=#{weekstart} AND o.end_tm >=#{data_date} 
+			 ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3,4,5
+	</select>
+	<!--周趋势-集错包-->
+	<select id="selectWeekWrongpackage" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'周趋势-集错包'  AS rate_flag,
+			a.dt_year,
+ 			a.dt_week,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			case when WEEKOFYEAR(#{weekstart}) = WEEKOFYEAR(DATE_SUB(#{weekstart},INTERVAL 1 DAY)) 
+			 then subdate(#{weekstart},if(date_format(#{weekstart},'%w')=0,7,date_format(#{weekstart},'%w'))-1)
+		     else #{weekstart}  end AS t_data_date,
+			IFNULL(Round(SUM(a.pk_error_num)/SUM(a.pk_tot_num)*100,2),0) AS date_trend, 
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 
+				DATE_FORMAT(a.stats_dt,'%Y')  AS dt_year,
+      			WEEKOFYEAR(a.stats_dt)        AS dt_week,
+				CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',WEEKOFYEAR(a.stats_dt),'周') AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				SUM(a.pk_error_num) AS pk_error_num,
+				SUM(a.pk_tot_num) AS pk_tot_num,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='4'
+			where a.stats_dt BETWEEN #{weekstart} AND #{data_date}
+			
+			GROUP BY 1,2,3,4	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{weekstart} AND o.end_tm >=#{data_date} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3,4,5
+	</select>
+	<!--周趋势-遗失-->
+	<select id="selectWeekLoss" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'周趋势-遗失'  AS rate_flag,
+			a.dt_year,
+ 			a.dt_week,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			case when WEEKOFYEAR(#{weekstart}) = WEEKOFYEAR(DATE_SUB(#{weekstart},INTERVAL 1 DAY)) 
+			 then subdate(#{weekstart},if(date_format(#{weekstart},'%w')=0,7,date_format(#{weekstart},'%w'))-1)
+		     else #{weekstart}  end AS t_data_date,
+			IFNULL(Round(Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8)*10000,2),0) AS date_trend, 
+			IFNULL(a.trgt_val,0) AS goal_vlaues
+		FROM (
+			SELECT 
+				DATE_FORMAT(a.stats_dt,'%Y')  AS dt_year,
+      			WEEKOFYEAR(a.stats_dt)        AS dt_week,
+				CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',WEEKOFYEAR(a.stats_dt),'周') AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				SUM(a.lost_cnt) AS lost_cnt,
+				SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='5'
+			where a.stats_dt BETWEEN #{weekstart} AND #{data_date}
+			
+			GROUP BY 1,2,3,4	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{weekstart} AND o.end_tm >=#{data_date} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3,4,5
+	</select>
+	<!--周趋势-疑似遗失-->
+	<select id="selectWeekRetention" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'周趋势-疑似遗失'  AS rate_flag,
+			a.dt_year,
+ 			a.dt_week,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			case when WEEKOFYEAR(#{weekstart}) = WEEKOFYEAR(DATE_SUB(#{weekstart},INTERVAL 1 DAY)) 
+			 then subdate(#{weekstart},if(date_format(#{weekstart},'%w')=0,7,date_format(#{weekstart},'%w'))-1)
+		     else #{weekstart}  end AS t_data_date,
+			IFNULL(Round(Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8)*10000,2),0) AS date_trend, 
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 
+				DATE_FORMAT(a.stats_dt,'%Y')  AS dt_year,
+      			WEEKOFYEAR(a.stats_dt)        AS dt_week,
+				CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',WEEKOFYEAR(a.stats_dt),'周') AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				SUM(a.dob_lost_cnt) AS dob_lost_cnt,
+				SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+				Round(SUM(c.trgt_val),2) AS trgt_val
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+			ON a.stats_dt = c.pick_dt
+			AND a.dbct_cd = c.dbct_cd
+			AND c.trgt_val_typ='6'
+			where a.stats_dt BETWEEN #{weekstart} AND #{data_date}
+			  
+			GROUP BY 1,2,3,4	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{weekstart} AND o.end_tm >=#{data_date} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3,4,5
+	</select>
+	<!--月趋势-延误-->
+	<select id="selectMonthDelay" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			'月趋势-延误'  AS rate_flag,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			#{monthstart} AS t_data_date,
+			IFNULL(Round(SUM(a.dly_snd_cnt)/SUM(dly_tot_cnt)*100,2),0) AS date_trend,
+			IFNULL(Round(SUM(a.dly_snd_cnt2)/SUM(a.dly_tot_cnt2)*100,2),0) AS month_avg_trend,
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 	
+				a.stats_dt AS stats_dt,			
+				a.dbct_cd AS dbct_cd,
+				a.dly_snd_cnt AS dly_snd_cnt,
+				a.dly_tot_cnt AS dly_tot_cnt,
+				b.dly_snd_cnt AS dly_snd_cnt2,
+				b.dly_tot_cnt AS dly_tot_cnt2,
+				a.trgt_val AS trgt_val
+			FROM(
+				SELECT 
+					DATE_FORMAT(a.stats_dt,'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.dly_snd_cnt) AS dly_snd_cnt,
+					SUM(a.dly_tot_cnt) AS dly_tot_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='1'
+				where a.stats_dt>=#{monthstart} AND a.stats_dt &lt; #{monthend}
+				
+				GROUP BY 1,2 
+				)a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.dly_snd_cnt) AS dly_snd_cnt,
+					SUM(a.dly_tot_cnt) AS dly_tot_cnt
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				where a.stats_dt>=DATE_SUB(#{monthstart},INTERVAL 1 YEAR) AND a.stats_dt &lt; DATE_SUB(#{monthend},INTERVAL 1 YEAR)
+				GROUP BY 1,2
+				)b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{monthstart} AND o.end_tm >=#{monthend} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3
+	</select>
+	<!--月趋势-错发-->
+	<select id="selectMonthWrong" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			'月趋势-错发'  AS rate_flag,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			#{monthstart} AS t_data_date,
+			IFNULL(Round(SUM(a.err_snd_cnt)/SUM(a.oper_cnt)*100,2),0) AS date_trend,
+			IFNULL(Round(SUM(a.err_snd_cnt2)/SUM(a.oper_cnt2)*100,2),0) AS month_avg_trend,
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 	
+				a.stats_dt AS stats_dt,			
+				a.dbct_cd AS dbct_cd,
+				a.err_snd_cnt AS err_snd_cnt,
+				a.oper_cnt AS oper_cnt,
+				b.err_snd_cnt AS err_snd_cnt2,
+				b.oper_cnt AS oper_cnt2,
+				a.trgt_val AS trgt_val
+			FROM(
+				SELECT 
+					DATE_FORMAT(a.stats_dt,'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.err_snd_cnt) AS err_snd_cnt,
+					SUM(a.oper_cnt) AS oper_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='2'
+				where a.stats_dt>=#{monthstart} AND a.stats_dt &lt; #{monthend}
+				
+				GROUP BY 1,2 )a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.err_snd_cnt) AS err_snd_cnt,
+					SUM(a.oper_cnt) AS oper_cnt
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				where a.stats_dt>=DATE_SUB(#{monthstart},INTERVAL 1 YEAR) AND a.stats_dt &lt; DATE_SUB(#{monthend},INTERVAL 1 YEAR)
+				GROUP BY 1,2
+				)b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{monthstart} AND o.end_tm >=#{monthend} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3
+	</select>
+	<!--月趋势-错分-->
+	<select id="selectMonthWrongpoints" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			'月趋势-错分'  AS rate_flag,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			#{monthstart} AS t_data_date,
+			IFNULL(Round(SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)*100,2),0) AS date_trend,
+			IFNULL(Round(SUM(a.issue_err_sum2)/SUM(a.issue_sign_sum2)*100,2),0) AS month_avg_trend,
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 	
+				a.stats_dt AS stats_dt,			
+				a.dbct_cd AS dbct_cd,
+				a.issue_err_sum AS issue_err_sum,
+				a.issue_sign_sum AS issue_sign_sum,
+				b.issue_err_sum AS issue_err_sum2,
+				b.issue_sign_sum AS issue_sign_sum2,
+				a.trgt_val AS trgt_val
+			FROM(
+				SELECT 
+					DATE_FORMAT(a.stats_dt,'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.issue_err_sum) AS issue_err_sum,
+					SUM(a.issue_sign_sum) AS issue_sign_sum,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='3'
+				where a.stats_dt>=#{monthstart} AND a.stats_dt &lt; #{monthend}
+				
+				GROUP BY 1,2 )a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.issue_err_sum) AS issue_err_sum,
+					SUM(a.issue_sign_sum) AS issue_sign_sum
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				where a.stats_dt>=DATE_SUB(#{monthstart},INTERVAL 1 YEAR) AND a.stats_dt &lt; DATE_SUB(#{monthend},INTERVAL 1 YEAR)
+				GROUP BY 1,2
+				)b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{monthstart} AND o.end_tm >=#{monthend}
+			 ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3
+	</select>
+	<!--月趋势-集错包-->
+	<select id="selectMonthWrongpackage" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			'月趋势-错集包'  AS rate_flag,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			#{monthstart} AS t_data_date,
+			IFNULL(Round(SUM(a.pk_error_num)/SUM(a.pk_tot_num)*100,2),0) AS date_trend,
+			IFNULL(Round(SUM(a.pk_error_num2)/SUM(a.pk_tot_num2)*100,2),0) AS month_avg_trend,
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 	
+				a.stats_dt AS stats_dt,			
+				a.dbct_cd AS dbct_cd,
+				a.pk_error_num AS pk_error_num,
+				a.pk_tot_num AS pk_tot_num,
+				b.pk_error_num AS pk_error_num2,
+				b.pk_tot_num AS pk_tot_num2,
+				a.trgt_val AS trgt_val
+			FROM(
+				SELECT 
+					DATE_FORMAT(a.stats_dt,'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.pk_error_num) AS pk_error_num,
+					SUM(a.pk_tot_num) AS pk_tot_num,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='4'
+				where a.stats_dt>=#{monthstart} AND a.stats_dt &lt; #{monthend}
+				
+				GROUP BY 1,2 )a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.pk_error_num) AS pk_error_num,
+					SUM(a.pk_tot_num) AS pk_tot_num
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				where a.stats_dt>=DATE_SUB(#{monthstart},INTERVAL 1 YEAR) AND a.stats_dt &lt; DATE_SUB(#{monthend},INTERVAL 1 YEAR)
+				GROUP BY 1,2
+				)b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{monthstart} AND o.end_tm >=#{monthend} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3
+	</select>
+	<!--月趋势-遗失-->
+	<select id="selectMonthLoss" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			'月趋势-遗失'  AS rate_flag,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			#{monthstart} AS t_data_date,
+			IFNULL(Round(Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8)*10000,2),0) AS date_trend,
+			IFNULL(Round(Round(SUM(a.lost_cnt2)/SUM(a.dob_tot_cnt2),8)*10000,2),0) AS month_avg_trend,
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 	
+				a.stats_dt AS stats_dt,			
+				a.dbct_cd AS dbct_cd,
+				a.lost_cnt AS lost_cnt,
+				a.dob_tot_cnt AS dob_tot_cnt,
+				b.lost_cnt AS lost_cnt2,
+				b.dob_tot_cnt AS dob_tot_cnt2,
+				a.trgt_val AS trgt_val
+			FROM(
+				SELECT 
+					DATE_FORMAT(a.stats_dt,'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.lost_cnt) AS lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='5'
+				where a.stats_dt>=#{monthstart} AND a.stats_dt &lt; #{monthend}
+				
+				GROUP BY 1,2 
+				)a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.lost_cnt) AS lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				where a.stats_dt>=DATE_SUB(#{monthstart},INTERVAL 1 YEAR) AND a.stats_dt &lt; DATE_SUB(#{monthend},INTERVAL 1 YEAR)
+				GROUP BY 1,2
+				)b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+			AND o.org_typ = '3'
+			AND o.start_tm<=#{monthstart} AND o.end_tm >=#{monthend} 
+			]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3
+	</select>
+	<!--月趋势-疑似遗失-->
+	<select id="selectMonthRetention" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			'月趋势-疑似遗失'  AS rate_flag,
+			a.stats_dt AS data_date,
+			case when #{sel_level} = '1' then o.grtr_dist_cd 
+			 when #{sel_level} = '2' then o.prov_cd 
+			 when #{sel_level} = '5' then o.org_cd
+		     else a.stats_dt  end  AS org_id,
+			#{monthstart} AS t_data_date,
+			IFNULL(Round(Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8)*10000,2),0) AS date_trend,
+			IFNULL(Round(Round(SUM(a.dob_lost_cnt2)/SUM(a.dob_tot_cnt2),8)*10000,2),0) AS month_avg_trend,
+			IFNULL(SUM(a.trgt_val),0) AS goal_vlaues
+		FROM (
+			SELECT 	
+				a.stats_dt AS stats_dt,			
+				a.dbct_cd AS dbct_cd,
+				a.dob_lost_cnt AS dob_lost_cnt,
+				a.dob_tot_cnt AS dob_tot_cnt,
+				b.dob_lost_cnt AS dob_lost_cnt2,
+				b.dob_tot_cnt AS dob_tot_cnt2,
+				a.trgt_val AS trgt_val
+			FROM(
+				SELECT 
+					DATE_FORMAT(a.stats_dt,'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='6'
+				where a.stats_dt>=#{monthstart} AND a.stats_dt &lt; #{monthend}
+				
+				GROUP BY 1,2 )a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y-%m') AS stats_dt,
+					a.dbct_cd AS dbct_cd,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt
+				FROM  ydbi.bas_s_bigdata_qut_ctl a
+				where a.stats_dt>=DATE_SUB(#{monthstart},INTERVAL 1 YEAR) AND a.stats_dt &lt; DATE_SUB(#{monthend},INTERVAL 1 YEAR)
+				GROUP BY 1,2
+				)b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd	
+			) a
+		LEFT JOIN org_inf o
+		ON a.dbct_cd = o.org_cd
+			<where> 
+			<![CDATA[ 
+				AND o.org_typ = '3'
+				AND o.start_tm<=#{monthstart} AND o.end_tm >=#{monthend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					  AND o.grtr_dist_cd =#{sel_cd} 
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 2,3
+	</select>
+	
+	
+	<!--季度趋势-延误-->
+	<select id="selectQuarterDelay" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+		'季度趋势-延误'  AS rate_flag,
+		a.stats_dt AS data_date,
+		IFNULL(Round(a.dly_snd_cnt/a.dly_tot_cnt*100,2),0) AS date_trend,
+		IFNULL(Round(b.dly_snd_cnt/b.dly_tot_cnt*100,2),0) AS quarter_time_trend,
+		IFNULL(a.trgt_val,0) AS goal_vlaues,
+		#{quartestart} AS t_data_date
+		FROM (
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.dly_snd_cnt) AS dly_snd_cnt,
+					SUM(a.dly_tot_cnt) AS dly_tot_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='1'
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{quartestart} AND a.stats_dt<#{quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{quartestart} AND o.end_tm >=#{quarteend} 
+					
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)a
+			LEFT JOIN(
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.dly_snd_cnt) AS dly_snd_cnt,
+					SUM(a.dly_tot_cnt) AS dly_tot_cnt,
+					CONCAT(DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y'),'-',quarter(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR))) AS stats_dt1
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{t_quartestart} AND a.stats_dt<#{t_quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{t_quartestart} AND o.end_tm >=#{t_quarteend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)b
+			ON a.stats_dt = b.stats_dt1
+			AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--季度趋势-错发-->
+	<select id="selectQuarterWrong" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false"> 
+		SELECT
+		'季度趋势-错发'  AS rate_flag,
+		a.stats_dt AS data_date,
+		IFNULL(IFNULL(Round(a.err_snd_cnt/a.oper_cnt*100,2),0),0) AS date_trend,
+		IFNULL(Round(b.err_snd_cnt/b.oper_cnt*100,2),0) AS quarter_time_trend,
+		IFNULL(a.trgt_val,0) AS goal_vlaues,
+		#{quartestart} AS t_data_date
+		FROM (
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.err_snd_cnt) AS err_snd_cnt,
+					SUM(a.oper_cnt) AS oper_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='2'
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{quartestart} AND a.stats_dt<#{quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{quartestart} AND o.end_tm >=#{quarteend} 
+					
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)a
+			LEFT JOIN(
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.err_snd_cnt) AS err_snd_cnt,
+					SUM(a.oper_cnt) AS oper_cnt,
+					CONCAT(DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y'),'-',quarter(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR))) AS stats_dt1
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{t_quartestart} AND a.stats_dt<#{t_quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{t_quartestart} AND o.end_tm >=#{t_quarteend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)b
+			ON a.stats_dt = b.stats_dt1
+			AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--季度趋势-错分-->
+	<select id="selectQuarterWrongpoints" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+		'季度趋势-错分'  AS rate_flag,
+		a.stats_dt AS data_date,
+		IFNULL(Round(a.issue_err_sum/a.issue_sign_sum*100,2),0) AS date_trend,
+		IFNULL(Round(b.issue_err_sum/b.issue_sign_sum*100,2),0) AS quarter_time_trend,
+		IFNULL(a.trgt_val,0) AS goal_vlaues,
+		#{quartestart} AS t_data_date
+		FROM (
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.issue_err_sum) AS issue_err_sum,
+					SUM(a.issue_sign_sum) AS issue_sign_sum,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='3'
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{quartestart} AND a.stats_dt<#{quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{quartestart} AND o.end_tm >=#{quarteend} 
+					
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)a
+			LEFT JOIN(
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.issue_err_sum) AS issue_err_sum,
+					SUM(a.issue_sign_sum) AS issue_sign_sum,
+					CONCAT(DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y'),'-',quarter(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR))) AS stats_dt1
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{t_quartestart} AND a.stats_dt<#{t_quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{t_quartestart} AND o.end_tm >=#{t_quarteend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)b
+			ON a.stats_dt = b.stats_dt1
+			AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--季度趋势-集错包-->
+	<select id="selectQuarterWrongpackage" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+		'季度趋势-集错包'  AS rate_flag,
+		a.stats_dt AS data_date,
+		IFNULL(Round(a.pk_error_num/a.pk_tot_num*100,2),0) AS date_trend,
+		IFNULL(Round(a.pk_error_num/a.pk_tot_num*100,2),0)AS quarter_time_trend,
+		IFNULL(a.trgt_val,0) AS goal_vlaues,
+		#{quartestart} AS t_data_date
+		FROM (
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.pk_error_num) AS pk_error_num,
+					SUM(a.pk_tot_num) AS pk_tot_num,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='4'
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{quartestart} AND a.stats_dt<#{quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{quartestart} AND o.end_tm >=#{quarteend} 
+					
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)a
+			LEFT JOIN(
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.pk_error_num) AS pk_error_num,
+					SUM(a.pk_tot_num) AS pk_tot_num,
+					CONCAT(DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y'),'-',quarter(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR))) AS stats_dt1
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{t_quartestart} AND a.stats_dt<#{t_quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{t_quartestart} AND o.end_tm >=#{t_quarteend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)b
+			ON a.stats_dt = b.stats_dt1
+			AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--季度趋势-遗失-->
+	<select id="selectQuarterLoss" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+		'季度趋势-遗失'  AS rate_flag,
+		a.stats_dt AS data_date,
+		IFNULL(Round(Round(a.lost_cnt/a.dob_tot_cnt,8)*10000,2),0) AS date_trend,
+		IFNULL(Round(Round(b.lost_cnt/b.dob_tot_cnt,8)*10000,2),0) AS quarter_time_trend,
+		IFNULL(a.trgt_val,0) AS goal_vlaues,
+		#{quartestart} AS t_data_date
+		FROM (
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.lost_cnt) AS lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='5'
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{quartestart} AND a.stats_dt<#{quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{quartestart} AND o.end_tm >=#{quarteend} 
+					
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)a
+			LEFT JOIN(
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.lost_cnt) AS lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+					CONCAT(DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y'),'-',quarter(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR))) AS stats_dt1
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{t_quartestart} AND a.stats_dt<#{t_quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{t_quartestart} AND o.end_tm >=#{t_quarteend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)b
+			ON a.stats_dt = b.stats_dt1
+			AND a.dbct_cd = b.dbct_cd
+	</select>
+	<!--季度趋势-疑似遗失-->
+	<select id="selectQuarterRetention" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+		'季度趋势-疑似遗失'  AS rate_flag,
+		a.stats_dt AS data_date,
+		IFNULL(Round(Round(a.dob_lost_cnt/a.dob_tot_cnt,8)*10000,2),0) AS date_trend,
+		IFNULL(Round(Round(b.dob_lost_cnt/b.dob_tot_cnt,8)*10000,2),0) AS quarter_time_trend,
+		IFNULL(a.trgt_val,0) AS goal_vlaues,
+		#{quartestart} AS t_data_date
+		FROM (
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+					Round(SUM(c.trgt_val),2) AS trgt_val
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				LEFT JOIN ydbi.dbct_trgt_val_qc_tbl c
+				ON a.stats_dt = c.pick_dt
+				AND a.dbct_cd = c.dbct_cd
+				AND c.trgt_val_typ='6'
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{quartestart} AND a.stats_dt<#{quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{quartestart} AND o.end_tm >=#{quarteend} 
+					
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)a
+			LEFT JOIN(
+			SELECT 
+					CONCAT(DATE_FORMAT(a.stats_dt,'%Y'),'-',quarter(a.stats_dt)) AS stats_dt,		
+					case when #{sel_level} = '1' then o.grtr_dist_cd 
+					when #{sel_level} = '2' then o.prov_cd 
+					when #{sel_level} = '5' then o.org_cd
+					ELSE '000000' end AS dbct_cd,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,
+					SUM(a.dob_tot_cnt) AS dob_tot_cnt,
+					CONCAT(DATE_FORMAT(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR),'%Y'),'-',quarter(DATE_ADD(a.stats_dt,INTERVAL 1 YEAR))) AS stats_dt1
+				FROM ydbi.bas_s_bigdata_qut_ctl a
+				LEFT JOIN org_inf o
+				ON a.dbct_cd = o.org_cd
+				<where> 
+				<![CDATA[ 
+					AND a.stats_dt>=#{t_quartestart} AND a.stats_dt<#{t_quarteend}
+					AND o.org_typ = '3'
+					AND o.start_tm<=#{t_quartestart} AND o.end_tm >=#{t_quarteend} 
+				]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+				GROUP BY 1,2
+			)b
+			ON a.stats_dt = b.stats_dt1
+			AND a.dbct_cd = b.dbct_cd
+	</select>
+	
+	
+</mapper>

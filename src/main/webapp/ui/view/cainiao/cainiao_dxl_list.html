@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/orange/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	
+	<style type="text/css">
+		.datagrid-header-rownumber,.datagrid-cell-rownumber{
+		   width:40px;
+		  }
+	</style>
+	<script type="text/javascript">
+		var objectName = '线路日明细表';
+		var listTemplate = '#cainiao_dxl_list';
+		var listId = "cainiao_dxl_list";
+		var formSearchTemplate = '#cainiao_searchForm';
+		var searchFormId = "cainiao_searchForm";
+		var gridMenuId = '#cainiao_dxl_list_menu';
+		var urlSearch = appId + '/actions/cainiao/searchDxlData.do?actionId=cainiao_searchDxlData';
+		var urlTotSearch = appId + '/actions/cainiao/searchData.do?actionId=cainiao_searchData';
+		var urlExport= appId + '/actions/cainiao/exportDxlEntities.do?actionId=cainiao_exportDxlEntities';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'cainiao_dxl_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		var expellActions = {
+			"cainiao_searchDxlData":urlSearch,
+			"cainiao_exportDxlEntities":urlExport
+		}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		var today = getToday();
+		$(function(){
+			//startp
+			$('#startPlace').combobox({
+ 			    url:appId+"/actions/cainiao/getRegion.do?actionId=cainiao_getRegion&endPlace=&startPlace="+$('#startPlace').val(),    
+ 			    valueField:'id',    
+ 			    textField:'name',
+ 				filter: function(q, row){
+					var opts = $(this).combobox('options');
+					return row[opts.textField].indexOf(q) > -1;
+				},
+               	onHidePanel: function() {  
+                	    var _options = $(this).combobox('options');  
+                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+	               	     for (var i = 0; i < _data.length; i++) {  
+	             	        if (_data[i][_options.valueField] == _value) {  
+	             	            _b=true;  
+	             	            break;  
+	             	        }  
+	             	    }
+                	    if(!_b){  
+                	        $(this).combobox('setValue', '');  
+                	    }  
+                	}, 
+ 			    loadFilter:function(oData){
+ 			    	var data = oData.data;
+ 			    	for(var i in data){
+ 			    		data[i].name = data[i].name;
+ 			    	}
+ 			    	data.unshift({"id":"","name":"请选择"});
+ 			    	return data;
+ 			    }
+ 			});
+			//stopstartp
+			//startend
+			$('#endPlace').combobox({
+ 			    url:appId+"/actions/cainiao/getRegion.do?actionId=cainiao_getRegion&endPlace=&startPlace="+$('#startPlace').val(),    
+ 			    valueField:'id',    
+ 			    textField:'name',
+ 				filter: function(q, row){
+					var opts = $(this).combobox('options');
+					return row[opts.textField].indexOf(q) > -1;
+				},
+               	onHidePanel: function() {  
+                	    var _options = $(this).combobox('options');  
+                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+	               	     for (var i = 0; i < _data.length; i++) {  
+	             	        if (_data[i][_options.valueField] == _value) {  
+	             	            _b=true;  
+	             	            break;  
+	             	        }  
+	             	    }
+                	    if(!_b){  
+                	        $(this).combobox('setValue', '');  
+                	    }  
+                	}, 
+ 			    loadFilter:function(oData){
+ 			    	var data = oData.data;
+ 			    	for(var i in data){
+ 			    		data[i].name = data[i].name;
+ 			    	}
+ 			    	data.unshift({"id":"","name":"请选择"});
+ 			    	return data;
+ 			    }
+ 			});
+			//stopend
+			
+			
+			getAuthButtons(pageId,gridMenuId,authActions,expellActions);
+			loadDatagrid();
+			searchData('cainiao_searchDxlData',urlSearch);
+		});
+		
+		function doAction(pageId,buttonId,actionUrl){
+			if(authActions.hasOwnProperty(buttonId)){
+				if(buttonId.indexOf('addData')>0){
+					addData(buttonId,appId+actionUrl);
+				}
+			    else if(buttonId.indexOf('updateData')>0){
+					updateData(buttonId,appId+actionUrl);
+				} 
+				else if(buttonId.indexOf('deleteData')>0){
+					deleteData(buttonId,appId+actionUrl);
+				}
+				else if( buttonId.indexOf('getData')>0){
+					getData(buttonId,appId+actionUrl);
+				} 
+				else if(buttonId.indexOf('searchDxlData')>0){
+					searchData(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('refresh')>0){
+					refresh(buttonId,appId+actionUrl);
+				}
+				else {
+					//默认操作
+					var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"+objectName);
+
+			    	if(selectRow){
+						var tempUrl = '';
+   						tempUrl = tempUrl+'&brch_cd='+selectRow.brch_cd;
+   						tempUrl = tempUrl+'&dbct_cd='+selectRow.dbct_cd;
+   						tempUrl = tempUrl+'&pass_time='+selectRow.pass_time;
+   						tempUrl = tempUrl+'&port_no='+selectRow.port_no;
+   		   				tempUrl = tempUrl+'&over_time='+selectRow.over_time;
+		   				tempUrl += "&actionUrl="+appId+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+			    		$$.openJcdfDialog(urlActionForm+tempUrl, '操作'+objectName, 500, 600);
+			    	}					
+				}
+			}
+			else {
+				alert('当前用户没有该操作授权!');
+			}
+		};
+		
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			/* 日期框 */
+			var slcDate=$("#startDt").datebox("getValue"); 
+			slcDate = slcDate.replace(/-/g,'/'); 
+			var timestampStart = new Date(slcDate).getTime();
+			var timestampToday = new Date().getTime();
+			var result=timestampToday-timestampStart;
+			if(result<0){
+				$$.showJcdfMessager('提示消息', '日期不能大于今天', 'warning');
+				return false;
+			}
+			
+			var params = $$.serializeToJson(formSearchTemplate);
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(isDatagridLoaded){
+				$(listTemplate).datagrid('load', json );
+			}else{
+				$(listTemplate).datagrid({
+					queryParams: json,
+					url : urlSearch
+				});
+				isDatagridLoaded = true;
+			}
+		};
+		
+		function exportExcel(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			$('#'+searchFormId).form('submit',{    
+			    url:actionUrl,    
+			    onSubmit: function(param){
+			    	param.search_condition = JSON.stringify(params)
+			    },
+			    success: function(data){   
+			    	var oData = JSON.parse(data);
+			        if (oData&&oData.errorCode){   
+			        	$$.showJcdfMessager('提示消息', oData.msg, 'warning');   
+			        }    
+			    } 
+			}); 		
+		};
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+		};
+		
+	
+					
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			$(listTemplate).datagrid({
+				//title:objectName+'列表',
+				height : $$.getDatagridHeight(),
+				width : $$.getDatagridWidth(),
+				border : true,
+				nowrap : true,
+				striped : true,
+				fitColumns : true,
+				idField : '',
+				columns:[
+				         	[
+				         		{field : 'lnNm',title : '线路名称',width : $$.fillsize(0.1),align : 'center',rowspan:2}, 
+								{title:'单量',align:'center',colspan:3},
+								{title:'去程时效',align:'center',colspan:3},
+								{title:'返程时效',align:'center',colspan:3}
+							],[
+								{field : 'levUnitCnt',title :'去程单量',width : $$.fillsize(0.1),align : 'center'}, 
+								{field : 'rtnUnitCnt',title :'返程单量',width : $$.fillsize(0.1),align : 'center'}, 
+								{field : 'levRtnRate',title :'去返比',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'levTlns',title :'去程时效',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'levIndustNm',title :'去程行业排名',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'levIndustVal',title :'去程行业均值',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'rtnTlns',title :'返程时效',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'rtnIndustNm',title :'返程行业排名',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'rtnIndustVal',title :'返程行业均值',width : $$.fillsize(0.1),align : 'center'},
+							]
+				 		],
+				onBeforeLoad : function() {
+					$$.clearSelect(listId);
+				},
+				queryParams : $$.serializeToJson(searchFormId),
+				pagination : true,
+				rownumbers : true,
+				singleSelect : true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar : gridMenuId,
+				loadFilter : function(data) {
+					if (data != null && data.errorCode > 0) {
+						if (data.msg != null && data.msg != "") {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data;
+				},
+				onLoadSuccess:function(data){ 
+					$("#beizhu").html("");
+	            	var sumVal = data.data[0];
+	            	if(sumVal != null){
+	            		$('#startDt').datebox('setValue', sumVal.statsDt);
+	            		$("#beizhu").show();
+						var newContent = '<p style="font-size: larger;font-weight:bold;line-height:20px;margin-left: 20px;">说明:</p>'
+								+'<p style="font-size: larger;line-height:20px;margin-left: 50px;">全链路排名：'+sumVal.fullPathNm+'&nbsp&nbsp全链路时效：'+sumVal.fullPathTlns+'&nbsp&nbsp行业平均时效：'+sumVal.industAvgTlns+'</p>'
+							;
+						$("#beizhu").html(newContent);
+            		}
+           	 	}
+			});
+		}
+	</script>
+</head> 
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false" style="padding: 4px 0;">
+		<fieldset style="padding: 5px; border: 1px solid #d4a375;height:184px;">
+			<legend>信息查询</legend>
+			<form id="cainiao_searchForm" class="search-form" method="post">
+				<input type="hidden" id="statsDt1" name="statsDt1">
+				<input type="hidden" id="statsDt2" name="statsDt2">
+				<table cellpadding="2" style="width: 100%">
+				   <tr>
+						<td align="right">统计时间：</td>
+						<td class="left"><input type="text" id="startDt" class="easyui-datebox"
+							name="startDt" style="width:220px;height:26px" data-options="required:true" />		
+						</td>
+						<td align="right">线路类型：</td>
+						<td align="left">
+							<select id="lineType" name="line_type"  style="width:220px;height:26px">
+								<!-- <option value="">-请选择-</option> -->
+								<option value="1">省-省</option>
+								<option value="2" selected="selected">市-市</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td align="right">起点：</td>
+						<td>
+							<input type="text" id="startPlace" name="startPlace"  style="width:220px;height:26px"/>
+						</td>
+						<td align="right">终点：</td>
+						<td>
+							<input type="text" id="endPlace" name="endPlace"  style="width:220px;height:26px"/>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="8" align="center" >
+							<a class="easyui-linkbutton" iconCls="icon-search"
+								style="margin-right: 20px;"
+								onclick="searchData('cainiao_searchDxlData',urlSearch)">查询</a>
+							<a class="easyui-linkbutton" iconCls="icon-reload"
+								style="margin-right: 20px;" onclick="searchReset()">重置</a> 
+							<a class="easyui-linkbutton" iconCls="icon-download"
+								style="margin-right: 20px;"
+								onclick="exportExcel('cainiao_exportDxlEntities',urlExport)">导出</a>
+						</td> 
+					</tr>
+				</table>
+			</form>
+			<div id="beizhu" style="display: none;color:red;">
+			</div>
+		</fieldset>
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 2px;">
+		<!-- <div id="cainiao_dxl_list_menu">
+			<div style="padding: 5px;">
+			</div>
+		</div> -->
+		<table id="cainiao_dxl_list" fit="true"></table>
+	</div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.setl.dao.Setl_fee_cdMapper">
+
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	<!-- Result Map -->
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.setl.model.Setl_fee_cd">
+		<result column="fee_cd" property="id" jdbcType="INTEGER" />
+		<result column="fee_nm" property="name" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<!-- 一级费用编码名称查询 -->
+	<select id="searchOneFeeData" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+	    SELECT
+	      DISTINCT 
+	      fee_type_cd       AS fee_cd
+	      ,fee_type_name    AS fee_nm
+	    FROM setl.setl_fee_def_oth
+	    ORDER BY 1
+	]]>
+	</select>
+
+	<!-- 二级费用编码名称查询 -->
+	<select id="searchTwoFeeData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+	     DISTINCT 
+	     fee_cd      AS fee_cd
+	     ,fee_remark   AS fee_nm
+	    FROM setl.setl_fee_def_oth
+	    WHERE  CAST(fee_type_cd AS SIGNED INTEGER) = #{sel_fee_cd,jdbcType=INTEGER}
+	    ORDER BY 1
+	]]>
+	</select>
+
+</mapper>   

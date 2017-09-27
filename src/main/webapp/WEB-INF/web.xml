@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+
+	<display-name>ydbi</display-name>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	
+	 <!-- ======================== 单点登录开始 ======================== -->
+	 <!-- <filter>
+		<filter-name>CAS Filter</filter-name>
+		<filter-class>org.jasig.cas.client.authentication.AuthenticationFilter</filter-class>
+		<init-param>
+			<param-name>casServerLoginUrl</param-name>
+			<param-value>https://cas.yundasys.com:8443/cas3.4/login</param-value>
+		</init-param>
+		<init-param>
+   			<param-name>serverName</param-name>
+   			<param-value>http://10.19.106.115:10115</param-value>
+  		</init-param>
+	</filter>
+
+		<filter-mapping>
+        	<filter-name>CAS Filter</filter-name>
+    		<url-pattern>/actions/*</url-pattern>
+   		</filter-mapping>
+   		<filter-mapping>
+     		 <filter-name>CAS Filter</filter-name>
+     		 <url-pattern>/ui/view/*</url-pattern>
+  		 </filter-mapping>
+ 
+
+		<filter>
+			<filter-name>CAS Validation Filter</filter-name>
+			<filter-class>
+				org.jasig.cas.client.validation.Cas20ProxyReceivingTicketValidationFilter</filter-class>
+			<init-param>
+				<param-name>casServerUrlPrefix</param-name>
+				<param-value>https://cas.yundasys.com:8443/cas3.4</param-value>
+			</init-param>
+			<init-param>
+    			<param-name>serverName</param-name>
+				<param-value>http://10.19.106.115:10115</param-value>
+ 			</init-param>	
+		</filter>
+		<filter-mapping>
+  			<filter-name>CAS Validation Filter</filter-name>
+  			<url-pattern>/actions/*</url-pattern>
+	 	</filter-mapping>
+	 	<filter-mapping>
+ 			<filter-name>CAS Validation Filter</filter-name>
+  			<url-pattern>/ui/view/*</url-pattern>
+	 	</filter-mapping>
+
+		<filter>
+			<filter-name>CAS HttpServletRequest Wrapper Filter</filter-name>
+			<filter-class>
+				org.jasig.cas.client.util.HttpServletRequestWrapperFilter
+			</filter-class>
+		</filter>
+		<filter-mapping>
+       		<filter-name>CAS HttpServletRequest Wrapper Filter</filter-name>
+   			<url-pattern>/actions/*</url-pattern>
+ 		</filter-mapping>
+ 		<filter-mapping>
+     		 <filter-name>CAS HttpServletRequest Wrapper Filter</filter-name>
+      		 <url-pattern>/ui/view/*</url-pattern>
+ 		</filter-mapping>
+
+		<filter>
+			<filter-name>CAS Assertion Thread Local Filter</filter-name>
+			<filter-class>org.jasig.cas.client.util.AssertionThreadLocalFilter</filter-class>
+		</filter>
+		<filter-mapping>
+       		 <filter-name>CAS Assertion Thread Local Filter</filter-name>
+    		 <url-pattern>/actions/*</url-pattern>
+ 		</filter-mapping>
+ 		<filter-mapping>
+			<filter-name>CAS Assertion Thread Local Filter</filter-name>
+			<url-pattern>/ui/view/*</url-pattern>
+ 		</filter-mapping> -->
+   
+  <!-- ======================== 单点登录结束 ======================== -->
+	
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:spring/spring.xml</param-value>
+	</context-param>
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<servlet>
+		<servlet-name>SpringMVC</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring/app/spring-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>SpringMVC</servlet-name>
+		<!-- <url-pattern>/</url-pattern> -->
+		<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
+
+	<!-- ================================================================================ -->
+	<!-- filters configure -->
+	<!-- ================================================================================ -->
+
+
+	<filter>
+		<display-name>AuthLocalFilter</display-name>
+		<filter-name>AuthLocalFilter</filter-name>
+		<filter-class>com.yd.common.session.CIPLocalLoginFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>AuthLocalFilter</filter-name>
+		<url-pattern>/actions/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>AuthLocalFilter</filter-name>
+		<url-pattern>/ui/view/*</url-pattern>
+	</filter-mapping>
+	<!-- 移动端过滤器 -->
+	<filter>
+		<display-name>MobileFilter</display-name>
+		<filter-name>MobileFilter</filter-name>
+		<filter-class>com.yd.ydbi.common.filter.MobileSessionFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>MobileFilter</filter-name>
+		<url-pattern>/action/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>MobileFilter</filter-name>
+		<url-pattern>/ui/mobile/view/*</url-pattern>
+	</filter-mapping>
+	<!-- 过滤静态资源 -->
+	<filter>
+		<display-name>CIPStaticResourcesFilter</display-name>
+		<filter-name>CIPStaticResourcesFilter</filter-name>
+		<filter-class>com.yd.common.session.CIPStaticResourcesFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>CIPStaticResourcesFilter</filter-name>
+		<url-pattern>/ui/js/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>CIPStaticResourcesFilter</filter-name>
+		<url-pattern>/ui/css/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>CIPStaticResourcesFilter</filter-name>
+		<url-pattern>/ui/img/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>CIPStaticResourcesFilter</filter-name>
+		<url-pattern>/ui/view/admin/*</url-pattern>
+	</filter-mapping>
+
+	<welcome-file-list>
+		<welcome-file>login.html</welcome-file>
+	</welcome-file-list>
+	
+</web-app>

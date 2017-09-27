@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>大数据平台</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="top-content">
+        <div class="top-tab-area">
+            <ul class="tab-all">
+                <li class="tab-list">首页</li>
+                <li class="tab-list">重要指标</li>
+                <li class="tab-list">目标值</li>
+                <li class="tab-list">业务量</li>
+                <li class="tab-list">运输</li>
+                <li class="tab-list">时效</li>
+                <li class="tab-list  tab-list-active">质控</li>
+            </ul>
+        </div>
+        <div class="search-btn"></div>
+        <div class="tab-search-input">
+            <div class="search-area">
+                <div class="search-box">
+                    <div class="search-img"></div>
+                    <input class="search-info" id="search-info-area" placeholder="账户搜索">
+                    <div class="search-close"></div>
+                </div>
+                <div class="search-cancel">取消</div>
+            </div>
+        </div>
+    </div>
+    <div class="org-area">
+        <div class="org-select-area">
+            <div class="org-item-left">
+                <span class="org-name">机构</span>
+                <span class="org-name-detail">
+                    <label>
+                        <input class="org-name-input" id="picker-pos" data-value="" data-num="area_id" value="集团" readonly="readonly">
+                        <!--<ins class="arrow-bottom-img"></ins>-->
+                    </label>
+                </span>
+            </div>
+            <div class="org-item-right">
+                <span class="org-name">日期</span>
+                <span class="date-name-detail">
+                    <label>
+                        <input class="org-name-input" id="calender-select" readonly="readonly">
+                        <ins class="arrow-rili-img"></ins>
+                    </label>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="business-area">
+        <div class="business-menu">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">操作质控</span>
+            </div>
+            <div class="business-menu-content" id="QC-detail">
+                <div class="business-menu-item" data-link="QC-delay.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">延误率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd ratio-down-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-down-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-down"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item" data-link="QC-wrong.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">错发率<span class="detail-item-hd-price">(时)</span></span>
+                            <span class="business-menu-item-bd ratio-down-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-down-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-down"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item" data-link="QC-errclass.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">错分率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd ratio-up-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item" data-link="QC-set.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">错集包率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd ratio-down-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item"  data-link="QC-loss.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">遗失率<span class="detail-item-hd-price">(‱)</span></span>
+                            <span class="business-menu-item-bd ratio-down-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-down-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-down"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-down-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-down"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item"  data-link="QC-strand.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">疑似遗失率<span class="detail-item-hd-price">(‱)</span></span>
+                            <span class="business-menu-item-bd ratio-up-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item hide-view"  data-link="QC-strand.html">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="transport-menu-item-hd">滞留率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd ratio-up-num">---</span>
+                        </span>
+                        <div class="business-menu-item-right">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">---</span>
+                                    <span class="volume-ratio-img ratio-img-top-up"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="menu-area">
+    <div class="menu-item">
+        <div class="menu-img menu-tab-data menu-tab-active"></div>
+        <p class="menu-name menu-name-active">数据</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-scan"></div>
+        <p class="menu-name">订阅</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-infor"></div>
+        <p class="menu-name">资讯</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-my"></div>
+        <p class="menu-name">我的</p>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getQCBaskInfoURL = appId + "/action/ydbi_quality_control/searchData.do";
+    var sendClass;
+    $(function() {
+        init();
+    });
+    function init() {
+        getNum();    //用于显示网点
+        viewJs();
+        setView();
+        linkTab();  //导航栏设置
+        getBaskInfo(); //初始化获取数据
+        commonFun(); //公用方法
+    }
+
+    function getBaskInfo() {
+        getBaskInfoDetail();   //获取目标值
+    }
+
+    function getBaskInfoDetail() {
+        $.showLoading("加载中");
+        sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "data_date": $("#calender-select").val()
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getQCBaskInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addListInfo(oData.data[0]);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("***");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addListInfo(data) {
+        var str = "<div class='business-menu-item' data-link='QC-delay.html' data-info='delay'><div class='business-menu-item-detail'><span class='business-menu-item-num'><span class='transport-menu-item-hd'>延误率<span class='detail-item-hd-price'>(%)</span></span><span class='business-menu-item-bd ratio-"+ changeData(data.day_percent1,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.delay_rate,"abs")) +"</span> </span><div class='business-menu-item-right'><div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.day_percent1,"symbol") +"-num'>"+ changeData(data.day_percent1,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent1,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.week_with_percent1,"symbol") +"-num'>"+ changeData(data.week_with_percent1,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent1,"symbol") +"'></span></div></div></div><div class='point-next'></div></div></div>" +
+                "<div class='business-menu-item' data-link='QC-delay.html'  data-info='wrong'><div class='business-menu-item-detail'><span class='business-menu-item-num'><span class='transport-menu-item-hd'>错发率<span class='detail-item-hd-price'>(%)</span></span><span class='business-menu-item-bd ratio-"+ changeData(data.day_percent2,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.wrong_rate,"abs")) +"</span> </span><div class='business-menu-item-right'><div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.day_percent2,"symbol") +"-num'>"+ changeData(data.day_percent2,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent2,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.week_with_percent2,"symbol") +"-num'>"+ changeData(data.week_with_percent2,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent2,"symbol") +"'></span></div></div></div><div class='point-next'></div></div></div>" +
+                "<div class='business-menu-item' data-link='QC-delay.html'  data-info='errorSend'><div class='business-menu-item-detail'><span class='business-menu-item-num'><span class='transport-menu-item-hd'>错分率<span class='detail-item-hd-price'>(%)</span></span><span class='business-menu-item-bd ratio-"+ changeData(data.day_percent3,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.wrongpoints_rate,"abs")) +"</span> </span><div class='business-menu-item-right'><div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.day_percent3,"symbol") +"-num'>"+ changeData(data.day_percent3,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent3,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.week_with_percent3,"symbol") +"-num'>"+ changeData(data.week_with_percent3,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent3,"symbol") +"'></span></div></div></div><div class='point-next'></div></div></div>" +
+                "<div class='business-menu-item' data-link='QC-delay.html'  data-info='set'><div class='business-menu-item-detail'><span class='business-menu-item-num'><span class='transport-menu-item-hd'>错集包率<span class='detail-item-hd-price'>(%)</span></span><span class='business-menu-item-bd ratio-"+ changeData(data.day_percent4,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.wrongpackage_rate,"abs")) +"</span> </span><div class='business-menu-item-right'><div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.day_percent4,"symbol") +"-num'>"+ changeData(data.day_percent4,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent4,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.week_with_percent4,"symbol") +"-num'>"+ changeData(data.week_with_percent4,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent4,"symbol") +"'></span></div></div></div><div class='point-next'></div></div></div>" +
+                "<div class='business-menu-item' data-link='QC-delay.html'  data-info='loss'><div class='business-menu-item-detail'><span class='business-menu-item-num'><span class='transport-menu-item-hd'>遗失率<span class='detail-item-hd-price'>(‱)</span></span><span class='business-menu-item-bd ratio-"+ changeData(data.day_percent5,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.loss_rate,"abs")) +"</span> </span><div class='business-menu-item-right'><div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.day_percent5,"symbol") +"-num'>"+ changeData(data.day_percent5,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent5,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.week_with_percent5,"symbol") +"-num'>"+ changeData(data.week_with_percent5,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent5,"symbol") +"'></span></div></div></div><div class='point-next'></div></div></div>" +
+                "<div class='business-menu-item' data-link='QC-delay.html'  data-info='asLoss'><div class='business-menu-item-detail'><span class='business-menu-item-num'><span class='transport-menu-item-hd'>疑似遗失率<span class='detail-item-hd-price'>(‱)</span></span><span class='business-menu-item-bd ratio-"+ changeData(data.day_percent6,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.retention_rate,"abs")) +"</span> </span><div class='business-menu-item-right'><div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.day_percent6,"symbol") +"-num'>"+ changeData(data.day_percent6,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent6,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='volume-ratio-info-size ratio-"+ changeData(data.week_with_percent6,"symbol") +"-num'>"+ changeData(data.week_with_percent6,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent6,"symbol") +"'></span></div></div></div><div class='point-next'></div></div></div>" ;
+        $("#QC-detail").empty().append(str);
+
+        //点击进入详情
+        $(".business-menu-item").on("click",function() {
+            var linkInfo = $(this).attr("data-link");
+            if(linkInfo != null) {
+                window.location.href = linkInfo  + "?sendType=" + sendClass + "&dataOrg=" + $("#picker-pos").attr("data-value") + "&dataInfo=" + $(this).attr("data-info");
+            }
+        })
+    }
+
+
+
+    function viewJs() {
+        var orgShowName = "集团";    //为了获取集团名称
+        $.each(showOrgName,function(index,val) {
+            if(val != "无") {
+                orgShowName = val;
+            }
+        });
+        $("#picker-pos").val(orgShowName).attr({"data-value":showOrgCode,"data-num":showOrgType});
+
+        //下拉展现数据
+        $(".business-menu-top").on("click",function() {
+            if($(this).attr("data-show") == "false") {
+                $(this).attr("data-show","true").children(".business-menu-img").removeClass("business-menu-img-down").addClass("business-menu-img-up").end().next().slideDown(200);
+            }else {
+                $(this).attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);
+            }
+        });
+
+        //为了使第一个展开
+        $(".business-menu-top").eq(0).trigger("click");
+
+    }
+</script>
+</body>
+</html>

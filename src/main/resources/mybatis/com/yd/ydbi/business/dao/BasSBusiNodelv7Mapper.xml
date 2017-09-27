@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.business.dao.BasSBusiNodelv7Mapper" >
+  <resultMap id="BasSBusiNodelv7Map" type="com.yd.ydbi.business.model.BasSBusiNodelv7" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="nodelv_dt_7" property="nodelvDt7" jdbcType="DATE" />
+    <result column="pick_dbct_14" property="pickDbct14" jdbcType="INTEGER" />
+    <result column="pick_cnt" property="pickCnt" jdbcType="BIGINT" />
+    <result column="nodelv_cnt" property="nodelvCnt" jdbcType="BIGINT" />
+    <result column="pick_cnt_yd" property="pickCntYd" jdbcType="BIGINT" />
+    <result column="delv_cnt_yd" property="delvCntYd" jdbcType="BIGINT" />
+    <result column="pick_cnt_wd" property="pickCntWd" jdbcType="BIGINT" />
+    <result column="delv_cnt_wd" property="delvCntWd" jdbcType="BIGINT" />
+    <result column="pick_cnt_w" property="pickCntW" jdbcType="BIGINT" />
+    <result column="delv_cnt_w" property="delvCntW" jdbcType="BIGINT" />
+    <result column="pick_cnt_m" property="pickCntM" jdbcType="BIGINT" />
+    <result column="delv_cnt_m" property="delvCntM" jdbcType="BIGINT" />
+  </resultMap>
+  <sql id="condition_filter">
+	  	<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+	    AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+	   </if>
+	   <if test='sel_level!=null and sel_level == "1" '>
+	    AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+	   </if>
+	   <if test='sel_level!=null and sel_level == "2" '>
+	    AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+	   </if>
+	   <if test='sel_level!=null and sel_level == "3" '>
+	    AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+	   </if>
+	   <if test='sel_level!=null and sel_level == "5" '>
+	    AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+	   </if>
+	   AND k.start_tm &lt;= a.stats_dt
+		AND k.end_tm > a.stats_dt
+  </sql>
+  
+  <sql id="select_org_nm_cd_condition">
+		(case when #{sel_level} = 0 then grtr_dist_nm
+           	when #{sel_level} = 1 then k.prov_nm
+			else k.org_nm
+			end) orgName,
+		(case when #{sel_level} = 0 then grtr_dist_cd
+          	when #{sel_level} = 1 then k.prov_cd
+		else k.org_cd
+		end) orgCode,
+	</sql>
+  <sql id="Base_Column_List" >
+    id, nodelv_dt_7, pick_dbct_14, pick_cnt, nodelv_cnt, pick_cnt_yd, delv_cnt_yd, pick_cnt_wd, 
+    delv_cnt_wd, pick_cnt_w, delv_cnt_w, pick_cnt_m, delv_cnt_m
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BasSBusiNodelv7Map" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from bas_s_busi_nodelv_7
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  
+  <select id="sevenDaysWithoutReceiptRate" resultType="map" parameterType="map">
+	SELECT
+		ROUND(a.cfm_rcv_rt7 ,2)  cfm_rcv_rt7,
+		FORMAT(IFNULL(ROUND((a.cfm_rcv_rt7 - b.lastday_cfm_rcv_rt7) / b.lastday_cfm_rcv_rt7 * 100,2),0),2) daysFrom,
+		FORMAT(IFNULL(ROUND((a.cfm_rcv_rt7 - c.lastWeekSd_cfm_rcv_rt7) / c.lastWeekSd_cfm_rcv_rt7 * 100,2),0),2) weeksFrom
+	FROM
+	 (SELECT 0 as st,
+		ROUND(sum(a.cfm_rcv_cnt7)/sum(a.pick_cnt7)*100,2) lastday_cfm_rcv_rt7
+	  FROM
+		`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+		a.stats_dt = date_sub(#{curDate},INTERVAL 1 DAY)
+		<include refid="condition_filter"/>
+     	</where>
+	  	GROUP BY a.`stats_dt`
+	  	UNION ALL SELECT 0,0
+		limit 1
+	  ) b LEFT JOIN
+		(SELECT 0 as st,
+			ROUND(sum(a.cfm_rcv_cnt7)/sum(a.pick_cnt7)*100,2) lastWeekSd_cfm_rcv_rt7
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+		a.stats_dt = DATE_SUB(#{curDate},INTERVAL 1 WEEK)
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY a.`stats_dt`
+		UNION ALL SELECT 0,0
+		limit 1
+		) c on b.st = c.st   LEFT JOIN 
+		(SELECT 0 as st,
+			ROUND(sum(a.cfm_rcv_cnt7)/sum(a.pick_cnt7)*100,2) cfm_rcv_rt7
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY a.`stats_dt`
+		UNION ALL SELECT 0,0
+		limit 1
+		) a  on c.st = a.st
+  </select>
+  
+  <select id="sevenDaysWithoutReceiptRateForNull" resultType="map" parameterType="map">
+	SELECT
+		0  cfm_rcv_rt7,
+		0 daysFrom,
+		0 weeksFrom
+  </select>
+  
+  <!--七日未签收率 日月周平均-->
+<select id="dwmAvgAmount" resultType="map" parameterType="map">
+	SELECT
+		FORMAT(a.lastDayTheAVG,2) lastDayTheAVG,
+		FORMAT(c.theMonthTheAVG,2) theMonthTheAVG,
+		FORMAT(b.lastWeekTheAVG,2) lastWeekTheAVG
+	FROM
+	(SELECT a.stats_dt, 0 as st,
+		SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 lastDayTheAVG
+		FROM
+			`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt = date_sub(#{curDate},INTERVAL 1 DAY)
+		<include refid="condition_filter"/>
+     	</where>
+		GROUP BY a.stats_dt
+		UNION ALL SELECT 0,0,0
+		limit 1
+	) a left join 
+	(SELECT 
+		DATE_FORMAT(a.stats_dt,'%Y') ymw, 0 as st,
+		SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 lastWeekTheAVG
+	FROM
+		`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+	<where>
+		a.stats_dt >= DATE_SUB(subdate(#{curDate},if(date_format(#{curDate},'%w')=0,7,date_format(#{curDate},'%w'))-1),INTERVAL 1 WEEK)
+		and a.stats_dt &lt;= DATE_SUB(subdate(#{curDate},if(date_format(#{curDate},'%w')=0,7,date_format(#{curDate},'%w'))-7),INTERVAL 1 WEEK)
+	<include refid="condition_filter"/>
+    	</where>
+	GROUP BY ymw
+	UNION ALL SELECT 0,0,0
+	limit 1
+	) b on a.st = b.st left join
+	(SELECT
+		 date_format(a.stats_dt, '%Y-%m'), 0 as st,
+		 SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 theMonthTheAVG
+	FROM
+		`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+	<where>
+		a.stats_dt >= date_format(#{curDate}, '%Y-%m-%01')
+		and a.stats_dt &lt;= last_day(#{curDate})
+	<include refid="condition_filter"/>
+    </where>
+	GROUP BY 1
+	UNION ALL SELECT 0,0,0
+	limit 1
+	) c on b.st = c.st
+  </select>
+  
+  <!-- 七日未签收率(季度趋势) -->
+  <select id="cfmRcvRt7QTrend" parameterType="map" resultType="map">
+		select 
+			a.yq yq,round(a.cfm_rcv_rt7,2) actiVal,a.theDate,round(ifnull(c.cfm_rcv_rt7,0),2) qauterSameTime
+		from
+		(SELECT
+			CONCAT(
+				DATE_FORMAT(stats_dt, '%Y'),
+				'-',
+				QUARTER (stats_dt)
+			) yq,
+			SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 cfm_rcv_rt7,
+			DATE_ADD(
+				date(
+					concat(
+						YEAR (stats_dt),
+						'-',
+						elt(QUARTER(stats_dt), 1, 4, 7, 10),
+						'-',
+						1
+					)
+				),
+				INTERVAL - 1 QUARTER
+			) theDate
+		FROM
+			ydbi.bas_s_bigdata_busi a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt >= DATE_SUB(concat(date_format(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  #{curDate}),1) + interval QUARTER(#{curDate})*3-3 month),'%Y-%m-'),'01'),INTERVAL 1 YEAR)
+		AND a.stats_dt &lt;= LAST_DAY(MAKEDATE(EXTRACT(YEAR  FROM #{curDate}),1) + interval QUARTER(#{curDate})*3-1 month)
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY yq )a LEFT JOIN
+		(select 
+			CONCAT(SUBSTR(b.yq,1,4)+1,SUBSTR(b.yq,-2)) yq,b.cfm_rcv_rt7
+		from 
+		(SELECT 
+			CONCAT(
+				DATE_FORMAT(stats_dt, '%Y'),
+				'-',
+				QUARTER (stats_dt)
+			) yq,
+			SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 cfm_rcv_rt7
+		FROM
+			ydbi.bas_s_bigdata_busi a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt >= DATE_SUB(concat(date_format(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  #{curDate}),1) + interval QUARTER(#{curDate})*3-3 month),'%Y-%m-'),'01'),INTERVAL 2 YEAR)
+		AND a.stats_dt &lt;= DATE_SUB(LAST_DAY(MAKEDATE(EXTRACT(YEAR  FROM #{curDate}),1) + interval QUARTER(#{curDate})*3-1 month),INTERVAL 1 YEAR)
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY yq )b)c
+		on a.yq = c.yq
+  </select>
+  
+  <!-- 七日未签收率(月度趋势) -->
+  <select id="cfmRcvRt7MTrend" parameterType="map" resultType="map">
+	SELECT a.ym,round(a.cfm_rcv_rt7,2) monthSameTime,round(b.cfm_rcv_rt7,2) avtiveValue,b.theDate
+	from
+		(select 
+			DATE_FORMAT(SUBDATE(ymd,INTERVAL -1 MONTH),'%Y-%m')ym,
+			cfm_rcv_rt7
+		from(SELECT 
+				DATE_FORMAT(stats_dt, '%Y-%m-%d') ymd,
+				SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 cfm_rcv_rt7
+	
+			FROM 
+				ydbi.bas_s_bigdata_busi a
+			INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+			<where> 
+				a.stats_dt >= DATE_ADD(
+					DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+					INTERVAL - 6 MONTH
+				)
+			AND a.stats_dt &lt; DATE_ADD(
+				DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+				INTERVAL 0 MONTH
+			)
+			<include refid="condition_filter"/>
+	    	</where>
+			GROUP BY ymd 
+			) a
+			where SUBSTR(a.ymd,-2) = SUBSTR(#{curDate},-2)) a ,
+			(SELECT 
+				DATE_FORMAT(stats_dt, '%Y-%m') ym,
+				SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 cfm_rcv_rt7,
+				DATE_ADD(
+					DATE_FORMAT(stats_dt, '%Y-%m-%01'),
+					INTERVAL - 1 MONTH
+				) theDate
+			FROM 
+				ydbi.bas_s_bigdata_busi a
+			INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+			<where>
+				a.stats_dt >= DATE_ADD(
+					DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+					INTERVAL - 5 MONTH
+				)
+			AND a.stats_dt &lt; DATE_ADD(
+				DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+				INTERVAL 1 MONTH
+			)
+			<include refid="condition_filter"/>
+	    	</where>
+			GROUP BY
+				ym )b 
+			where a.ym = b.ym
+    </select>
+  
+  
+  <!-- 七日未签收率(周度趋势) -->
+  <select id="cfmRcvRt7WTrend" parameterType="map" resultType="map">
+	select 
+		CONCAT(DATE_FORMAT(stats_dt,'%Y'),'-',case when LENGTH(WEEKOFYEAR(stats_dt)) = 1 THEN CONCAT('0',WEEKOFYEAR(stats_dt)) else WEEKOFYEAR(stats_dt)  end) yweek,
+		round(SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100,2) avtiVal,
+		DATE_SUB(stats_dt, INTERVAL 1 WEEK) theDate
+	from ydbi.bas_s_bigdata_busi a
+	INNER JOIN org_inf k
+   			ON a.dbct_cd = k.Org_Cd
+	<where> a.stats_dt >= DATE_ADD(subdate(#{curDate},date_format(#{curDate},'%w')-1), INTERVAL - 7 WEEK)
+		AND a.stats_dt &lt;= subdate(#{curDate},date_format(#{curDate},'%w')-7)
+	<include refid="condition_filter"/>
+    </where>
+	GROUP BY 1
+	order by yweek
+  </select>
+  
+  
+  <!-- 七日未签收率(日度趋势) -->
+  <select id="cfmRcvRt7DTrend" parameterType="map" resultType="map">
+		SELECT 
+		tb.ymd ymd
+		,round(SUM(tb.pick_cnt),2) avtiVal
+		,round(SUM(tb.pick_cnt1),2)	sameTiVal
+		FROM (
+		select 
+		 DATE_FORMAT(stats_dt,'%Y-%m-%d') as ymd,SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 as pick_cnt,0  as pick_cnt1
+		 from ydbi.bas_s_bigdata_busi a
+		 INNER JOIN org_inf k
+   			ON a.dbct_cd = k.Org_Cd
+	<where> a.stats_dt > DATE_ADD(#{curDate},INTERVAL -15 DAY)
+		 and a.stats_dt &lt;= #{curDate}
+		 <include refid="condition_filter"/>
+    </where>
+		GROUP BY ymd
+		union 
+		select 
+		 DATE_FORMAT(date_add(stats_dt,INTERVAL 7 DAY),'%Y-%m-%d') as ymd, 0  as pick_cnt ,SUM(a.cfm_rcv_cnt7)/SUM(a.pick_cnt7)*100 as pick_cnt1
+		 from ydbi.bas_s_bigdata_busi a
+		 INNER JOIN org_inf k
+   			ON a.dbct_cd = k.Org_Cd
+	<where> a.stats_dt > date_add(DATE_ADD(#{curDate},INTERVAL -15 DAY),INTERVAL -7 DAY)
+		 and a.stats_dt &lt;= date_add(#{curDate},INTERVAL -7 DAY)
+		  <include refid="condition_filter"/>
+    </where>
+		GROUP BY ymd
+		) tb
+		GROUP BY 1
+		ORDER BY 1
+  </select>
+  
+  <select id="getSiteAndSucRate" resultType="com.yd.ydbi.business.model.SitSucRate" parameterType="map">
+	
+		SELECT
+			
+			<include refid="select_org_nm_cd_condition"/>
+			round(sum(a.cfm_rcv_cnt7)/sum(a.pick_cnt7)*100,2) successRateTheDay
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt = #{curDate}
+		 <include refid="condition_filter"/>
+	    </where>
+		GROUP BY 1
+		ORDER BY successRateTheDay desc
+		</select>
+		
+	<select id="getSiteAndSucRateForNull" resultType="com.yd.ydbi.business.model.SitSucRate" parameterType="map">
+		SELECT
+			<include refid="select_org_nm_cd_condition"/>
+			0 as successRateTheDay
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			k.grtr_dist_nm &lt;> ''
+		 <include refid="condition_filter"/>
+	    </where>
+		GROUP BY 1
+		ORDER BY successRateTheDay desc
+		</select>
+		
+	<select id="getStandardDbcdTrend" resultType="map" parameterType="map">
+		SELECT
+			a.stats_dt,
+			sum(dbct_cnt7_low) dbct_cnt7_low,
+			sum(dbct_cnt7_mid) dbct_cnt7_mid,
+			sum(dbct_cnt7_up) dbct_cnt7_up
+		FROM
+			bas_s_bigdata_busi a inner join org_inf k on a.dbct_cd = k.org_cd
+		<where>
+			a.stats_dt > DATE_SUB(#{curDate},INTERVAL 15 DAY)
+		and a.stats_dt &lt;= #{curDate}
+		<include refid="condition_filter"/>
+	    </where>
+		GROUP BY a.stats_dt
+	</select>
+</mapper>

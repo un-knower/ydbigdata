@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.hp.dao.NbtrmarkMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+	
+	<!-- 查某天菜鸟 -->
+	<select id="getNbm" parameterType="java.util.Map"
+		resultType="com.yd.ydbi.hp.model.NewbeeMark">
+		SELECT
+			scor AS total_mark,
+			indust_avg_scor AS sum_mark,
+			indust_nm AS rank,
+			nm_cnt AS flag
+		FROM
+			cn_compst_scor
+		WHERE
+			stats_dt LIKE concat(
+				concat(
+					'%',
+					#{date_time}),'%')
+	</select>
+
+</mapper>

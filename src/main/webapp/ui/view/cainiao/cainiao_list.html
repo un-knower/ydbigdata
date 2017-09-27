@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/orange/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	<script type="text/javascript">
+		var objectName = '菜鸟数据导入';
+		var listTemplate = '#cainiao_list';
+		var listId = "cainiao_list";
+		var formSearchTemplate = '#cainiao_searchForm';
+		var searchFormId = "cainiao_searchForm";
+		var gridMenuId = '#cainiao_list_menu';
+		var addFormUrl = 'cainiao_form.html?actionId=cainiao_form&mode=add';
+		var updateFormUrl = 'cainiao_form.html?actionId=cainiao_form&mode=edit';
+		var getFormUrl = 'cainiao_form.html?actionId=cainiao_form&mode=display';
+
+		var urlSearch = appId + '/actions/cainiao/searchData.do?actionId=cainiao_searchData';
+		var urlExport= appId + '/actions/cainiao/exportEntities.do?actionId=cainiao_exportEntities';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'cainiao_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		var expellActions = {
+			"cainiao_searchData":urlSearch,
+			"cainiao_exportEntities":urlExport,
+			cainiao_importData:"/actions/cainiao/importData.do?actionId=cainiao_importData",
+			cainiao_updateData:"/actions/cainiao/updateData.do?actionId=cainiao_updateData",
+			cainiao_getDataByStatsDt:"/actions/cainiao/getDataByStatsDt.do?actionId=cainiao_getDataByStatsDt"
+		}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		var today = getToday();
+		$(function(){
+			getAuthButtons(pageId,gridMenuId,authActions,expellActions);
+			loadDatagrid();
+		});
+		
+		function doAction(pageId,buttonId,actionUrl){
+			if(authActions.hasOwnProperty(buttonId)){
+				if(buttonId.indexOf('addData')>0){
+					addData(buttonId,appId+actionUrl);
+				}
+			    else if(buttonId.indexOf('updateData')>0){
+					updateData(buttonId,appId+actionUrl);
+				} 
+				else if(buttonId.indexOf('deleteData')>0){
+					deleteData(buttonId,appId+actionUrl);
+				}
+				else if( buttonId.indexOf('getData')>0){
+					getData(buttonId,appId+actionUrl);
+				} 
+				else if(buttonId.indexOf('searchData')>0){
+					searchData(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('refresh')>0){
+					refresh(buttonId,appId+actionUrl);
+				}
+				else {
+					//默认操作
+					var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"+objectName);
+
+			    	if(selectRow){
+						var tempUrl = '';
+   						tempUrl = tempUrl+'&brch_cd='+selectRow.brch_cd;
+   						tempUrl = tempUrl+'&dbct_cd='+selectRow.dbct_cd;
+   						tempUrl = tempUrl+'&pass_time='+selectRow.pass_time;
+   						tempUrl = tempUrl+'&port_no='+selectRow.port_no;
+   		   				tempUrl = tempUrl+'&over_time='+selectRow.over_time;
+		   				tempUrl += "&actionUrl="+appId+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+			    		$$.openJcdfDialog(urlActionForm+tempUrl, '操作'+objectName, 500, 600);
+			    	}					
+				}
+			}
+			else {
+				alert('当前用户没有该操作授权!');
+			}
+		};
+		
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			
+			var start=$("#statsDt1").datebox("getValue"); 
+			var end=$("#statsDt2").datebox("getValue");
+			if(start == "" || end == ""){
+				$$.showJcdfMessager('提示信息','日期不得为空','warning');
+				return false;
+			}
+			
+			start = start.replace(/-/g,'/'); 
+			end = end.replace(/-/g,'/');
+			var timestampStart = new Date(start).getTime();
+			var timestampEnd = new Date(end).getTime();
+			var result=timestampEnd-timestampStart;
+			if(result<0){
+				$$.showJcdfMessager('提示消息', '起始日期不能大于结束日期', 'warning');
+				return false;
+			}
+			
+			var params = $$.serializeToJson(formSearchTemplate);
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(isDatagridLoaded){
+				$(listTemplate).datagrid('load', json );
+			}else{
+				$(listTemplate).datagrid({
+					queryParams: json,
+					url : urlSearch
+				});
+				isDatagridLoaded = true;
+			}	
+		};
+		
+		function exportExcel(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			$('#'+searchFormId).form('submit',{    
+			    url:actionUrl,    
+			    onSubmit: function(param){
+			    	param.search_condition = JSON.stringify(params)
+			    },
+			    success: function(data){   
+			    	var oData = JSON.parse(data);
+			        if (oData&&oData.errorCode){   
+			        	$$.showJcdfMessager('提示消息', oData.msg, 'warning');   
+			        }    
+			    } 
+			}); 		
+		};
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+		};
+		
+		function addData(buttonId,actionUrl){
+	   		$$.openJcdfDialog(addFormUrl+"&actionUrl="+actionUrl+"&tableId="+listId+"&refActionId="+buttonId, '新增'+objectName, 500, 600);
+		};
+		
+		function getData(buttonId,actionUrl){
+			var selectRow = $$.getSingleSelectRow(listId, "请选择你要编辑的"+objectName);
+	    	if(selectRow){
+				var tempUrl = '';
+   				tempUrl = tempUrl+'&statsDt='+selectRow.statsDt;
+   				tempUrl += "&actionUrl="+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+	    		$$.openJcdfDialog(getFormUrl + tempUrl, '编辑'+objectName, 500, 600);
+	    	}
+		};
+		
+		function deleteData(buttonId,actionUrl){
+			var selectRow = $$.getSelectIds(listId, "请选择你要删除的"+objectName);
+	    	if(selectRow){
+	    		$$.showJcdfConfirm("确认", "确定删除所选的"+objectName+"?", "deleteSelectionData('"+actionUrl+"')");
+	    	}
+		};
+		
+		//批量删除
+		function deleteSelectionData(actionUrl) {
+		    //获取选中行的数据,返回的是数组
+		    //获取选中行的数据
+		    var selectRows = $(listTemplate).datagrid("getSelections");
+	        //如果为真的话
+	        if (selectRows.length > 0 ) {
+	            //定义变量值
+	            var strIds = "";
+	            //拼接字符串，这里也可以使用数组，作用一样
+	            for (var i = 0; i < selectRows.length; i++) {
+	            	if (null == strIds || i == 0) {
+	            		strIds = selectRows[i].statsDt;
+                    } else {
+                    	strIds = strIds + "," + selectRows[i].statsDt;
+                    }
+	            }
+	            var jsonData = {"strIds":strIds};
+	            $.ajax({
+	 			   type: "POST",
+	 			   url: actionUrl,
+	 			   dataType:"json",
+	 			   data : jsonData,
+	 			   //contentType: "application/json",
+	 			   success: function(data){
+	 			   	 	$$.closeProcessingDialog();
+	 					if (data && data.errorCode == 0) {
+	 						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+	 						$$.refreshJcdfDatagrid(listId);
+	 					} else {
+	 						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+	 					}
+	 			   }
+	 			});
+		    };
+		}
+		
+		function deleteNodeById(buttonId,actionUrl,brch_cd,dbct_cd,pass_time){
+			$$.openProcessingDialog();
+			var jsonData = {
+   						"brch_cd":brch_cd,
+   						"dbct_cd":dbct_cd,
+   						"pass_time":pass_time
+						};
+			$.ajax({
+			   type: "POST",
+			   url: actionUrl+"?actionId="+buttonId,
+			   dataType:"json",
+			   data : JSON.stringify(jsonData),
+			   contentType: "application/json",
+			   success: function(data){
+			   	 	$$.closeProcessingDialog();
+					if (data && data.errorCode == 0) {
+						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						$$.refreshJcdfDatagrid(listId);
+					} else {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+			   }
+			});
+		};
+		//修改
+		function updateData(buttonId,actionUrl){
+	    	var selectRow = $$.getSingleSelectRow(listId, "请选择你要编辑的"+objectName);
+	    	if(selectRow){
+				var tempUrl = '';
+   				tempUrl = tempUrl+'&statsDt='+selectRow.statsDt;
+   				tempUrl += "&actionUrl="+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+	    		$$.openJcdfDialog(updateFormUrl + tempUrl, '编辑'+objectName, 500, 600);
+	    	}
+		};
+				
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			$(listTemplate).datagrid({
+				//title:objectName+'列表',
+				height : $$.getDatagridHeight(),
+				width : $$.getDatagridWidth(),
+				border : true,
+				nowrap : true,
+				striped : true,
+				fitColumns : true,
+				idField : '',
+				columns : [ [ 
+						{field:'',checkbox:true},
+						{field:'statsDt',title:'统计日期',width:$$.fillsize(0.13),align:'center'},
+						{field:'fullPathNm',title:'全链路排名',width:$$.fillsize(0.13),align:'center'},
+						{field:'fullPathTlns',title:'全链路时效',width:$$.fillsize(0.13),align:'center'},
+						{field:'industAvgTlns',title:'行业平均时效',width:$$.fillsize(0.13),align:'center'},
+						{field:'entrPers',title:'录入人',width:$$.fillsize(0.13),align:'center'},
+						{field:'entrTm',title:'录入时间',width:$$.fillsize(0.13),align:'center'},
+						{field:'rmk',title:'备注',width:$$.fillsize(0.13),align:'center'},
+					] 
+				],
+				onBeforeLoad : function() {
+					$$.clearSelect(listId);
+				},
+				queryParams : $$.serializeToJson(searchFormId),
+				pagination : true,
+				rownumbers : true,
+				singleSelect : false,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar : gridMenuId,
+				loadFilter : function(data) {
+					if (data != null && data.errorCode > 0) {
+						if (data.msg != null && data.msg != "") {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data;
+				}
+			});
+		}
+	</script>
+</head> 
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false" style="padding: 4px 0;">
+		<fieldset style="padding: 5px; border: 1px solid #d4a375;">
+			<legend>信息查询</legend>
+			<form id="cainiao_searchForm" class="search-form" method="post">
+				<table cellpadding="2" style="width: 100%">
+				   <tr>
+							<td align="right">统计时间：</td>
+							<td class="left"><input type="text" id="statsDt1" class="easyui-datebox"
+								name="statsDt1" style="width:220px;height:26px" data-options="required:true" />
+								&nbsp-&nbsp
+								<input type="text" id="statsDt2" class="easyui-datebox"
+								name="statsDt2" style="width:220px;height:26px" data-options="required:true" />
+							</td>
+				    </tr>
+					<tr>
+						<td colspan="8" align="center" >
+					<a class="easyui-linkbutton" iconCls="icon-search"
+						style="margin-right: 20px;"
+						onclick="searchData('cainiao_searchData',urlSearch)">查询</a>
+					<a class="easyui-linkbutton" iconCls="icon-reload"
+						style="margin-right: 20px;" onclick="searchReset()">重置</a> 
+					<a class="easyui-linkbutton" iconCls="icon-download"
+						style="margin-right: 20px;"
+						onclick="exportExcel('cainiao_exportEntities',urlExport)">导出</a>
+						</td> 
+					</tr>
+				</table>
+			</form>
+		</fieldset>
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 2px;">
+		<div id="cainiao_list_menu">
+			<div style="padding: 5px;">
+			</div>
+		</div>
+		<table id="cainiao_list" fit="true" ></table>
+	</div>
+</body>
+</html>

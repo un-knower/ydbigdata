@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.hp.dao.HomepageMapper">
+    <!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+    <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache"/>
+    <resultMap id="getAllSetDaysResult" type="HashMap">
+        <result property="key" column="SP_FPARAMEKEY"/>
+        <result property="value" column="SP_FPARAMEVALUE"/>
+    </resultMap>
+    <resultMap id="BaseResultMap" type="com.yd.ydbi.hp.model.HomePage2zj">
+        <result column="allcountry" property="allcountry" jdbcType="VARCHAR"/>
+        <result column="all_collect" property="all_collect" jdbcType="VARCHAR"/>
+        <result column="soa_person_num" property="soa_person_num"
+                jdbcType="VARCHAR"/>
+        <result column="order_num" property="order_num" jdbcType="VARCHAR"/>
+        <result column="send_num" property="send_num" jdbcType="VARCHAR"/>
+        <result column="goal_sign" property="goal_sign" jdbcType="VARCHAR"/>
+        <result column="real_sign" property="real_sign" jdbcType="VARCHAR"/>
+        <result column="open_line" property="open_line" jdbcType="VARCHAR"/>
+        <result column="dispatch_car" property="dispatch_car" jdbcType="VARCHAR"/>
+        <result column="real_ship" property="real_ship" jdbcType="VARCHAR"/>
+        <result column="goal_ship" property="goal_ship" jdbcType="VARCHAR"/>
+        <result column="tag" property="tag" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="query_where">
+        <if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+            AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+        </if>
+        <if test='sel_level!=null and sel_level == "1" '>
+            AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+        </if>
+        <if test='sel_level!=null and sel_level == "2" '>
+            AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+        </if>
+        <if test='sel_level!=null and sel_level == "3" '>
+            AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+        </if>
+        <if test='sel_level!=null and sel_level == "5" '>
+            AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+        </if>
+        AND k.start_tm<![CDATA[<=]]> stats_dt
+        AND stats_dt<![CDATA[<]]> k.end_tm
+        AND k.org_typ = '3'
+    </sql>
+
+    <sql id="oper_injoin">
+        INNER JOIN org_inf k
+        ON bas_s_bigdata_qut_ctl.dbct_cd = k.Org_Cd
+        <where>
+            <include refid="query_where"/>
+        </where>
+    </sql>
+
+    <sql id="pepo_injoin">
+        INNER JOIN org_inf k
+        ON daw_o_bigdata_fb_pepo.dbct_cd = k.Org_Cd
+        <where>
+            <include refid="query_where"/>
+        </where>
+    </sql>
+    <!-- 查全国某天首页 -->
+    <select id="homePageCountry" parameterType="java.util.Map"
+            resultMap="BaseResultMap">
+        SELECT
+        *,"today" AS tag
+        FROM
+        (
+            SELECT
+            SUM(pick_cnt) AS "all_collect",
+            SUM(delv_cnt) AS "send_num",
+            SUM(delv_cnt) AS "goal_sign",
+            SUM(cfm_rcv_cnt) AS "real_sign"
+            FROM
+            bas_s_bigdata_busi
+            INNER JOIN org_inf k
+            ON bas_s_bigdata_busi.dbct_cd = k.Org_Cd
+            <where>
+                stats_dt = #{date_time}
+                <include refid="query_where"/>
+            </where>
+        ) a
+        LEFT JOIN (
+            SELECT
+            SUM(odr_cnt) AS "order_num"
+            FROM
+            bas_o_bigdata_odr
+            INNER JOIN org_inf k
+            ON bas_o_bigdata_odr.dbct_cd = k.Org_Cd
+            <where>
+                stats_dt = #{date_time}
+                <include refid="query_where"/>
+            </where>
+        ) b ON 1 = 1
+        LEFT JOIN (
+            SELECT
+            COUNT(*) AS "open_line"
+            FROM
+            bas_t_bigdata_trans_cl
+            INNER JOIN org_inf k
+            ON bas_t_bigdata_trans_cl.fst_scan_site = k.Org_Cd
+            <where>
+                stats_dt = #{date_time}
+                <include refid="query_where"/>
+            </where>
+
+        ) d ON 1 = 1
+        LEFT JOIN (
+            SELECT
+            SUM(dept_cnt) AS "dispatch_car"
+            FROM
+            bas_t_bigdata_trans_dept
+            INNER JOIN org_inf k
+            ON bas_t_bigdata_trans_dept.strt_site = k.Org_Cd
+            <where>
+                stats_dt = #{date_time}
+                <include refid="query_where"/>
+            </where>
+        ) e ON 1 = 1
+        LEFT JOIN
+        (
+            SELECT
+            SUM(std_ldcp) AS "goal_ship",
+            SUM(act_ldcp) AS "real_ship"
+            FROM
+            bas_t_bigdata_trans_load
+            INNER JOIN org_inf k
+            ON bas_t_bigdata_trans_load.strt_site = k.Org_Cd
+            <where>
+                stats_dt = #{date_time}
+                <include refid="query_where"/>
+            </where>
+
+        ) f ON 1 = 1
+        <!-- ===================================================================== -->
+        UNION
+        SELECT
+        *,"yestoday" AS tag
+        FROM
+        (
+        SELECT
+        SUM(pick_cnt) AS "all_collect",
+        SUM(delv_cnt) AS "send_num",
+        SUM(delv_cnt) AS "goal_sign",
+        SUM(cfm_rcv_cnt) AS "real_sign"
+        FROM
+        bas_s_bigdata_busi
+        INNER JOIN org_inf k
+        ON bas_s_bigdata_busi.dbct_cd = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 day)
+            <include refid="query_where"/>
+        </where>
+        ) g
+        LEFT JOIN (
+        SELECT
+        SUM(odr_cnt) AS "order_num"
+        FROM
+        bas_o_bigdata_odr
+        INNER JOIN org_inf k
+        ON bas_o_bigdata_odr.dbct_cd = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 day)
+            <include refid="query_where"/>
+        </where>
+        ) h ON 1 = 1
+        LEFT JOIN (
+
+        SELECT
+        COUNT(*) AS "open_line"
+        FROM
+        bas_t_bigdata_trans_cl
+        INNER JOIN org_inf k
+        ON bas_t_bigdata_trans_cl.fst_scan_site = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 day)
+            <include refid="query_where"/>
+        </where>
+
+        ) j ON 1 = 1
+        LEFT JOIN (
+        SELECT
+        SUM(dept_cnt) AS "dispatch_car"
+        FROM
+        bas_t_bigdata_trans_dept
+        INNER JOIN org_inf k
+        ON bas_t_bigdata_trans_dept.strt_site = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 day)
+            <include refid="query_where"/>
+        </where>
+        ) k ON 1 = 1
+        LEFT JOIN
+        (
+        SELECT
+        SUM(std_ldcp) AS "goal_ship",
+        SUM(act_ldcp) AS "real_ship"
+        FROM
+        bas_t_bigdata_trans_load
+        INNER JOIN org_inf k
+        ON bas_t_bigdata_trans_load.strt_site = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 day)
+            <include refid="query_where"/>
+        </where>
+
+        ) l ON 1 = 1
+
+        UNION
+        SELECT
+        *,"lastweek" AS tag
+        FROM
+        (
+        SELECT
+        SUM(pick_cnt) AS "all_collect",
+        SUM(delv_cnt) AS "send_num",
+        SUM(delv_cnt) AS "goal_sign",
+        SUM(cfm_rcv_cnt) AS "real_sign"
+        FROM
+        bas_s_bigdata_busi
+        INNER JOIN org_inf k
+        ON bas_s_bigdata_busi.dbct_cd = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 WEEK)
+            <include refid="query_where"/>
+        </where>
+        ) m
+        LEFT JOIN (
+        SELECT
+        SUM(odr_cnt) AS "order_num"
+        FROM
+        bas_o_bigdata_odr
+        INNER JOIN org_inf k
+        ON bas_o_bigdata_odr.dbct_cd = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 WEEK)
+            <include refid="query_where"/>
+        </where>
+        ) b ON 1 = 1
+        LEFT JOIN (
+        SELECT
+        COUNT(*) AS "open_line"
+        FROM
+        bas_t_bigdata_trans_cl
+        INNER JOIN org_inf k
+        ON bas_t_bigdata_trans_cl.fst_scan_site = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 WEEK)
+            <include refid="query_where"/>
+        </where>
+        ) o ON 1 = 1
+        LEFT JOIN (
+        SELECT
+        SUM(dept_cnt) AS "dispatch_car"
+        FROM
+        bas_t_bigdata_trans_dept
+        INNER JOIN org_inf k
+        ON bas_t_bigdata_trans_dept.strt_site = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 WEEK)
+            <include refid="query_where"/>
+        </where>
+        ) p ON 1 = 1
+        LEFT JOIN
+        (
+        SELECT
+        SUM(std_ldcp) AS "goal_ship",
+        SUM(act_ldcp) AS "real_ship"
+        FROM
+        bas_t_bigdata_trans_load
+        INNER JOIN org_inf k
+        ON bas_t_bigdata_trans_load.strt_site = k.Org_Cd
+        <where>
+            stats_dt = DATE_ADD(
+            #{date_time},INTERVAL -1 WEEK)
+            <include refid="query_where"/>
+        </where>
+
+        ) q ON 1 = 1
+
+    </select>
+    <select id="getPCEHeader" parameterType="java.util.Map"
+            resultMap="getAllSetDaysResult">
+
+            SELECT
+                "today" AS "KEY",
+                IFNULL(
+                    CAST(
+                      ROUND(t1.oper / t2.pepo) AS CHAR
+                    ),
+                    ""
+                ) AS SP_FPARAMEVALUE
+            FROM (
+                SELECT SUM(oper_cnt) AS oper
+                FROM bas_s_bigdata_qut_ctl
+                <include refid="oper_injoin"/>
+                AND stats_dt = #{date_time}
+            ) t1
+            INNER JOIN
+            (
+                SELECT SUM(dbct_pepo) AS pepo
+                FROM daw_o_bigdata_fb_pepo
+                <include refid="pepo_injoin"/>
+                AND stats_dt = #{date_time}
+            ) t2
+            ON 1=1
+
+        UNION
+
+            SELECT
+            "yestoday" AS "KEY",
+            IFNULL(
+            CAST(
+            ROUND(t1.oper / t2.pepo) AS CHAR
+            ),
+            ""
+            ) AS SP_FPARAMEVALUE
+            FROM (
+            SELECT SUM(oper_cnt) AS oper
+            FROM bas_s_bigdata_qut_ctl
+            <include refid="oper_injoin"/>
+            AND stats_dt=DATE_ADD(
+              #{date_time},INTERVAL -1 DAY)
+            ) t1
+            INNER JOIN
+            (
+            SELECT SUM(dbct_pepo) AS pepo
+            FROM daw_o_bigdata_fb_pepo
+            <include refid="pepo_injoin"/>
+            AND stats_dt=DATE_ADD(
+              #{date_time},INTERVAL -1 DAY)
+            ) t2
+            ON 1=1
+        UNION
+
+            SELECT
+            "lastweek" AS "KEY",
+            IFNULL(
+            CAST(
+            ROUND(t1.oper / t2.pepo) AS CHAR
+            ),
+            ""
+            ) AS SP_FPARAMEVALUE
+            FROM (
+            SELECT SUM(oper_cnt) AS oper
+            FROM bas_s_bigdata_qut_ctl
+            <include refid="oper_injoin"/>
+            AND stats_dt=DATE_ADD(
+              #{date_time},INTERVAL -1 WEEK)
+            ) t1
+            INNER JOIN
+            (
+            SELECT SUM(dbct_pepo) AS pepo
+            FROM daw_o_bigdata_fb_pepo
+            <include refid="pepo_injoin"/>
+            AND stats_dt=DATE_ADD(
+              #{date_time},INTERVAL -1 WEEK)
+            ) t2
+            ON 1=1
+        UNION
+        SELECT -- 超过1000
+        "up1000" AS "KEY",
+        IFNULL(CAST( COUNT(*) AS CHAR),"") AS SP_FPARAMEVALUE
+        FROM
+        daw_o_bigdata_fb_pepo po
+        RIGHT JOIN bas_s_bigdata_qut_ctl bu
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time}
+        AND ROUND(bu.oper_cnt / po.dbct_pepo, 0) > 1000
+        UNION
+        SELECT
+        "upave" AS "KEY",
+        IFNULL(CAST( COUNT(*) AS CHAR),"") AS SP_FPARAMEVALUE
+        FROM
+        daw_o_bigdata_fb_pepo po
+        RIGHT JOIN bas_s_bigdata_qut_ctl bu
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time}
+        AND
+        ROUND(bu.oper_cnt / po.dbct_pepo) > (SELECT
+        ROUND(SUM(bu.oper_cnt)/SUM(po.dbct_pepo))
+        FROM
+        bas_s_bigdata_qut_ctl bu
+        LEFT JOIN daw_o_bigdata_fb_pepo po
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time})
+        UNION
+        SELECT
+        "lowave" AS "KEY",
+        IFNULL(CAST( COUNT(*) AS CHAR),"") AS SP_FPARAMEVALUE
+        FROM
+        daw_o_bigdata_fb_pepo po
+        RIGHT JOIN bas_s_bigdata_qut_ctl bu
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time}
+        AND
+        ROUND(bu.oper_cnt / po.dbct_pepo)  <![CDATA[   <  ]]> (SELECT
+        ROUND(SUM(bu.oper_cnt)/SUM(po.dbct_pepo))
+        FROM
+        bas_s_bigdata_qut_ctl bu
+        LEFT JOIN daw_o_bigdata_fb_pepo po
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time})
+        UNION
+        SELECT
+        "alln" AS "KEY",
+        IFNULL(CAST( COUNT(*) AS CHAR),"") AS SP_FPARAMEVALUE
+        FROM
+        bas_s_bigdata_qut_ctl bu
+        LEFT JOIN daw_o_bigdata_fb_pepo po
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time}
+        UNION
+        SELECT
+        "allcity" AS "KEY",
+        IFNULL(
+        CAST(
+        ROUND(t1.oper / t2.pepo) AS CHAR
+        ),
+        ""
+        ) AS SP_FPARAMEVALUE
+        FROM (
+        SELECT SUM(oper_cnt) AS oper
+        FROM bas_s_bigdata_qut_ctl
+        WHERE
+         stats_dt = #{date_time}
+        ) t1
+        INNER JOIN
+        (
+        SELECT SUM(dbct_pepo) AS pepo
+        FROM daw_o_bigdata_fb_pepo
+        WHERE stats_dt = #{date_time}
+        ) t2
+        ON 1=1
+    </select>
+    <select id="getPCETrend" parameterType="java.util.Map"
+            resultMap="getAllSetDaysResult">
+        SELECT
+        "today" AS "KEY",
+        IFNULL(
+        CAST(
+        ROUND(t1.oper / t2.pepo) AS CHAR
+        ),
+        ""
+        ) AS SP_FPARAMEVALUE
+        FROM (
+        SELECT SUM(oper_cnt) AS oper
+        FROM bas_s_bigdata_qut_ctl
+        <include refid="oper_injoin"/>
+        AND stats_dt = #{date_time}
+        ) t1
+        INNER JOIN
+        (
+        SELECT SUM(dbct_pepo) AS pepo
+        FROM daw_o_bigdata_fb_pepo
+        <include refid="pepo_injoin"/>
+        AND stats_dt = #{date_time}
+        ) t2
+        ON 1=1
+
+        UNION
+        SELECT
+        "sameterm" AS "KEY",
+        IFNULL(
+        CAST(
+        ROUND(t1.oper / t2.pepo) AS CHAR
+        ),
+        ""
+        ) AS SP_FPARAMEVALUE
+        FROM (
+        SELECT SUM(oper_cnt) AS oper
+        FROM bas_s_bigdata_qut_ctl
+        <include refid="oper_injoin"/>
+        AND stats_dt=DATE_ADD(
+        #{date_time},INTERVAL -1 WEEK)
+        ) t1
+        INNER JOIN
+        (
+        SELECT SUM(dbct_pepo) AS pepo
+        FROM daw_o_bigdata_fb_pepo
+        <include refid="pepo_injoin"/>
+        AND stats_dt=DATE_ADD(
+        #{date_time},INTERVAL -1 WEEK)
+        ) t2
+        ON 1=1
+    </select>
+    <select id="getPCEFoot" parameterType="java.util.Map" resultType="com.yd.ydbi.hp.model.PerCapitalEffectTopN">
+        SELECT DISTINCT ROUND((b.pce-a.pce)/b.pce*100,2) AS week_cycle,
+        k.org_nm AS fb_code,
+        a.pce AS p_num
+        FROM(
+
+            SELECT -- 今天
+            bu.dbct_cd,ROUND(bu.oper_cnt/po.dbct_pepo) AS pce
+            FROM
+            bas_s_bigdata_qut_ctl bu
+            LEFT JOIN daw_o_bigdata_fb_pepo po
+            ON po.dbct_cd = bu.dbct_cd
+            WHERE
+            bu.stats_dt = #{date_time}
+            AND po.stats_dt = #{date_time}
+
+        ) a
+        LEFT JOIN(
+
+            SELECT
+            bu.dbct_cd,ROUND(bu.oper_cnt/po.dbct_pepo) AS pce
+            FROM
+            bas_s_bigdata_qut_ctl bu
+            LEFT JOIN daw_o_bigdata_fb_pepo po
+            ON po.dbct_cd = bu.dbct_cd
+            WHERE
+            bu.stats_dt = DATE_ADD(#{date_time},INTERVAL -1 WEEK)
+            AND po.stats_dt = DATE_ADD(#{date_time},INTERVAL -1 WEEK)
+
+        ) b
+        ON a.dbct_cd =b.dbct_cd
+        INNER JOIN org_inf k
+        ON a.dbct_cd = k.org_cd
+        <where>
+            <if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+                AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+            </if>
+            <if test='sel_level!=null and sel_level == "1" '>
+                AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+            </if>
+            <if test='sel_level!=null and sel_level == "2" '>
+                AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+            </if>
+            <if test='sel_level!=null and sel_level == "3" '>
+                AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+            </if>
+            <if test='sel_level!=null and sel_level == "5" '>
+                AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+            </if>
+        AND k.org_typ=3
+        AND k.start_tm <![CDATA[<=]]>#{date_time}
+        AND #{date_time} <![CDATA[<]]> k.end_tm
+        </where>
+    </select>
+    <select id="getPCETop" parameterType="java.util.Map" resultType="com.yd.ydbi.hp.model.PerCapitalEffectTopN">
+        SELECT a.pce AS p_num,k.org_nm AS fb_code FROM(
+        SELECT -- 今天
+        bu.dbct_cd,ROUND(bu.oper_cnt/po.dbct_pepo) AS pce
+        FROM
+        bas_s_bigdata_qut_ctl bu
+        LEFT JOIN daw_o_bigdata_fb_pepo po
+        ON po.dbct_cd = bu.dbct_cd
+        WHERE
+        bu.stats_dt = #{date_time}
+        AND po.stats_dt = #{date_time}
+        ) a
+        INNER JOIN org_inf k
+        ON a.dbct_cd = k.org_cd
+        AND k.org_typ=3
+        AND k.start_tm <![CDATA[<=]]>#{date_time}
+        AND #{date_time} <![CDATA[<]]> k.end_tm
+    </select>
+</mapper>

@@ -1,0 +1,2773 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.cainiao.dao.CaiNiaoDxlMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.cainiao.model.CaiNiaoDxl" >
+    <result column="line_Name" property="lnNm" jdbcType="VARCHAR" />
+    <result column="start_place" property="startPlace" jdbcType="VARCHAR" />
+    <result column="end_place" property="startPlace" jdbcType="VARCHAR" />
+    <result column="lev_unit_cnt" property="levUnitCnt" jdbcType="BIGINT" />
+    <result column="rtn_unit_cnt" property="rtnUnitCnt" jdbcType="BIGINT" />
+    <result column="lev_rtn_rate" property="levRtnRate" jdbcType="DECIMAL" />
+    <result column="lev_tlns" property="levTlns" jdbcType="DECIMAL" />
+    <result column="lev_indust_nm" property="levIndustNm" jdbcType="BIGINT" />
+    <result column="lev_indust_val" property="levIndustVal" jdbcType="DECIMAL" />
+    <result column="rtn_tlns" property="rtnTlns" jdbcType="DECIMAL" />
+    <result column="rtn_indust_nm" property="rtnIndustNm" jdbcType="BIGINT" />
+    <result column="rtn_indust_val" property="rtnIndustVal" jdbcType="DECIMAL" />
+    <result column="start_dt" property="startDt" jdbcType="DATE" />
+    <result column="line_type" property="lineType" jdbcType="INTEGER" />
+  </resultMap>
+  
+  <resultMap id="weekResultMap" type="com.yd.ydbi.cainiao.model.CaiNiaoWeek" >
+    <result column="lnNm" property="lnNm" jdbcType="VARCHAR" />
+    <result column="start_place" property="startPlace" jdbcType="VARCHAR" />
+    <result column="end_place" property="startPlace" jdbcType="VARCHAR" />
+    <result column="firstDay" property="firstDay" jdbcType="VARCHAR" />
+    <result column="secondDay" property="secondDay" jdbcType="INTEGER" />
+    <result column="thirdDay" property="thirdDay" jdbcType="INTEGER" />
+    <result column="fourthDay" property="fourthDay" jdbcType="INTEGER" />
+    <result column="fifthDay" property="fifthDay" jdbcType="INTEGER" />
+    <result column="seventhDay" property="seventhDay" jdbcType="INTEGER" />
+    <result column="lev_unit_cnt" property="lineQuantity" jdbcType="INTEGER" />
+    <result column="rankState" property="rankState" jdbcType="INTEGER" />
+  </resultMap>
+  
+  <resultMap id="comboResultMap" type="com.yd.ydbi.matrix.model.Matrix_cross_comboxBean" >
+    <result column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+  </resultMap>
+ 
+  <select id="searchDxlData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT 
+			lnNm AS lnNm,
+			levUnitCnt AS levUnitCnt,
+			rtnUnitCnt AS rtnUnitCnt,
+			levRtnRate AS levRtnRate,
+			lev_tlns AS lev_tlns,
+			levIndustNm AS levIndustNm,
+			levIndustVal AS levIndustVal,
+			rtnTlns AS rtnTlns,
+			rtnIndustNm AS rtnIndustNm,
+			rtnIndustVal AS rtnIndustVal,
+			startDt AS startDt,
+			lineType AS lineType
+		FROM(
+		<!-- 省-省  -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+			INNER JOIN ydserver.province pro ON cd.start_place = LEFT (pro.ProvinceName, 2)
+				AND pro.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+			INNER JOIN ydserver.province proed ON cd.end_place = LEFT (proed.ProvinceName, 2)
+				AND proed.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省辖市-省辖市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+			(	
+				SELECT
+					cd.*
+				FROM
+					ydbi.cainiao_dxl cd
+				<if test='startPlace != null and startPlace != ""'>	
+					INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						AND cit.ProvinceID = #{startPlace}
+				</if>
+			) a
+			<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited ON a.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						AND cited.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #市-市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.CityID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.CityID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省辖市-市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.CityID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省辖市-省# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.province proed ON cd.end_place = LEFT (proed.ProvinceName, 2)
+				AND proed.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #市-省辖市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.CityID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省-省辖市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.province pro ON cd.start_place = LEFT (pro.ProvinceName, 2)
+					AND pro.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.ProvinceID = #{endPlace}
+			</if>
+		
+		) B
+		where 1 = 1
+		 <choose>
+	        <when test='startDt !=null and startDt !="" '>
+	        	and B.startDt = #{startDt,jdbcType=DATE} 
+	        </when>
+	        <otherwise>
+	        	and B.startDt = (select  max(start_dt) as sdate from cainiao_dxl b1)
+	        </otherwise>
+	    </choose>
+       	<if test='line_type != null and line_type != ""'>
+       		and B.lineType =  #{line_type,jdbcType=INTEGER} 
+       	</if>
+		LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT count(*) AS levUnitCnt
+	FROM(
+		SELECT 
+			lnNm AS lnNm,
+			levUnitCnt AS levUnitCnt,
+			rtnUnitCnt AS rtnUnitCnt,
+			levRtnRate AS levRtnRate,
+			lev_tlns AS lev_tlns,
+			levIndustNm AS levIndustNm,
+			levIndustVal AS levIndustVal,
+			rtnTlns AS rtnTlns,
+			rtnIndustNm AS rtnIndustNm,
+			rtnIndustVal AS rtnIndustVal,
+			startDt AS startDt,
+			lineType AS lineType
+		FROM(
+		<!-- 省-省  -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+			INNER JOIN ydserver.province pro ON cd.start_place = LEFT (pro.ProvinceName, 2)
+				AND pro.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+			INNER JOIN ydserver.province proed ON cd.end_place = LEFT (proed.ProvinceName, 2)
+				AND proed.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省辖市-省辖市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+			(	
+				SELECT
+					cd.*
+				FROM
+					ydbi.cainiao_dxl cd
+				<if test='startPlace != null and startPlace != ""'>	
+					INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						AND cit.ProvinceID = #{startPlace}
+				</if>
+			) a
+			<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited ON a.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						AND cited.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #市-市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.CityID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.CityID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省辖市-市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.CityID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省辖市-省# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.province proed ON cd.end_place = LEFT (proed.ProvinceName, 2)
+				AND proed.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #市-省辖市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.city cit ON cd.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+					AND cit.CityID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.ProvinceID = #{endPlace}
+			</if>
+		UNION
+		<!-- #省-省辖市# -->
+			SELECT
+				line_Name AS lnNm,
+				lev_unit_cnt AS levUnitCnt,
+				rtn_unit_cnt AS rtnUnitCnt,
+				lev_rtn_rate AS levRtnRate,
+				lev_tlns AS lev_tlns,
+				lev_indust_nm AS levIndustNm,
+				lev_indust_val AS levIndustVal,
+				rtn_tlns AS rtnTlns,
+				rtn_indust_nm AS rtnIndustNm,
+				rtn_indust_val AS rtnIndustVal,
+				start_dt AS startDt,
+				line_type AS lineType
+			FROM
+				ydbi.cainiao_dxl cd
+			<if test='startPlace != null and startPlace != ""'>	
+				INNER JOIN ydserver.province pro ON cd.start_place = LEFT (pro.ProvinceName, 2)
+					AND pro.ProvinceID = #{startPlace}
+			</if>
+			<if test='endPlace != null and endPlace != ""'>
+				INNER JOIN ydserver.city cited ON cd.end_place LIKE concat('%',LEFT (cited.CityName, 2),'%')
+					AND cited.ProvinceID = #{endPlace}
+			</if>
+		
+		) B
+		where 1 = 1
+		 <choose>
+	        <when test='startDt !=null and startDt !="" '>
+	        	and B.startDt = #{startDt,jdbcType=DATE} 
+	        </when>
+	        <otherwise>
+	        	and B.startDt = (select  max(start_dt) as sdate from cainiao_dxl b1)
+	        </otherwise>
+	    </choose>
+       	<if test='line_type != null and line_type != ""'>
+       		and B.lineType =  #{line_type,jdbcType=INTEGER} 
+       	</if>
+	) C
+  </select>
+  
+  
+  <insert id="insertData" parameterType="java.util.List" >
+	INSERT INTO cainiao_dxl (
+		line_Name,end_place,start_place,lev_unit_cnt,rtn_unit_cnt,lev_rtn_rate,lev_tlns,
+		lev_indust_nm,lev_indust_val,rtn_tlns,rtn_indust_nm,rtn_indust_val,start_dt,line_type
+	)
+	VALUES 
+	<foreach collection="list" item="item" index="index" separator="," >
+	    (#{item.lnNm},#{item.endPlace},#{item.startPlace},#{item.levUnitCnt},#{item.rtnUnitCnt},#{item.levRtnRate},
+	    #{item.levTlns},#{item.levIndustNm},#{item.levIndustVal},#{item.rtnTlns},#{item.rtnIndustNm},
+	    #{item.rtnIndustVal},#{item.startDt},#{item.lineType}
+	    )
+	</foreach>
+  </insert>
+  
+  <delete id="deleteData"  parameterType="java.util.Map">
+	    DELETE FROM 
+	    	cainiao_dxl 
+	    WHERE start_dt IN
+	    <foreach collection="list" index="index" item="item" open="(" separator="," close=")"> 
+	        #{item} 
+	    </foreach>
+	</delete>
+	
+	
+	<select id="searchWeekData" parameterType="java.util.Map" resultMap="weekResultMap" useCache="false">
+		SELECT
+		 	lnNm,end_place,start_place,
+		 	sum(firstDay) AS firstDay,
+		 	sum(secondDay) AS secondDay,
+		 	sum(thirdDay) AS thirdDay,
+		 	sum(fourthDay) AS fourthDay,
+		 	sum(fifthDay) AS fifthDay,
+		 	sum(sixthDay) AS sixthDay,
+		 	sum(seventhDay) AS seventhDay,
+		 	sum(lev_unit_cnt) AS lev_unit_cnt,
+		 	ROUND(SUM(rankState)/ 7 ,1) AS rankState,
+			start_dt as start_dt
+		FROM
+		(
+			SELECT
+				a.line_Name AS lnNm,			-- 1查询省到省
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+				sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+			FROM
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM	cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					LEFT JOIN ydserver.province pro
+						ON a.start_place = LEFT (pro.ProvinceName, 2)
+						AND pro.ProvinceID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					LEFT JOIN ydserver.province proed
+						ON a.end_place = LEFT (proed.ProvinceName, 2)
+						AND proed.ProvinceID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				<if test='startPlace != null and startPlace != ""'>
+					AND a.start_place like LEFT (pro.ProvinceName, 2)
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					AND a.end_place like LEFT (proed.ProvinceName, 2)
+				</if>
+			UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM	cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					LEFT JOIN ydserver.province pro
+						ON a.start_place = LEFT (pro.ProvinceName, 2)
+						AND pro.ProvinceID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					LEFT JOIN ydserver.province proed
+						ON a.end_place = LEFT (proed.ProvinceName, 2)
+						AND proed.ProvinceID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				<if test='startPlace != null and startPlace != ""'>
+					AND a.start_place like LEFT (pro.ProvinceName, 2)
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					AND a.end_place like LEFT (proed.ProvinceName, 2)
+				</if>
+			)a 
+			
+			GROUP BY lnNm 
+		   	
+			UNION
+			SELECT
+				a.line_Name AS lnNm,					-- 2查询省下市到省辖市
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+				sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+			FROM 
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt 
+				FROM 
+				(
+					select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+					FROM
+						cainiao_dxl a
+						<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						where  
+						 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+						AND cit.ProvinceID = #{startPlace}
+					</if>
+				)a 
+					<if test='endPlace != null and endPlace != ""'>
+						inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+					</if>
+				WHERE 
+					1=1
+				<if test='endPlace != null and endPlace != ""'>
+					and cited.ProvinceID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+			UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM (
+					select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+					FROM
+						cainiao_dxl a
+						<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						where  
+						 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+						AND cit.ProvinceID = #{startPlace}
+					</if>
+				)a 
+					<if test='endPlace != null and endPlace != ""'>
+						inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+					</if>
+				WHERE 
+					1=1
+				<if test='endPlace != null and endPlace != ""'>
+					and cited.ProvinceID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+			) a
+			GROUP BY lnNm 
+	 		UNION
+			SELECT
+				a.line_Name AS lnNm,					-- 3查询市
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+				sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+			FROM 
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					INNER JOIN ydserver.city cit
+						ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						and cit.CityID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited
+						ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						and cited.CityID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+				<choose>
+					<when test='line_type == 1 or line_type == 2'>
+						and a.line_type =  #{line_type,jdbcType=INTEGER} 
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+			UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					INNER JOIN ydserver.city cit
+						ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						and cit.CityID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited
+						ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						and cited.CityID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+				<choose>
+					<when test='line_type == 1 or line_type == 2'>
+						and a.line_type =  #{line_type,jdbcType=INTEGER} 
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+			) a
+			GROUP BY lnNm 
+			
+			UNION
+			SELECT
+				a.line_Name AS lnNm,					-- 4查询省下市到市
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+				sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+			FROM 
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM 
+				(
+					select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+					FROM
+						cainiao_dxl a
+						<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						where  
+						 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+						AND cit.ProvinceID = #{startPlace}
+					</if>
+				)a 
+				<if test='endPlace != null and endPlace != ""'>
+					inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+				</if>
+				WHERE 
+					1=1
+				<if test='endPlace != null and endPlace != ""'>
+					and cited.CityID = #{endPlace}
+				</if>
+				<choose>
+					<when test='line_type == 1 or line_type == 2'>
+						and a.line_type =  #{line_type,jdbcType=INTEGER} 
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+			UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM 
+				(
+					select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+					FROM
+						cainiao_dxl a
+						<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						where  
+						 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+						AND cit.ProvinceID = #{startPlace}
+					</if>
+				)a 
+				<if test='endPlace != null and endPlace != ""'>
+					inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+				</if>
+				WHERE 
+					1=1
+				<if test='endPlace != null and endPlace != ""'>
+					and cited.CityID = #{endPlace}
+				</if>
+				<choose>
+					<when test='line_type == 1 or line_type == 2'>
+						and a.line_type =  #{line_type,jdbcType=INTEGER} 
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+			) a
+			GROUP BY lnNm 
+ 		
+			UNION
+			SELECT
+				a.line_Name AS lnNm,					-- 5查询省下市到省
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+			    sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+		  	FROM
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt 
+				FROM 
+				(
+					select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+					FROM
+						cainiao_dxl a
+						<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						where  
+						 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+						AND cit.ProvinceID = #{startPlace}
+					</if>
+					)a 
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.province proed ON a.end_place = LEFT (proed.ProvinceName, 2)
+					</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and proed.ProvinceID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM 
+				(
+					select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+					FROM
+						cainiao_dxl a
+						<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						where  
+						 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+						AND cit.ProvinceID = #{startPlace}
+					</if>
+					)a 
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.province proed ON a.end_place = LEFT (proed.ProvinceName, 2)
+					</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and proed.ProvinceID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+			)  a
+			GROUP BY lnNm
+			UNION
+			SELECT
+				a.line_Name AS lnNm,					-- 6查询市到省辖市
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+				sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+			FROM 
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					INNER JOIN ydserver.city cit
+						ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						and cit.CityID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited
+						ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						and cited.ProvinceID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+			UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					INNER JOIN ydserver.city cit
+						ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+						and cit.CityID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited
+						ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						and cited.ProvinceID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+			) a
+			GROUP BY lnNm 
+			UNION
+			SELECT
+				a.line_Name AS lnNm,					-- 7查询省到省辖市
+				a.end_place AS end_place,
+				a.start_place AS start_place,
+				sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+				sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+				(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+				-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+				)AS rankState,
+				a.start_dt as start_dt
+			FROM 
+			(
+				SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					INNER JOIN ydserver.province pro ON a.start_place = LEFT (pro.ProvinceName, 2)
+						and pro.ProvinceID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited
+						ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						and cited.ProvinceID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+			UNION
+				SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+				FROM cainiao_dxl a
+				<choose>
+					<when test='line_type == 3'>
+						INNER JOIN  cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 1
+					</when>
+					<when test='line_type == 4'>
+						INNER JOIN cainiao_tool_line_type clt 
+							on  a.line_Name = clt.line_Name
+							and clt.line_type = 2
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='startPlace != null and startPlace != ""'>
+					INNER JOIN ydserver.province pro ON a.start_place = LEFT (pro.ProvinceName, 2)
+						and pro.ProvinceID = #{startPlace}
+				</if>
+				<if test='endPlace != null and endPlace != ""'>
+					INNER JOIN ydserver.city cited
+						ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+						and cited.ProvinceID = #{endPlace}
+				</if>
+				WHERE 
+					1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+			) a
+			GROUP BY lnNm
+		) g
+		WHERE
+		 	1 = 1
+			and g.start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL -6 DAY)
+			<choose>
+		        <when test='rankState == 1'>
+		        	 <![CDATA[and  g.rankState  = 0]]>
+		        </when>
+		        <when test='rankState == 2'>
+	        		<![CDATA[and  g.rankState  > 0]]>
+		        </when>
+		        <when test='rankState == 3'>
+	        		<![CDATA[and  g.rankState  < 0]]>
+		        </when>
+		        <otherwise>
+		        </otherwise>
+		    </choose>
+		    <if test='endlevUnitCnt !=null and endlevUnitCnt !="" '>
+			   AND g.lev_unit_cnt between #{startlevUnitCnt} and #{endlevUnitCnt}
+			</if>
+		GROUP BY lnNm
+		LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}		
+	</select>
+	
+		<select id="searchWeekFooterData" parameterType="java.util.Map" resultMap="weekResultMap" useCache="false">
+		SELECT count(*) AS lineQuantity
+		FROM(
+			SELECT
+				lnNm,end_place,start_place,
+				sum(firstDay) AS firstDay,
+				sum(secondDay) AS secondDay,
+				sum(thirdDay) AS thirdDay,
+				sum(fourthDay) AS fourthDay,
+				sum(fifthDay) AS fifthDay,
+				sum(sixthDay) AS sixthDay,
+				sum(seventhDay) AS seventhDay,
+				sum(lev_unit_cnt) AS lev_unit_cnt,
+				ROUND(SUM(rankState)/ 7 ,1) AS rankState,
+				start_dt as start_dt
+			FROM
+			(
+				SELECT
+					a.line_Name AS lnNm,			-- 1查询省到省
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM	cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						LEFT JOIN ydserver.province pro
+							ON a.start_place = LEFT (pro.ProvinceName, 2)
+							AND pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						LEFT JOIN ydserver.province proed
+							ON a.end_place = LEFT (proed.ProvinceName, 2)
+							AND proed.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+					<if test='startPlace != null and startPlace != ""'>
+						AND a.start_place like LEFT (pro.ProvinceName, 2)
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						AND a.end_place like LEFT (proed.ProvinceName, 2)
+					</if>
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM	cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						LEFT JOIN ydserver.province pro
+							ON a.start_place = LEFT (pro.ProvinceName, 2)
+							AND pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						LEFT JOIN ydserver.province proed
+							ON a.end_place = LEFT (proed.ProvinceName, 2)
+							AND proed.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+					<if test='startPlace != null and startPlace != ""'>
+						AND a.start_place like LEFT (pro.ProvinceName, 2)
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						AND a.end_place like LEFT (proed.ProvinceName, 2)
+					</if>
+				)a 
+				
+				GROUP BY lnNm 
+				
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 2查询省下市到省辖市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt 
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+						<if test='endPlace != null and endPlace != ""'>
+							inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+						</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM (
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+						<if test='endPlace != null and endPlace != ""'>
+							inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+						</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 3查询市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.CityID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.CityID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+				
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 4查询省下市到市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+					<if test='endPlace != null and endPlace != ""'>
+						inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+					</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.CityID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+					<if test='endPlace != null and endPlace != ""'>
+						inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+					</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.CityID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+			
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 5查询省下市到省
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt 
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+						)a 
+						<if test='endPlace != null and endPlace != ""'>
+							INNER JOIN ydserver.province proed ON a.end_place = LEFT (proed.ProvinceName, 2)
+						</if>
+						WHERE 
+							1=1
+						<if test='endPlace != null and endPlace != ""'>
+							and proed.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+							and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+					UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+						)a 
+						<if test='endPlace != null and endPlace != ""'>
+							INNER JOIN ydserver.province proed ON a.end_place = LEFT (proed.ProvinceName, 2)
+						</if>
+						WHERE 
+							1=1
+						<if test='endPlace != null and endPlace != ""'>
+							and proed.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+							and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				)  a
+				GROUP BY lnNm
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 6查询市到省辖市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 7查询省到省辖市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.province pro ON a.start_place = LEFT (pro.ProvinceName, 2)
+							and pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.province pro ON a.start_place = LEFT (pro.ProvinceName, 2)
+							and pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm
+			) g
+			WHERE
+				1 = 1
+				and g.start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL -6 DAY)
+				<choose>
+					<when test='rankState == 1'>
+						 <![CDATA[and  g.rankState  = 0]]>
+					</when>
+					<when test='rankState == 2'>
+						<![CDATA[and  g.rankState  > 0]]>
+					</when>
+					<when test='rankState == 3'>
+						<![CDATA[and  g.rankState  < 0]]>
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='endlevUnitCnt !=null and endlevUnitCnt !="" '>
+				   AND g.lev_unit_cnt between #{startlevUnitCnt} and #{endlevUnitCnt}
+				</if>
+			GROUP BY lnNm
+		) B
+  	</select>
+  	
+  		<select id="searchSumWeekData" parameterType="java.util.Map" resultMap="weekResultMap" useCache="false">
+	 	SELECT
+		 	'全链路' AS lnNm, sum(firstDay) AS firstDay, 
+		 	sum(secondDay) AS secondDay, sum(thirdDay) AS thirdDay, sum(fourthDay) AS fourthDay, 
+			sum(fifthDay) AS fifthDay, sum(sixthDay) AS sixthDay, sum(seventhDay) AS seventhDay,
+			sum(lev_unit_cnt) AS lev_unit_cnt,sum(rankState) AS rankState
+		FROM
+		(
+			SELECT
+				lnNm,end_place,start_place,
+				sum(firstDay) AS firstDay,
+				sum(secondDay) AS secondDay,
+				sum(thirdDay) AS thirdDay,
+				sum(fourthDay) AS fourthDay,
+				sum(fifthDay) AS fifthDay,
+				sum(sixthDay) AS sixthDay,
+				sum(seventhDay) AS seventhDay,
+				sum(lev_unit_cnt) AS lev_unit_cnt,
+				ROUND(SUM(rankState)/ 7 ,1) AS rankState,
+				start_dt as start_dt
+			FROM
+			(
+				SELECT
+					a.line_Name AS lnNm,			-- 1查询省到省
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM	cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						LEFT JOIN ydserver.province pro
+							ON a.start_place = LEFT (pro.ProvinceName, 2)
+							AND pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						LEFT JOIN ydserver.province proed
+							ON a.end_place = LEFT (proed.ProvinceName, 2)
+							AND proed.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+					<if test='startPlace != null and startPlace != ""'>
+						AND a.start_place like LEFT (pro.ProvinceName, 2)
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						AND a.end_place like LEFT (proed.ProvinceName, 2)
+					</if>
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM	cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						LEFT JOIN ydserver.province pro
+							ON a.start_place = LEFT (pro.ProvinceName, 2)
+							AND pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						LEFT JOIN ydserver.province proed
+							ON a.end_place = LEFT (proed.ProvinceName, 2)
+							AND proed.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+					<if test='startPlace != null and startPlace != ""'>
+						AND a.start_place like LEFT (pro.ProvinceName, 2)
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						AND a.end_place like LEFT (proed.ProvinceName, 2)
+					</if>
+				)a 
+				
+				GROUP BY lnNm 
+				
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 2查询省下市到省辖市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt 
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+						<if test='endPlace != null and endPlace != ""'>
+							inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+						</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM (
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+						<if test='endPlace != null and endPlace != ""'>
+							inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+						</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 3查询市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.CityID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.CityID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+				
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 4查询省下市到市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+					<if test='endPlace != null and endPlace != ""'>
+						inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+					</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.CityID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+					)a 
+					<if test='endPlace != null and endPlace != ""'>
+						inner JOIN ydserver.city cited ON a.end_place LIKE concat('%', LEFT (cited.CityName, 2), '%' )
+					</if>
+					WHERE 
+						1=1
+					<if test='endPlace != null and endPlace != ""'>
+						and cited.CityID = #{endPlace}
+					</if>
+					<choose>
+						<when test='line_type == 1 or line_type == 2'>
+							and a.line_type =  #{line_type,jdbcType=INTEGER} 
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+			
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 5查询省下市到省
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt 
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+						)a 
+						<if test='endPlace != null and endPlace != ""'>
+							INNER JOIN ydserver.province proed ON a.end_place = LEFT (proed.ProvinceName, 2)
+						</if>
+						WHERE 
+							1=1
+						<if test='endPlace != null and endPlace != ""'>
+							and proed.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+							and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+					UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM 
+					(
+						select a.line_Name,a.start_dt,a.start_place,a.end_place,a.lev_indust_nm,a.lev_unit_cnt,a.line_type
+						FROM
+							cainiao_dxl a
+							<choose>
+							<when test='line_type == 3'>
+								INNER JOIN  cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 1
+							</when>
+							<when test='line_type == 4'>
+								INNER JOIN cainiao_tool_line_type clt 
+									on  a.line_Name = clt.line_Name
+									and clt.line_type = 2
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						<if test='startPlace != null and startPlace != ""'>
+							inner JOIN ydserver.city cit ON a.start_place LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							where  
+							 start_dt BETWEEN date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+							AND cit.ProvinceID = #{startPlace}
+						</if>
+						)a 
+						<if test='endPlace != null and endPlace != ""'>
+							INNER JOIN ydserver.province proed ON a.end_place = LEFT (proed.ProvinceName, 2)
+						</if>
+						WHERE 
+							1=1
+						<if test='endPlace != null and endPlace != ""'>
+							and proed.ProvinceID = #{endPlace}
+						</if>
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+							and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				)  a
+				GROUP BY lnNm
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 6查询市到省辖市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.city cit
+							ON a.start_place  LIKE concat('%',LEFT (cit.CityName, 2),'%')
+							and cit.CityID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm 
+				UNION
+				SELECT
+					a.line_Name AS lnNm,					-- 7查询省到省辖市
+					a.end_place AS end_place,
+					a.start_place AS start_place,
+					sum(if(a.start_dt=#{startDt,jdbcType=DATE},a.lev_indust_nm,0)) AS firstDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -1 day),a.lev_indust_nm,0)) AS secondDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -2 day),a.lev_indust_nm,0)) AS thirdDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -3 day),a.lev_indust_nm,0)) AS fourthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -4 day),a.lev_indust_nm,0)) AS fifthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -5 day),a.lev_indust_nm,0)) AS sixthDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_indust_nm,0)) AS seventhDay,
+					sum(if(a.start_dt=date_sub(#{startDt,jdbcType=DATE},interval -6 day),a.lev_unit_cnt,0)) AS lev_unit_cnt,
+					(if(a.start_dt  between #{startDt,jdbcType=DATE} AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY) , sum(IFNULL(a.lev_indust_nm,0)) ,0)
+					-if(a.start_dt  between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) AND date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY), if(sum(IFNULL(a.lev_indust_nm,0)),sum(IFNULL(a.lev_indust_nm,0)),0) ,0)
+					)AS rankState,
+					a.start_dt as start_dt
+				FROM 
+				(
+					SELECT a.start_dt,a.end_place,a.start_place,a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.province pro ON a.start_place = LEFT (pro.ProvinceName, 2)
+							and pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL - 6 DAY)
+				UNION
+					SELECT a.start_dt,a.end_place,a.start_place,-a.lev_indust_nm,a.line_name,a.lev_unit_cnt
+					FROM cainiao_dxl a
+					<choose>
+						<when test='line_type == 3'>
+							INNER JOIN  cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 1
+						</when>
+						<when test='line_type == 4'>
+							INNER JOIN cainiao_tool_line_type clt 
+								on  a.line_Name = clt.line_Name
+								and clt.line_type = 2
+						</when>
+						<otherwise>
+						</otherwise>
+					</choose>
+					<if test='startPlace != null and startPlace != ""'>
+						INNER JOIN ydserver.province pro ON a.start_place = LEFT (pro.ProvinceName, 2)
+							and pro.ProvinceID = #{startPlace}
+					</if>
+					<if test='endPlace != null and endPlace != ""'>
+						INNER JOIN ydserver.city cited
+							ON a.end_place  LIKE concat('%',LEFT (cited.CityName, 2),'%')
+							and cited.ProvinceID = #{endPlace}
+					</if>
+					WHERE 
+						1=1
+						<choose>
+							<when test='line_type == 1 or line_type == 2'>
+								and a.line_type =  #{line_type,jdbcType=INTEGER} 
+							</when>
+							<otherwise>
+							</otherwise>
+						</choose>
+						and start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 7 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL 1 DAY)
+				) a
+				GROUP BY lnNm
+			) g
+			WHERE
+				1 = 1
+				and g.start_dt between  date_sub(#{startDt,jdbcType=DATE}, INTERVAL 0 DAY) and date_sub(#{startDt,jdbcType=DATE}, INTERVAL -6 DAY)
+				<choose>
+					<when test='rankState == 1'>
+						 <![CDATA[and  g.rankState  = 0]]>
+					</when>
+					<when test='rankState == 2'>
+						<![CDATA[and  g.rankState  > 0]]>
+					</when>
+					<when test='rankState == 3'>
+						<![CDATA[and  g.rankState  < 0]]>
+					</when>
+					<otherwise>
+					</otherwise>
+				</choose>
+				<if test='endlevUnitCnt !=null and endlevUnitCnt !="" '>
+				   AND g.lev_unit_cnt between #{startlevUnitCnt} and #{endlevUnitCnt}
+				</if>
+			GROUP BY lnNm
+			
+		) Q
+	</select>
+	
+	
+	<select id="getLineRegion" parameterType="java.util.Map" resultMap="comboResultMap" >
+		SELECT cityId AS id,cityName AS name from 
+		(
+			select CityID,CityName from ydserver.city cit
+			UNION all
+			select ProvinceID,ProvinceName from ydserver.province pro
+		) b 
+		WHERE 1=1
+		<if test='startPlace !=null and startPlace !="" '>
+			and b.cityName LIKE CONCAT('%','${startPlace}','%')
+		</if>
+		<if test='endPlace !=null and endPlace !="" '>
+			and b.cityName LIKE CONCAT('%','${endPlace}','%')
+		</if>
+		GROUP BY cityId
+	</select>
+</mapper>

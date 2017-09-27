@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>总部目标值</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <div class="area-detail-all">
+            <span class="time-show-area" id="info-time"></span>
+            <div class="area-detail-left">
+                <p class="area-detail-name">目标值</p>
+                <p class="area-detail-value" id="goal-value">---</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio" id="goal-area">
+                        <span class="area-ratio-area">
+                            <span class="area-ratio-info ratio-up-num">---</span>
+                            <span class="area-ratio-img ratio-img-top-up"></span>
+                        </span>
+                        <span class="area-ratio-area" style="margin-left: 6px;">
+                            <span class="area-ratio-info ratio-up-num">---</span>
+                            <span class="area-ratio-img ratio-img-top-up"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="area-detail-right">
+                <p class="area-detail-name">实际值</p>
+                <p class="area-detail-value" id="actual-value">---</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio" id="actual-area">
+                        <span class="area-ratio-area ratio-down-num">较上日
+                            <span class="area-ratio-info">---</span>
+                            <span class="area-ratio-img ratio-img-down-up"></span>
+                        </span>
+                        <span class="area-ratio-area ratio-down-num" style="margin-left: 4px;">环比
+                            <span class="area-ratio-info">---</span>
+                            <span class="area-ratio-img ratio-img-top-down"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab">
+                    <div class="echart-tab-item">
+                        <span class="echart-name echart-tab-yel">目标值</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item margin-top-5">
+                        <span class="echart-name ratio-up-num">实际值</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="day"  class="echart-tab-list-active">日趋势</li>
+                        <li data-value="week">周趋势</li>
+                        <li data-value="month">月趋势</li>
+                        <li data-value="quarter">季度趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="area-detail-menu water-remark-area">
+        <div class="area-detail-tab-list">
+           <ul class="area-detail-ul">
+               <li class="area-tab-li-active" data-trend="complete">完成率排名</li>
+               <li  data-trend="wave">波动率排名</li>
+           </ul>
+            <div class="area-detail-active-show"></div>
+        </div>
+        <table class="area-detail-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead" id="remark-title">
+            <tr>
+                <td width="25%">下级机构</td>
+                <td width="25%">目标值(万)</td>
+                <td width="25%">实际值(万)</td>
+                <td width="25%">完成率</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody" id="remark-list">
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">江苏大区</P>-->
+                    <!--<P class="area-code">320000</P>-->
+                <!--</td>-->
+                <!--<td>200.00</td>-->
+                <!--<td>300.00</td>-->
+                <!--<td class="ratio-down-num">18.9%</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">南京大区</P>-->
+                    <!--<P class="area-code">325800</P>-->
+                <!--</td>-->
+                <!--<td>700.00</td>-->
+                <!--<td>550.00</td>-->
+                <!--<td class="ratio-up-num">138.25%</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">上海大区</P>-->
+                    <!--<P class="area-code">320780</P>-->
+                <!--</td>-->
+                <!--<td>700.00</td>-->
+                <!--<td>550.00</td>-->
+                <!--<td class="ratio-down-num">78.20%</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">西北大区</P>-->
+                    <!--<P class="area-code">320140</P>-->
+                <!--</td>-->
+                <!--<td>700.00</td>-->
+                <!--<td>550.00</td>-->
+                <!--<td class="ratio-up-num">118.25%</td>-->
+            <!--</tr>-->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+var getAreaInfoURL = appId + "/action/ydbi_business_target/searchData.do";
+var getWeekInfoURL = appId + "/action/ydbi_business_target_week/searchData.do";
+var getMonthInfoURL = appId + "/action/ydbi_business_target_month/searchData.do";
+var getQuarterInfoURL = appId + "/action/ydbi_business_target_quarter/searchData.do";
+var trendVal = "complete",showInfo = "day";//用于判断显示数值
+var orgType = YDM.QueryString("sendType");
+var orgId = YDM.QueryString("dataOrg");
+var orgName = decodeURI(YDM.QueryString("orgName"));
+
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs();
+        refreshInfo();  //刷新页面内容
+        getData();
+        refreshCtrl();
+        commonFun(); //公用方法
+    }
+function refreshInfo() {
+    getDayInfo(showInfo);
+    getTrendInfo(trendVal);
+    getTrendInfo("X"); //获取顶部信息
+}
+
+function getDayInfo(info, datePrevious, ajaxName) {
+    var getInfoURL;
+    var dateRequest = datePrevious || dataTime; 
+    var survParams = {
+        "data_date": dateRequest,
+        "sel_type":"3",
+        "page":"1",
+        "rows":"15"
+    };
+    survParams[orgType] = orgId;
+    var str = encodeURI("search_condition="+JSON.stringify(survParams));
+    if(info == "day") {
+        getInfoURL = getAreaInfoURL;
+    }else if(info == "week") {
+        getInfoURL = getWeekInfoURL;
+    }else if(info == "month") {
+        getInfoURL = getMonthInfoURL;
+    }else if(info == "quarter") {
+        getInfoURL = getQuarterInfoURL;
+    }
+    $.ajax({
+        type : 'POST',
+        url : getInfoURL,
+        dataType : 'json',
+        data: str,
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success : function(oData) {
+            if (oData && oData.errorCode == 0) {
+                addEchartInfo(oData.data, ajaxName);
+            } else {
+                YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+            }
+        }
+    });
+}
+
+function addEchartInfo(data, ajaxName) {
+    prepareEchartData(data, ajaxName);
+}
+
+function getTrendInfo(trend) {
+    var trendInfo,getTrendURL;
+    var height = $(".water-remark-area").outerHeight(true);
+    $(".water-remark-area").css("min-height",height);
+    $("#remark-list").empty();
+    if(trend == "complete") {
+        trendInfo = "4"
+    }else if(trend == "wave") {
+        trendInfo = "5"
+    }else if(trend == "X") {
+        trendInfo = "X"
+    }
+    switch (showInfo) {
+        case "day" : getTrendURL = getAreaInfoURL;break;
+        case "week" : getTrendURL = getWeekInfoURL;break;
+        case "month" : getTrendURL = getMonthInfoURL;break;
+        case "quarter" : getTrendURL = getQuarterInfoURL;break;
+    }
+    var survParams = {
+        "data_date": dataTime,
+        "sel_type":trendInfo,
+        "page":"1",
+        "rows":"30"
+    };
+    survParams[orgType] = orgId;
+    var str = encodeURI("search_condition="+JSON.stringify(survParams));
+    $.ajax({
+        type : 'POST',
+        url : getTrendURL,
+        dataType : 'json',
+        data: str,
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success : function(oData) {
+            if (oData && oData.errorCode == 0) {
+                if(trend == "X") {
+                    addTopBaskInfo(oData.data[0])
+                }else {
+                    addRemarkInfo(oData.data);
+                }
+            } else {
+                YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+            }
+        }
+    });
+}
+
+function addRemarkInfo(data) {    //获取排名
+    if(trendVal == "complete") {
+        $.each(data,function(index,val) {
+            var str = "<tr><td><P class='area-name'>"+ val.org_name +"</P><P class='area-code'>"+ val.org_id +"</P></td><td>"+ val.goal_values +"</td><td>"+ val.actual_values +"</td><td class='ratio-"+ changeData(val.finish_percent,"symbol") +"-num'>"+ changeData(val.finish_percent,"abs","%") +"</td></tr>"
+            $("#remark-list").append(str);
+        })
+    }else {
+        $.each(data,function(index,val) {
+            var str = "<tr><td><P class='area-name'>"+ val.org_name +"</P><P class='area-code'>"+ val.org_id +"</P></td><td>"+ val.period_finish_percent +"</td><td>"+ val.finish_percent +"</td><td class='ratio-"+ changeData(val.volatility_values,"symbol") +"-num'>"+ changeData(val.volatility_values,"abs","%") +"</td></tr>"
+            $("#remark-list").append(str);
+        })
+    }
+}
+
+function changeTabTitle() {  //设置table顶部信息，分开放置请求太慢
+    if(trendVal == "complete") {
+        var strTitle;
+        var priceInfo = showInfo == "quarter" ? "亿" : "万";
+        strTitle = "<tr><td width='25%'>下级机构</td><td width='25%'>目标值("+ priceInfo +")</td><td width='25%'>实际值("+ priceInfo +")</td><td width='25%'>完成率</td></tr>"
+        $("#remark-title").empty().append(strTitle);
+    }else {
+        var showTitle;
+        switch (showInfo) {
+            case "day" : showTitle = "日";break;
+            case "week" : showTitle = "周";break;
+            case "month" : showTitle = "月";break;
+            case "quarter" : showTitle = "季度";break;
+        }
+        strTitle = "<tr><td width='27%'>下级机构</td><td width='27%'>上"+ showTitle +"完成率</td><td width='27%'>本"+ showTitle +"完成率</td><td width='19%'>波动率</td></tr>"
+        $("#remark-title").empty().append(strTitle);
+    }
+}
+
+function addTopBaskInfo(data) {
+    $("#goal-value").text(data.goal_values);
+    $("#actual-value").text(data.actual_values);
+    var strLeft = "<span class='area-ratio-area'><span class='area-ratio-info ratio-"+ changeData(data.residual_quantity,"symbol") +"-num'>"+ changeData(data.residual_quantity,'abs') +"</span><span class='margin-left-3 area-ratio-img ratio-img-top-"+ changeData(data.residual_quantity,'symbol') +"'></span></span><span class='area-ratio-area' style='margin-left: 6px;'><span class='area-ratio-info ratio-"+ changeData(data.finish_percent,'symbol') +"-num'>"+ changeData(data.finish_percent,"abs","%") +"</span><span class='margin-left-3 area-ratio-img ratio-img-top-"+ changeData(data.finish_percent,"symbol") +"'></span></span>";
+    $("#goal-area").empty().append(strLeft);
+    var strRight = "<span class='area-ratio-area ratio-"+ changeData(data.actual_residual_quantity,"symbol") +"-num'>较上日<span class='area-ratio-info margin-left-3'>"+ changeData(data.actual_residual_quantity,'abs') +"</span><span class='margin-left-3 area-ratio-img ratio-img-top-"+ changeData(data.actual_residual_quantity,'symbol') +"'></span></span><span class='area-ratio-area ratio-"+ changeData(data.day_percent,'symbol') +"-num' style='margin-left: 6px;'>环比<span class='margin-left-3 area-ratio-info'>"+ changeData(data.day_percent,"abs","%") +"</span><span class='margin-left-3 area-ratio-img ratio-img-top-"+ changeData(data.day_percent,"symbol") +"'></span></span>";
+    $("#actual-area").empty().append(strRight);
+}
+
+function viewJs() {
+    document.title = orgName;
+    $("#info-time").text(dataTime);
+    $(".area-detail-ul li").on("click",function() {
+        var index = $(this).index();
+        trendVal = $(this).attr("data-trend");
+        $(".area-detail-active-show").animate({"left":(50*index+10) + "%"},100);
+        getTrendInfo(trendVal);
+        changeTabTitle()
+    });
+    $(".echart-tab-list li").on("click",function() {
+        $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+        showInfo = $(this).attr("data-value");
+        getDayInfo(showInfo);
+        getTrendInfo(trendVal);
+        getData();
+        changeTabTitle();
+    })
+}
+
+/** 初始化chart数据*/
+function getData() {
+	var xDataNum;
+	var getXFormatter = prepareXFormatter();
+	var seriesName = ['实际值', '目标值'];
+	if(showInfo == "day") {
+		xDataNum = 15;
+    }else if(showInfo == "week") {
+    	xDataNum = 8;
+    }else if(showInfo == "month") {
+    	xDataNum = 6;
+    }else if(showInfo == "quarter") {
+    	xDataNum = 4;
+    }
+	
+	var initoptions = {
+		//getNextData: getNextSendCarInfo,
+		getPreviousData: getPreviousData,
+		xDataNum: xDataNum,
+		chartFieldId: "chartDv",
+		getXFormatter:getXFormatter,
+		trendType:'target',
+		seriesName: seriesName
+	} ;
+    BDC.doChart(initoptions);
+}
+/**准备X轴的坐标格式*/
+function prepareXFormatter() {
+	var getXFormatter;	
+	if(showInfo == "day") {
+		xDataNum = 15;
+		getXFormatter = function (value) {
+			if (value) {
+				return value.split('-')[2];
+			}
+		}
+    }else if(showInfo == "week") {
+    	xDataNum = 8;
+    	getXFormatter = function (value) {
+			if (value) {
+				return value.split('-')[1];
+			}
+		}
+    }else if(showInfo == "month") {
+    	xDataNum = 6;
+    	getXFormatter = function (value) {
+			if (value) {
+				return value.split('-')[1] + '月';
+			}
+		}
+    }else if(showInfo == "quarter") {
+    	xDataNum = 4;
+    	getXFormatter = function (value) {
+			if (value) {
+				var month = value.split('-')[1];
+				if (month == '1'){
+					return '一季度';
+				} else if (month == '2') {
+					return '二季度';
+				} else if (month == '3') {
+					return '三季度';
+				} else {
+					return '四季度';
+				}
+			}
+		}
+    }
+	return getXFormatter;
+}
+/** 处理chart数据*/ 
+function prepareEchartData (datas, ajaxName) {
+	if (!datas) {
+		return;
+	}
+	var weekRequestDate = '';
+	var xData = [];
+	var yData = [];
+	var realnumArr = [];
+	var onsamenumArr = []
+	yData.push(realnumArr);
+	yData.push(onsamenumArr);
+	//周趋势
+	$.each(datas, function (index, altrendData) {		
+		xData.push(altrendData.data_date);
+		yData[0].push(altrendData.actual_values);
+		yData[1].push (altrendData.goal_values);
+	    if (showInfo == 'day') {
+			weekRequestDate = index == 0 ? altrendData.data_date : weekRequestDate;
+		} else{
+			weekRequestDate = altrendData.t_data_date;
+		}
+	});
+	if (ajaxName === 'previous') {
+		BDC.preparePreviousData(xData, yData, weekRequestDate);
+	} else {
+		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+	} 
+	/* if (ajaxName === 'next') {
+		BDC.prepareNextData(xData, yData);
+	} else if (ajaxName === 'previous') {
+		BDC.preparePreviousData(xData, yData);
+	} else {
+		BDC.prepareCurrentData(xData, yData)
+	} */
+}
+/** 拿到next的chart数据*/
+/* var getNextSendCarInfo = function (date) {
+	var ajaxName = 'next';
+	getSendCarInfoAjax(date, ajaxName);
+}  */
+/** 拿到previous的chart数据*/
+var getPreviousData = function (date) {
+    var ajaxName = 'previous';
+    getDayInfo(showInfo, date, ajaxName);
+    
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript" src="../../js/combobox-company.js"></script>
+<script type="text/javascript" src="../../js/tool.js"></script>
+<script type="text/javascript">
+		//var appId = localStorage.getItem("appId");
+		var objectName = '网点对账报表';
+		var listTemplate = '#setl_ship_dtl_list';
+		var listId = "setl_ship_dtl_list";
+		var formSearchTemplate = '#setl_ship_dtl_searchForm';
+		var searchFormId = "setl_ship_dtl_searchForm";
+		var gridMenuId = '#setl_ship_dtl_list_menu';
+		var urlSearch = appId + '/actions/setl/setl_ship_dtl/searchData.do?actionId=setl_ship_dtl_searchData';
+		var urlExport= appId + '/actions/setl/setl_ship_dtl/exportEntities.do?actionId=setl_ship_dtl_exportEntities';
+		var urlDownFile= appId + '/actions/setl/setl_ship_dtl/downFile.do?actionId=setl_ship_dtl_downFile';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'setl_ship_dtl_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		 //当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		var today = getToday();
+		var yc_qy;
+		var userData = null;
+		var kdata;
+		var timestamp;
+		var kdata_exp;
+		var timestamp_exp;
+		var pageNumVal = 1;
+		var pageSizeVal = $$.pageSize;
+		$(function(){
+			var jsonStr = sessionStorage.getItem("userData");
+			if(jsonStr == null || jsonStr==""){
+				$$.showJcdfMessager('提示消息', '请重新登录', 'warning'); 
+				return;
+			}else{
+				userData = JSON.parse(jsonStr) ;
+			}
+			$('#sel_start_dt,#sel_end_dt').datebox({'editable':false});
+			$('#sel_start_dt,#sel_end_dt').datebox('setValue', getNowDate(0,-1));
+			$("#shipmentNo").bind("click", function(){
+				 if($("#shipmentNo").val()=="请输入您的运单号，最多可输入100个，多个单号请用回车键换行"){
+					 $("#shipmentNo").val('')
+				 }
+				 $("#shipmentNo").css({
+						"color" : "#000000"
+					});
+			  });
+			 $("#shipmentNo").bind("blur", function(){
+				 if($("#shipmentNo").val()==""){
+					 $("#shipmentNo").val('请输入您的运单号，最多可输入100个，多个单号请用回车键换行');
+					 $("#shipmentNo").css({
+							"color" : "#CCCCCC",
+							"font-size" :"13px"
+						});
+				 }
+			  }); 
+			 $('#branch').combobox({
+     		    url:appId+"/actions/tool/getRegion.do?actionId=tool_getRegion&sel_level=5&sel_cd=" + userData.org_id,    
+     		    valueField:'id',    
+     		    textField:'name',
+     		    filter: function(q, row){
+     				var opts = $(this).combobox('options');
+     				return row[opts.textField].indexOf(q) >-1;
+     			},
+     			onSelect:function(rec){
+     				$("#orgCode").val(rec.id);
+     				$("#orgName").val(rec.name);
+     		    },  
+     		    loadFilter:function(oData){
+     		    	var data = oData.data;
+     		    	for(var i in data){
+     		    		data[i].name = data[i].name + "(" + data[i].id + ")";
+     		    	}
+     		    	data.unshift({"id":"","name":"请选择"});
+     		    	return data;
+     		    }
+     		});
+			 $("#orgCode").keyup(function(){
+				var orgCode = $("#orgCode").val();
+				if (orgCode.length == 6 || orgCode.length == 8) {
+					var url = appId+"/actions/tool/getOrgInf.do?actionId=tool_getOrgInf&sel_cd=" + orgCode;
+					$.ajax({
+					   type: "POST",
+					   url: url,
+					   dataType:"json",
+					   success: function(oData){
+							if (oData!=null && oData.errorCode == "0") {
+								var orgInfo = oData.data;
+								if(orgInfo!=null){
+									$('#branch').combobox('setValue',orgInfo.orgName + "("+ orgInfo.orgCd + ")");
+								}else{
+									$$.showJcdfMessager('提示消息', '编码输入错误', 'info');
+							    	$("#branch").combobox('clear');
+							    	$("#orgCode").val("");
+								}
+							}
+					   }
+					});
+				}
+			});
+			$('#one_fee_cd').combobox({
+			    url:appId+"/actions/setl/setl_fee_cd/searchData.do?actionId=setl_fee_cd_searchData", 
+			    queryParams: { "search_condition" : JSON.stringify({"fee_type":"1"}) },
+			    valueField:'id',    
+			    textField:'name',
+			    filter: function(q, row){
+					var opts = $(this).combobox('options');
+					return row[opts.textField].indexOf(q) >-1;
+				}, 
+				onSelect:function(rec){
+    				$("#two_fee_cd").combobox('clear');
+    				$('#two_fee_cd').combobox({ queryParams: {'search_condition' : JSON.stringify({"fee_type":"2","sel_fee_cd":rec.id.toString()}) }});
+    		    },
+			    loadFilter:function(oData){
+			    	var data = oData.rows;
+			    	for(var i in data){
+			    		data[i].name = data[i].name;
+			    	}
+			    	data.unshift({"id":"","name":"请选择"});
+			    	return data;
+			    }
+			}); 
+			
+			$('#two_fee_cd').combobox({
+			    url:appId+"/actions/setl/setl_fee_cd/searchData.do?actionId=setl_fee_cd_searchData", 
+			    queryParams: { "search_condition" : JSON.stringify({"fee_type":"2","sel_fee_cd":"0"}) },
+			    valueField:'id',    
+			    textField:'name',
+			    filter: function(q, row){
+					var opts = $(this).combobox('options');
+					return row[opts.textField].indexOf(q) >-1;
+				}, 
+			    loadFilter:function(oData){
+			    	var data ={}
+			    	data = oData.rows;
+			    	for(var i in data){
+			    		data[i].name = data[i].name;
+			    	}
+			    	data.unshift({"id":"","name":"请选择"});
+			    	return data;
+			    }
+			}); 
+			
+			loadDatagrid();
+		});
+		
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			timestamp = new Date().getTime();
+			var params = $$.serializeToJson(formSearchTemplate);
+			var start_dt = params.sel_start_dt;
+			var end_dt = params.sel_end_dt;
+			var org_cd = params.org_id;
+			var shipmentNo  = $("#shipmentNo").val();
+			
+			if(getDateDiff(end_dt,start_dt) > 366){
+				$$.showJcdfMessager('提示消息', '开始和结束日期跨度不能超过一年', 'warning');
+				return;
+			}else if(getDateDiff(end_dt,start_dt) < 0){
+				$$.showJcdfMessager('提示消息', '结束不能早于开始日期', 'warning');
+				return;
+			}
+			
+			var strList=shipmentNo;
+			var strTxListValue="请输入您的运单号，最多可输入100个，多个单号请用回车键换行"
+		    strList=strList.replace(/[ \f\t\v]*/g,'');  //替换空格
+			if(strList==strTxListValue || strList==''){
+			}else{
+				var arrList = strList.split(/[\s]*[\r\n]+[\s]*/);
+				var intL=arrList.length;
+				if(intL>100){
+					$$.showJcdfMessager('提示消息','最多只能输入100行数据，请检查您的输入', 'warning');
+					return;
+				}
+				var strList_ok='';//对输入进行整形
+				for(var i=0; i<intL; i++){
+					if(arrList[i]!='' && !(/^\d{13}$/.test(arrList[i]))){
+						$$.showJcdfMessager('提示消息','单号 '+arrList[i] +'  不正确，请检查您的输入！', 'warning');
+			        	return;
+	        		}else{
+	        			if(i!=0)//第一行前面不需要加换行符
+	        			{
+	        				strList_ok += ',';
+	        			}
+	        			strList_ok += arrList[i];
+	        		}
+			 	}
+			}
+			
+			$.messager.progress({interval:'1000',text: '正在查询数据...' }); 
+			kdata = setInterval(loadData, 1000);
+			loadData();
+		};
+		
+		function loadData(){
+			var params = $$.serializeToJson(formSearchTemplate);
+			var start_dt = params.sel_start_dt;
+			var end_dt = params.sel_end_dt;
+			var org_cd = params.org_id;
+			var shipmentNo  = params.textarea;
+			params.com_id = userData.org_id;
+			params.ship_id = "";
+			params.textarea = "";
+			
+			if(getDateDiff(end_dt,start_dt) > 366){
+				$$.showJcdfMessager('提示消息', '开始和结束日期跨度不能超过一年', 'warning');
+				return;
+			}else if(getDateDiff(end_dt,start_dt) < 0){
+				$$.showJcdfMessager('提示消息', '结束不能早于开始日期', 'warning');
+				return;
+			}
+			
+			  var strList=shipmentNo;
+			  var strTxListValue="请输入您的运单号，最多可输入100个，多个单号请用回车键换行"
+			    strList=strList.replace(/[ \f\t\v]*/g,'');  //替换空格
+				if(strList==strTxListValue || strList==''){
+					params.ship_id = "";
+				}else{
+				var arrList = strList.split(/[\s]*[\r\n]+[\s]*/);
+				var intL=arrList.length;
+				if(intL>100){
+					$$.showJcdfMessager('提示消息','最多只能输入100行数据，请检查您的输入', 'warning');
+					return;
+				}
+				var strList_ok='';//对输入进行整形
+				for(var i=0; i<intL; i++){
+					if(arrList[i]!='' && !(/^\d{13}$/.test(arrList[i]))){
+						$$.showJcdfMessager('提示消息','单号 '+arrList[i] +'  不正确，请检查您的输入！', 'warning');
+			        			return;
+	        		}else{
+	        			if(i!=0)//第一行前面不需要加换行符
+	        			{
+	        				strList_ok += ',';
+	        			}
+	        			strList_ok     += arrList[i];
+	        		}
+			 	}
+				params.ship_id = strList_ok;
+			}
+			    
+			if($("#chk_org").is(":checked")){//选中  
+				params.chk_org = "1";
+			}  
+			if($("#chk_wgt").is(":checked")){//选中  
+				params.chk_wgt = "1";
+			}  
+			if($("#chk_vol").is(":checked")){//选中  
+				params.chk_vol = "1";
+			}  
+			
+			var json = { "search_condition" : JSON.stringify(params),"timestamp" : timestamp.toString() };
+			$(listTemplate).datagrid({
+				pageNumber:pageNumVal,
+				pageSize:pageSizeVal,
+				url : urlSearch,
+				queryParams: json,
+	      		loadFilter: function(data){
+	      			if (null != data && data.errorCode==0) {
+	      				clearInterval(kdata);
+						$.messager.progress('close');
+					}else if(null != data && data.errorCode != -100){
+						clearInterval(kdata);
+						$.messager.progress('close');
+						$$.showJcdfMessager('提示消息', data.msg, 'warning'); 
+					}else{
+						data.rows=[];
+					}
+					return data;
+				}
+			});
+
+			 $(listTemplate).datagrid('getPager').pagination({  
+			       onRefresh:function(pageNumber,pageSize){
+			    	   pageNumVal = pageNumber;
+			   		   pageSizeVal = pageSize;
+			    	   searchData('setl_ship_dtl_searchData',urlSearch)
+			        },  
+			       onSelectPage:function(pageNumber,pageSize){
+			    	   pageNumVal = pageNumber;
+			   		   pageSizeVal = pageSize;
+			    	   searchData('setl_ship_dtl_searchData',urlSearch)
+			        }  
+			   });
+		}
+		
+		function exportExcel(buttonId,actionUrl){
+			timestamp_exp = new Date().getTime();
+			var params = $$.serializeToJson(formSearchTemplate);
+			var start_dt = params.sel_start_dt;
+			var end_dt = params.sel_end_dt;
+			var org_cd = params.org_id;
+			var shipmentNo  = $("#shipmentNo").val();
+			
+			if(getDateDiff(end_dt,start_dt) > 366){
+				$$.showJcdfMessager('提示消息', '开始和结束日期跨度不能超过一年', 'warning');
+				return;
+			}else if(getDateDiff(end_dt,start_dt) < 0){
+				$$.showJcdfMessager('提示消息', '结束不能早于开始日期', 'warning');
+				return;
+			}
+			
+			var strList=shipmentNo;
+			var strTxListValue="请输入您的运单号，最多可输入100个，多个单号请用回车键换行"
+		    strList=strList.replace(/[ \f\t\v]*/g,'');  //替换空格
+			if(strList==strTxListValue || strList==''){
+			}else{
+				var arrList = strList.split(/[\s]*[\r\n]+[\s]*/);
+				var intL=arrList.length;
+				if(intL>100){
+					$$.showJcdfMessager('提示消息','最多只能输入100行数据，请检查您的输入', 'warning');
+					return;
+				}
+				var strList_ok='';//对输入进行整形
+				for(var i=0; i<intL; i++){
+					if(arrList[i]!='' && !(/^\d{13}$/.test(arrList[i]))){
+						$$.showJcdfMessager('提示消息','单号 '+arrList[i] +'  不正确，请检查您的输入！', 'warning');
+			        	return;
+	        		}else{
+	        			if(i!=0)//第一行前面不需要加换行符
+	        			{
+	        				strList_ok += ',';
+	        			}
+	        			strList_ok += arrList[i];
+	        		}
+			 	}
+			}
+			
+			$.messager.progress({interval:'1000',text: '正在生成文件...' }); 
+			kdata_exp = setInterval(exportData, 1000);
+			exportData();
+		};
+		
+		function exportData(){
+			var params = $$.serializeToJson(formSearchTemplate);
+			var start_dt = params.sel_start_dt;
+			var end_dt = params.sel_end_dt;
+			var org_cd = params.org_id;
+			var shipmentNo  = params.textarea;
+			params.com_id = userData.org_id;
+			params.ship_id = "";
+			params.textarea = "";
+			
+			if(getDateDiff(end_dt,start_dt) > 366){
+				$$.showJcdfMessager('提示消息', '开始和结束日期跨度不能超过一年', 'warning');
+				return;
+			}else if(getDateDiff(end_dt,start_dt) < 0){
+				$$.showJcdfMessager('提示消息', '结束不能早于开始日期', 'warning');
+				return;
+			}
+			
+			  var strList=shipmentNo;
+			  var strTxListValue="请输入您的运单号，最多可输入100个，多个单号请用回车键换行"
+			    strList=strList.replace(/[ \f\t\v]*/g,'');  //替换空格
+				if(strList==strTxListValue || strList==''){
+					params.ship_id = "";
+				}else{
+				var arrList = strList.split(/[\s]*[\r\n]+[\s]*/);
+				var intL=arrList.length;
+				if(intL>100){
+					$$.showJcdfMessager('提示消息','最多只能输入100行数据，请检查您的输入', 'warning');
+					return;
+				}
+				var strList_ok='';//对输入进行整形
+				for(var i=0; i<intL; i++){
+					if(arrList[i]!='' && !(/^\d{13}$/.test(arrList[i]))){
+						$$.showJcdfMessager('提示消息','单号 '+arrList[i] +'  不正确，请检查您的输入！', 'warning');
+			        			return;
+	        		}else{
+	        			if(i!=0)//第一行前面不需要加换行符
+	        			{
+	        				strList_ok += ',';
+	        			}
+	        			strList_ok     += arrList[i];
+	        		}
+			 	}
+				params.ship_id = strList_ok;
+			}
+			    
+			if($("#chk_org").is(":checked")){//选中  
+				params.chk_org = "1";
+			}  
+			if($("#chk_wgt").is(":checked")){//选中  
+				params.chk_wgt = "1";
+			}  
+			if($("#chk_vol").is(":checked")){//选中  
+				params.chk_vol = "1";
+			}  
+			
+			var json = { "search_condition" : JSON.stringify(params),"timestamp" : timestamp_exp.toString() };
+			$.ajax({
+				   type: "POST",
+				   url : urlExport,
+				   data : json,
+				   dataType : "json",
+				   success : function(data){
+					   if (null != data && data.errorCode==0) {
+		      				clearInterval(kdata_exp);
+							$.messager.progress('close');
+							downFile();
+						}else if(null != data && data.errorCode != -100){
+							clearInterval(kdata_exp);
+							$.messager.progress('close');
+							$$.showJcdfMessager('提示消息', data.msg, 'warning'); 
+						}
+				   }
+			});
+		}
+		
+		function downFile(){
+			$('#'+searchFormId).form('submit',{    
+			    url:urlDownFile,    
+			    onSubmit: function(param){
+			    	param.timestamp = timestamp_exp.toString()
+			    } 
+			}); 
+		}
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+			$('#sel_start_dt,#sel_end_dt').datebox('setValue', getNowDate(0,-1));
+		};
+		
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			var params = $$.serializeToJson(formSearchTemplate);
+			var hrefHJ = "";
+			$(listTemplate).datagrid({
+				// title:objectName+'列表',
+				height:$$.getDatagridHeight(),
+				width:$$.getDatagridWidth(),
+				idField:'',
+				frozenColumns:[
+					[
+						{field:'setlDt',title:'结算日期',width:120,align:'left',halign:'center'},
+						{field:'setlAdjDt',title:'结算调整日期',width:120,align:'left',halign:'center'},
+						{field:'shipId',title:'运单号',width:120,align:'right',halign:'center',
+		         			formatter:function(value,row,index){
+								if(value != "" && value != "0" && value != "0.00" && value != "null"){
+									return "<a href='javascript:void(0)' >"+value+"</a>";
+								}else{
+									return value;
+								}
+							}
+						}
+					]
+				],
+				columns:[
+				         	[
+				         		
+								{field:'grtrPkgId',title:'大包号',width:120,align:'right',halign:'center',
+				         			formatter:function(value,row,index){
+										if(value != "" && value != "0" && value != "0.00" && value != "null"){
+											return "<a href='javascript:void(0)' >"+value+"</a>";
+										}else{
+											return value;
+										}
+									}
+								},
+								{field:'setlOrgCd',title:'结算公司编码',width:120,align:'right',halign:'center'},
+								{field:'setlOrgNm',title:'结算公司名称',width:220,align:'left',halign:'center'},
+								{field:'setlOrgSubCd',title:'结算公司下级站点编码',width:120,align:'right',halign:'center'},
+								{field:'setlOrgSubNm',title:'结算公司下级站点名称',width:220,align:'left',halign:'center'},
+								{field:'unitDt',title:'录单日期',width:120,align:'left',halign:'center'},
+								{field:'unitBrchCd',title:'录单网点编码',width:120,align:'right',halign:'center'},
+								{field:'unitBrchNm',title:'录单网点名称',width:220,align:'left',halign:'center'},
+								{field:'cdAllocBrchCd',title:'条码分配网点编码',width:120,align:'right',halign:'center'},
+								{field:'cdAllocBrchNm',title:'条码分配网点名称',width:220,align:'left',halign:'center'},
+								{field:'allocCustCd',title:'所分配客户编码',width:120,align:'right',halign:'center'},
+								{field:'allocCustNm',title:'所分配客户名称',width:220,align:'left',halign:'center'},
+								{field:'pickDt',title:'揽件日期',width:120,align:'left',halign:'center'},
+								{field:'pickBrchCd',title:'揽件或始发网点编码',width:120,align:'right',halign:'center'},
+								{field:'pickBrchNm',title:'揽件或始发网点名称',width:220,align:'left',halign:'center'},
+								{field:'pickDeviCd',title:'揽件分部编码',width:120,align:'right',halign:'center'},
+								{field:'pickDeviNm',title:'揽件分部名称',width:220,align:'left',halign:'center'},
+								{field:'pickEmpCd',title:'揽件业务员编码',width:120,align:'right',halign:'center'},
+								{field:'pickEmpNm',title:'揽件业务员名称',width:220,align:'left',halign:'center'},
+								{field:'strtProvCd',title:'始发省份编码',width:120,align:'right',halign:'center'},
+								{field:'strtProvNm',title:'始发省份名称',width:220,align:'left',halign:'center'},
+								{field:'strtCityCd',title:'始发城市编码',width:120,align:'right',halign:'center'},
+								{field:'strtCityNm',title:'始发城市名称',width:220,align:'left',halign:'center'},
+								{field:'strtCntyCd',title:'始发区县编码',width:120,align:'right',halign:'center'},
+								{field:'strtCntyNm',title:'始发区县名称',width:220,align:'left',halign:'center'},
+								{field:'rchTm',title:'到件时间',width:150,align:'right',halign:'center'},
+								{field:'distTm',title:'分发时间',width:150,align:'right',halign:'center'},
+								{field:'cfmRcvTm',title:'签收日期',width:120,align:'left',halign:'center'},
+								{field:'cfmRcvPers',title:'签收人',width:120,align:'left',halign:'center'},
+								{field:'destBrchCd',title:'签收或目的网点编码',width:120,align:'right',halign:'center'},
+								{field:'destBrchNm',title:'签收或目的网点名称',width:220,align:'left',halign:'center'},
+								{field:'cfmRcvDeviCd',title:'签收分部编码',width:120,align:'right',halign:'center'},
+								{field:'cfmRcvDeviNm',title:'签收分部名称',width:220,align:'left',halign:'center'},
+								{field:'delvEmpCd',title:'派件业务员编码',width:120,align:'right',halign:'center'},
+								{field:'delvEmpNm',title:'派件业务员名称',width:220,align:'left',halign:'center'},
+								{field:'destProvCd',title:'目的省份编码',width:120,align:'right',halign:'center'},
+								{field:'destProvNm',title:'目的省份名称',width:220,align:'left',halign:'center'},
+								{field:'destCityCd',title:'目的城市编码',width:120,align:'right',halign:'center'},
+								{field:'destCityNm',title:'目的城市名称',width:220,align:'left',halign:'center'},
+								{field:'destCntyCd',title:'目的区县编码',width:120,align:'right',halign:'center'},
+								{field:'destCntyNm',title:'目的区县名称',width:220,align:'left',halign:'center'},
+								{field:'cfmRcvCityCd',title:'签收城市编码',width:120,align:'right',halign:'center'},
+								{field:'cfmRcvCityNm',title:'签收城市名称',width:220,align:'left',halign:'center'},
+								{field:'actlDelvDur',title:'实际派送历时',width:150,align:'right',halign:'center'},
+								{field:'stipDelvDur',title:'规定派送历时',width:150,align:'right',halign:'center'},
+								{field:'actlWgt',title:'实际重量',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'volWgt',title:'计泡重量',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'pickSetlWgt',title:'揽件结算重量',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'setlWgt',title:'结算重量',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'setlWgtAdj',title:'第11天结算重量',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'setlWgtTyp',title:'结算重量类型',width:50,align:'left',halign:'center'},
+								{field:'transTyp',title:'运输方式',width:50,align:'left',halign:'center'},
+								{field:'oneGrdExpCd',title:'一级费用类型编码',width:120,align:'right',halign:'center'},
+								{field:'oneGrdExpNm',title:'一级费用类型名称',width:220,align:'left',halign:'center'},
+								{field:'twoGrdExpCd',title:'二级费用类型编码',width:120,align:'right',halign:'center'},
+								{field:'twoGrdExpNm',title:'二级费用类型名称',width:220,align:'left',halign:'center'},
+								{field:'amnt',title:'费用金额',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'adjAmnt',title:'小计(新-旧)',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'setlDtRng',title:'结算日期范围',width:220,align:'right',halign:'center'},
+								{field:'ifCar',title:'是否直跑车',width:50,align:'left',halign:'center'},
+								{field:'ifShip',title:'是否同城件',width:50,align:'left',halign:'center'},
+								{field:'carExp',title:'广东报表整车称重费第1天',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'carExpAdj',title:'广东报表整车称重费第11天',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'adjTyp',title:'调整方式',width:50,align:'left',halign:'center'},
+								{field:'errTyp',title:'错误类别',width:50,align:'left',halign:'center'},
+								{field:'wgt',title:'重量',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'entrDt',title:'录入时间',width:150,align:'right',halign:'center'},
+								{field:'subdTyp',title:'补贴类型',width:50,align:'left',halign:'center'},
+								{field:'rt',title:'费率',width:120,align:'right',halign:'center',formatter:feeFormatter},
+								{field:'pickScorIfSame',title:'结算公司和条码分配是否一致',width:150,align:'left',halign:'center'}
+				         	]
+				         ],
+				onBeforeLoad:function(){$$.clearSelect(listId);},
+				queryParams:$$.serializeToJson(searchFormId),
+				border: true,
+				nowrap: true,
+				striped: true,
+				pagination:true,
+				rownumbers:true,
+				showFooter:true, 
+				singleSelect:true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar: gridMenuId,
+			    onClickCell: function(index,field,value){
+			    	if(field == 'shipId' || field == 'grtrPkgId' ){
+	      				var rows = $(listTemplate).datagrid('getRows');  
+	      				queryShipmentDtl(value);
+	      			}
+	      		},
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data; 
+				}
+			});
+		}
+		
+	</script>
+</head>
+<body class="easyui-layout">
+	<!-- <div data-options="region:'north', split:false, border:false, collapsible:true"  title="信息查询" style="padding: 0px 0;overflow:hidden;"> -->
+	<div data-options="region:'north', split:false, border:false, collapsible:true"  title="信息查询" style="padding: 0px 0; height: 190px">
+		<div class="area">
+			<!-- <div class="area-title">信息查询</div> -->
+			<div class="area-body">
+				<form id="setl_ship_dtl_searchForm" class="search-form"
+					method="post">
+					<table cellpadding="2" style="width: 100%">
+						<tr>
+							<td align="right" rowspan="4">运<br />单<br />号<br />：
+							</td>
+							<td rowspan="4"><textarea name="textarea" rows="6"
+									id="shipmentNo" name="ship_id"
+									style="color: #CCCCCC; font-size: 13px">请输入您的运单号，最多可输入100个，多个单号请用回车键换行</textarea>
+							</td>
+							<!-- <td align="right">大区：</td>
+						<td>
+							<input type="text" id="area" name="area_id" />
+						</td> -->
+							<td align="right">分部名称：</td>
+							<td><input type="text" id="branch" style="width: 200px;" />
+							</td>
+							<td align="right">分部编码：</td>
+							<td><input type="text" id="orgCode" name="org_id" style="width: 150px"
+								onkeyup="this.value=this.value.replace(/\D/g,'')"
+								onafterpaste="this.value=this.value.replace(/\D/g,'')" /></td>
+							<td align="right">费用大类：</td>
+							<td>
+							<input type="text" id="one_fee_cd" name="one_fee_cd" style="width: 150px;" />
+							</td>
+							<td align="right">费用小类：</td>
+							<td>
+							<input type="text" id="two_fee_cd" name="two_fee_cd" style="width: 150px;" />
+							</td>
+						</tr>
+						<tr>
+							<td align="right">开始日期：</td>
+							<td><input type="text" id="sel_start_dt" name="sel_start_dt"
+								class="easyui-datebox" data-options="" /></td>
+							<td align="right">结束日期：</td>
+							<td><input type="text" id="sel_end_dt" name="sel_end_dt"
+								class="easyui-datebox" data-options="" /></td>
+							<td align="right">揽件业务员：</td>
+							<td><input type="text" id="pick_emp" name="pick_emp" style="width: 150px;" /></td>
+							<td align="right">派件业务员：</td>
+							<td><input type="text" id="delv_emp" name="delv_emp" style="width: 150px;" /></td>
+						</tr>
+						<tr>
+							<td align="right">客户名称：</td>
+							<td><input type="text" id="cust_nm" name="cust_nm" style="width: 150px;" /></td>
+							<td align="right">运输方式：</td>
+							<td><select style="width: 150px" editable="false"
+								id="trans_typ" name="trans_typ" class="easyui-combobox">
+									<option value="">-请选择-</option>
+									<option value="1">汽运</option>
+									<option value="2">航空</option>
+							</select></td>
+							<td align="right">是否直跑车：</td>
+							<td><select style="width: 150px" editable="false"
+								id="if_car" name="if_car" class="easyui-combobox">
+									<option value="">-请选择-</option>
+									<option value="1">直跑车</option>
+									<option value="0">非直跑车</option>
+							</select></td>
+							<td align="right">是否同城件：</td>
+							<td><select style="width: 150px" editable="false"
+								id="if_city" name="if_city" class="easyui-combobox">
+									<option value="">-请选择-</option>
+									<option value="1">同城件</option>
+									<option value="0">非同城件</option>
+							</select></td>
+						</tr>
+						<tr>
+							<td colspan="4" align="center">
+								<input type="checkbox" id="chk_org" name="chk_org" />&nbsp;结算公司和条码分配不一致&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="checkbox" id="chk_wgt" name="chk_wgt" />&nbsp;按5公斤计算&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="checkbox" id="chk_vol" name="chk_vol" />&nbsp;按计泡重量结算
+							</td>
+							<td colspan="4" align="center">
+								<input type="hidden" id="area" name="area_id" value="" /> 
+								<input type="hidden" id="dbct" name="dbct_id" value="" />
+								<a class="easyui-linkbutton" iconCls="icon-search" style="margin-right: 20px; width: 80px; height: 25px" onclick="searchData('setl_ship_dtl_searchData',urlSearch)">查询</a>
+								<a class="easyui-linkbutton" iconCls="icon-reload" style="margin-right: 20px; width: 80px; height: 25px" onclick="searchReset()">重置</a> 
+								<a class="easyui-linkbutton" iconCls="icon-download" style="margin-right: 20px; width: 80px; height: 25px" onclick="exportExcel('setl_ship_dtl_exportEntities',urlExport)">导出</a>
+							</td>
+						</tr>
+					</table>
+				</form>
+			</div>
+		</div>
+	</div>
+	<div data-options="region:'center', split:false, border:false">
+		<div class="area">
+			<div class="area-title">网点对账列表</div>
+			<div class="area-body autoAdapt">
+				<div id="cip_admin_resource_list_menu"></div>
+				<table id="setl_ship_dtl_list" fit="true"></table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

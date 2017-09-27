@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>大数据平台</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="top-content">
+        <div class="top-tab-area">
+            <ul class="tab-all">
+                <li class="tab-list">首页</li>
+                <li class="tab-list">重要指标</li>
+                <li class="tab-list">目标值</li>
+                <li class="tab-list tab-list-active">业务量</li>
+                <li class="tab-list">运输</li>
+                <li class="tab-list">时效</li>
+                <li class="tab-list">质控</li>
+            </ul>
+        </div>
+        <div class="search-btn"></div>
+        <div class="tab-search-input">
+            <div class="search-area">
+                <div class="search-box">
+                    <div class="search-img"></div>
+                    <input class="search-info" id="search-info-area" placeholder="账户搜索">
+                    <div class="search-close"></div>
+                </div>
+                <div class="search-cancel">取消</div>
+            </div>
+        </div>
+    </div>
+    <div class="org-area">
+        <div class="org-select-area">
+            <div class="org-item-left">
+                <span class="org-name">机构</span>
+                <span class="org-name-detail">
+                    <label>
+                        <input class="org-name-input" id="picker-pos" data-value="" data-num="area_id" value="集团" readonly="readonly">
+                        <!--<ins class="arrow-bottom-img"></ins>-->
+                    </label>
+                </span>
+            </div>
+            <div class="org-item-right">
+                <span class="org-name">日期</span>
+                <span class="date-name-detail">
+                    <label>
+                        <input class="org-name-input" id="calender-select" readonly="readonly">
+                        <ins class="arrow-rili-img"></ins>
+                    </label>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="business-area water-remark-area">
+        <div class="business-menu">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">业务量</span>
+            </div>
+            <div class="business-menu-content">
+                <div class="business-menu-item" data-link="traffic-pick-up.html" data-page="lj">
+                    <p class="business-menu-item-name">揽件量<span class="detail-item-hd-price">(件)</span></p>
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num" id="lj-num">***</span>
+                        <div class="business-menu-item-right" id="lj-detail">
+                            <p class="business-menu-item-ratio">日环比
+                                <span class="volume-ratio-area">
+                                    <span class="volume-ratio-info ratio-down-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                </span>
+                            </p>
+                            <p class="business-menu-item-ratio">周同比
+                                <span class="volume-ratio-area">
+                                    <span class="volume-ratio-info ratio-up-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                </span>
+                            </p>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item" data-link="traffic-pick-up.html" data-page="pj">
+                    <p class="business-menu-item-name">派件量<span class="detail-item-hd-price">(件)</span></p>
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num" id="pj-num">***</span>
+                        <div class="business-menu-item-right" id="pj-detail">
+                            <p class="business-menu-item-ratio">日环比
+                                <span class="volume-ratio-area">
+                                    <span class="volume-ratio-info ratio-down-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                </span>
+                            </p>
+                            <p class="business-menu-item-ratio">周同比
+                                <span class="volume-ratio-area">
+                                    <span class="volume-ratio-info ratio-up-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                </span>
+                            </p>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item"  data-link="traffic-pick-up.html" data-page="qs">
+                    <p class="business-menu-item-name">签收量<span class="detail-item-hd-price">(件)</span></p>
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num" id="qj-num">***</span>
+                        <div class="business-menu-item-right" id="qj-detail">
+                            <p class="business-menu-item-ratio">日环比
+                                <span class="volume-ratio-area">
+                                    <span class="volume-ratio-info ratio-down-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                </span>
+                            </p>
+                            <p class="business-menu-item-ratio">周同比
+                                <span class="volume-ratio-area">
+                                    <span class="volume-ratio-info ratio-down-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                </span>
+                            </p>
+                        </div>
+                        <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item" data-link="traffic-sign-info.html" data-page="dq">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="business-menu-item-hd">单日签收率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd" id="day-num">***</span>
+                        </span>
+                        <div class="business-menu-item-right" id="day-detail">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                </div>
+                            </div>
+                        </div>
+                         <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item"  data-link="traffic-sign-info.html" data-page="tq">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="business-menu-item-hd">3日签收率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd" id="day3-num">***</span>
+                        </span>
+                        <div class="business-menu-item-right" id="day3-detail">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-down-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-down-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                </div>
+                            </div>
+                        </div>
+                         <div class="point-next"></div>
+                    </div>
+                </div>
+                <div class="business-menu-item"  data-link="traffic-sign-info.html" data-page="sq">
+                    <div class="business-menu-item-detail">
+                        <span class="business-menu-item-num">
+                            <span class="business-menu-item-hd">7日未签收率<span class="detail-item-hd-price">(%)</span></span>
+                            <span class="business-menu-item-bd" id="day7-num">***</span>
+                        </span>
+                        <div class="business-menu-item-right" id="day7-detail">
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">日环比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                </div>
+                            </div>
+                            <div class="business-item-right-hd">
+                                <p class="business-menu-item-ratio">周同比</p>
+                                <div class="volume-ratio-area">
+                                    <span class="volume-ratio-info-size ratio-up-num">***</span>
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                </div>
+                            </div>
+                        </div>
+                         <div class="point-next"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="business-menu hide-view">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">电子面单占比</span>
+            </div>
+            <div class="business-menu-content">
+                <!--<div class="business-menu-item">-->
+                    <!--<p class="business-menu-item-name">揽件量</p>-->
+                    <!--<div class="business-menu-item-detail">-->
+                        <!--<span class="business-menu-item-num">95,468,421,457</span>-->
+                        <!--<div class="business-menu-item-right">-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-up-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-down-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                        <!--</div>-->
+                        <!--<div class="point-next"></div>-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="business-menu-item">-->
+                    <!--<p class="business-menu-item-name">揽件量</p>-->
+                    <!--<div class="business-menu-item-detail">-->
+                        <!--<span class="business-menu-item-num">95,468,421,457</span>-->
+                        <!--<div class="business-menu-item-right">-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-up-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-down-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                        <!--</div>-->
+                        <!--<div class="point-next"></div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            </div>
+        </div>
+        <div class="business-menu hide-view">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">区域件构成</span>
+            </div>
+            <div class="business-menu-content">
+                <!--<div class="business-menu-item">-->
+                    <!--<p class="business-menu-item-name">揽件量</p>-->
+                    <!--<div class="business-menu-item-detail">-->
+                        <!--<span class="business-menu-item-num">154544</span>-->
+                        <!--<div class="business-menu-item-right">-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-up-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-down-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                        <!--</div>-->
+                        <!--<div class="point-next"></div>-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="business-menu-item">-->
+                    <!--<p class="business-menu-item-name">揽件量</p>-->
+                    <!--<div class="business-menu-item-detail">-->
+                        <!--<span class="business-menu-item-num">95,468,421,457</span>-->
+                        <!--<div class="business-menu-item-right">-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-up-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-down-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                        <!--</div>-->
+                        <!--<div class="point-next"></div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            </div>
+        </div>
+        <div class="business-menu hide-view">
+            <div class="business-menu-top" data-show="false">
+                <span class="business-menu-img business-menu-img-down"></span>
+                <span class="business-menu-name">重量段构成</span>
+            </div>
+            <div class="business-menu-content">
+                <!--<div class="business-menu-item">-->
+                    <!--<p class="business-menu-item-name">揽件量</p>-->
+                    <!--<div class="business-menu-item-detail">-->
+                        <!--<span class="business-menu-item-num">95,468,421,457</span>-->
+                        <!--<div class="business-menu-item-right">-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-up-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-down-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                        <!--</div>-->
+                        <!--<div class="point-next"></div>-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="business-menu-item">-->
+                    <!--<p class="business-menu-item-name">揽件量</p>-->
+                    <!--<div class="business-menu-item-detail">-->
+                        <!--<span class="business-menu-item-num">95,468,421,457</span>-->
+                        <!--<div class="business-menu-item-right">-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-up-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-up"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                            <!--<p class="business-menu-item-ratio">日环比-->
+                                <!--<span class="volume-ratio-area">-->
+                                    <!--<span class="volume-ratio-info ratio-down-num">120.19%</span>-->
+                                    <!--<span class="volume-ratio-img ratio-img-top-down"></span>-->
+                                <!--</span>-->
+                            <!--</p>-->
+                        <!--</div>-->
+                        <!--<div class="point-next"></div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            </div>
+        </div>
+    </div>
+</div>
+<div class="menu-area">
+    <div class="menu-item">
+        <div class="menu-img menu-tab-data menu-tab-active"></div>
+        <p class="menu-name menu-name-active">数据</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-scan"></div>
+        <p class="menu-name">订阅</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-infor"></div>
+        <p class="menu-name">资讯</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-my"></div>
+        <p class="menu-name">我的</p>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getTrafficBaskInfoURL = appId + "/action/bas_busi/getBusinessVolume.do";
+    var sendClass;
+    $(function() {
+        init();
+    });
+    function init() {
+        getNum();    //用于显示网点
+        viewJs();
+        setView();
+        linkTab();  //导航栏设置
+        getBaskInfo(); //初始化获取数据
+        commonFun(); //公用方法
+    }
+
+    function getBaskInfo() {
+        getBaskInfoDetail();   //获取目标值
+    }
+
+    function getBaskInfoDetail() {
+        $.showLoading("加载中");
+        sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "curDate": $("#calender-select").val()
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTrafficBaskInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addListInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("***");
+                    $(".ratio-img-top-up,.ratio-img-top-down").hide();
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    function  addListInfo(data) {
+        $("#lj-num").addClass("ratio-"+ changeData(data.basSBusiPick.daysFrom,"symbol") +"-num").text(formatNumberRgx(data.basSBusiPick.pickCnt));
+        var ljDetail = "<p class='business-menu-item-ratio'>日环比<span class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.basSBusiPick.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiPick.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiPick.daysFrom,"symbol") +"'></span></span></p><p class='business-menu-item-ratio'>周同比<span class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.basSBusiPick.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiPick.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiPick.weeksFrom,"symbol") +"'></span></span></p>";
+        $("#lj-detail").empty().append(ljDetail);
+        $("#pj-num").addClass("ratio-"+ changeData(data.sendAQuantity.daysFrom,"symbol") +"-num").text(formatNumberRgx(data.sendAQuantity.delvCnt));
+        var pjDetail = "<p class='business-menu-item-ratio'>日环比<span class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.sendAQuantity.daysFrom,"symbol") +"-num'>"+ changeData(data.sendAQuantity.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.sendAQuantity.daysFrom,"symbol") +"'></span></span></p><p class='business-menu-item-ratio'>周同比<span class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.sendAQuantity.weeksFrom,"symbol") +"-num'>"+ changeData(data.sendAQuantity.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.sendAQuantity.weeksFrom,"symbol") +"'></span></span></p>";
+        $("#pj-detail").empty().append(pjDetail);
+        $("#qj-num").addClass("ratio-"+ changeData(data.signAQuantity.daysFrom,"symbol") +"-num").text(formatNumberRgx(data.signAQuantity.cfm_rcvCnt));
+        var qjDetail = "<p class='business-menu-item-ratio'>日环比<span class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.signAQuantity.daysFrom,"symbol") +"-num'>"+ changeData(data.signAQuantity.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.signAQuantity.daysFrom,"symbol") +"'></span></span></p><p class='business-menu-item-ratio'>周同比<span class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.signAQuantity.weeksFrom,"symbol") +"-num'>"+ changeData(data.signAQuantity.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.signAQuantity.weeksFrom,"symbol") +"'></span></span></p>";
+        $("#qj-detail").empty().append(qjDetail);
+        $("#day-num").addClass("ratio-"+ changeData(data.basSBusiDelvTmp0.daysFrom,"symbol") +"-num").text(data.basSBusiDelvTmp0.cfm_rcvrt);
+        var dayDetail = "<div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info-size ratio-"+ changeData(data.basSBusiDelvTmp0.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelvTmp0.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelvTmp0.daysFrom,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info-size ratio-"+ changeData(data.basSBusiDelvTmp0.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelvTmp0.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelvTmp0.weeksFrom,"symbol") +"'></span></div></div>"
+        $("#day-detail").empty().append(dayDetail);
+        $("#day3-num").addClass("ratio-"+ changeData(data.basSBusiDelv3.daysFrom,"symbol") +"-num").text(data.basSBusiDelv3.cfm_rcv_rt3);
+        var day3Detail = "<div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info-size ratio-"+ changeData(data.basSBusiDelv3.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelv3.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelv3.daysFrom,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info-size ratio-"+ changeData(data.basSBusiDelv3.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelv3.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelv3.weeksFrom,"symbol") +"'></span></div></div>"
+        $("#day3-detail").empty().append(day3Detail);
+        $("#day7-num").addClass("ratio-"+ changeData(data.basSBusiNoDelv7.daysFrom,"symbol") +"-num").text(data.basSBusiNoDelv7.cfm_rcv_rt7);
+        var day7Detail = "<div class='business-item-right-hd'><p class='business-menu-item-ratio'>日环比</p><div class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info-size ratio-"+ changeData(data.basSBusiNoDelv7.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiNoDelv7.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiNoDelv7.daysFrom,"symbol") +"'></span></div></div><div class='business-item-right-hd'><p class='business-menu-item-ratio'>周同比</p><div class='volume-ratio-area'><span class='margin-left-2 volume-ratio-info-size ratio-"+ changeData(data.basSBusiNoDelv7.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiNoDelv7.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiNoDelv7.weeksFrom,"symbol") +"'></span></div></div>"
+        $("#day7-detail").empty().append(day7Detail);
+    }
+
+
+    function viewJs() {
+        var orgShowName = "集团";    //为了获取集团名称
+        $.each(showOrgName,function(index,val) {
+            if(val != "无") {
+                orgShowName = val;
+            }
+        });
+        $("#picker-pos").val(orgShowName).attr({"data-value":showOrgCode,"data-num":showOrgType});
+
+        //下拉展现数据
+        $(".business-menu-top").on("click",function() {
+            if($(this).attr("data-show") == "false") {
+                $(this).attr("data-show","true").children(".business-menu-img").removeClass("business-menu-img-down").addClass("business-menu-img-up").end().next().slideDown(200);
+             //   $(this).parent(".business-menu").siblings().find(".business-menu-top").attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);   //可以出发其他关闭
+            }else {
+                $(this).attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);
+            }
+        });
+
+        //为了使第一个展开
+        $(".business-menu-top").eq(0).trigger("click");
+
+        //点击进入详情
+        $(".business-menu-item").on("click",function() {
+            var linkHref = $(this).attr("data-link");
+            if(linkHref != null) {
+                window.location.href = linkHref + "?sendType=" + sendClass + "&dataOrg=" + $("#picker-pos").attr("data-value") + "&pageInfo=" + $(this).attr("data-page");
+            }
+        })
+    }
+</script>
+</body>
+</html>

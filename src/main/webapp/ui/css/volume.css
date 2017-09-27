@@ -1,0 +1,291 @@
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, p, blockquote, th, td {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+ol,ul,li{
+    list-style:none;
+}
+.container{
+	width: 100%;
+	height: auto;
+	position: relative;
+}
+header{
+	height:2.8em;
+	line-height: 2.8em;
+	text-align:center;
+	background-color: #ffcc33;
+	color: #000;
+}
+
+.not-display {
+	display: none;
+}
+/*navigation*/
+.clearfix:after {
+	/*overflow: hidden;
+	zoom:1;*/
+	content:".";
+	display:block;
+	height:0;
+	clear:both;
+	visibility:hidden
+}
+.nav{
+	overflow: hidden;
+	zoom:1;
+}
+
+.nav li{
+	float: left;
+	width: 20%;
+	height: 40px;
+	line-height: 40px;
+	text-align:center;
+	font-weight: bold;
+	margin-bottom: 1px;
+}
+
+.current{
+	border-bottom: 2px solid #c91a2e;
+	color: #ed1c24;
+}
+.chosen{
+	overflow: hidden;
+	zoom:1;
+}
+.chosen li{
+	float: left;
+	width: 50%;
+	height: 40px;
+	line-height: 40px;
+	font-size:0.8em;
+	border-bottom: 1px solid #bcbcbc;
+	border-top: 1px solid #bcbcbc;
+	padding-left: 5px;
+}
+.chosen-orga::before{
+
+}
+.orga-input,.date-input{
+	width: 140px;
+	height: 22px;
+	border: 1px solid #dcdcdc;
+	text-align: center;
+}
+
+/*content*/
+
+.content-data {
+	margin-bottom: 70px;
+}
+.content-menu {
+	height: auto;
+	line-height: 40px;
+	border-bottom: 1px solid #ffffff;
+	padding: 0 10px;
+	background: #f7f7f7;
+	list-style: none;
+}
+.menu-border-top {
+	border-top: 1px solid #dcdcdc;
+}
+.content-li-icon {
+	/*font-family:"iconfont" !important;*/
+    font-size:0.9em;
+	color: #c91a2e;
+	display:inline-block;
+	padding: auto 10px;
+	width: 25px;
+}
+.grids{
+	/*display: inline-block;*/
+	width: 95%;
+	/*border-top: 1px solid #dcdcdc;*/
+	margin: 4px auto;
+	overflow: hidden;
+}
+.grid{
+	position: relative;
+	float: left;
+	width: 33.3%;
+	/*background-color:#ccc;*/
+	min-height:90px;
+	padding: 8px 0 5px;
+	box-sizing: border-box;
+}
+.grid-bottom {
+	border-bottom: 2px solid #f3f0f0;
+}
+.grid:not(:nth-child(3n)):after {
+	content: '';
+	position: absolute;
+	top: 15%;
+	right: 0;
+	width: 1px;
+	height: 77%;
+	background: #efefef;
+	box-shadow: 1px 0px 0px #e6e0e0, -1px 0 1px #e8e6e6;
+}
+.content .grid-special{
+	border: none;
+}
+.content .grid>span{
+	display: block;
+	width: 100%;
+	line-height: 1.2em;
+	text-align: center;
+}
+.grid-tr1{
+	font-size: 0.8em;
+}
+.grid-tr2{
+	font-size: 1.2em;
+	font-weight: bold;
+	color: #22b14c;
+	padding: 6px 0;
+}
+.grid-tr3{
+	font-size: 0.5em;
+	color: #22b14c;
+}
+.grid-tr4{
+	font-size: 0.5em;
+	color: #ed1c24;
+}
+.grid-tr5{
+	font-size: 1.2em;
+	font-weight: bold;
+	padding: 12px 0;
+}
+
+/****collect parcel*****/
+
+.content-menu-trend {
+	float: left;
+	width: 25%;
+	height: 40px;
+	line-height: 40px;
+	text-align:center;
+	font-weight: bold;
+	margin-bottom: 1px;
+}
+.summary {
+	width: 95%;
+	margin: 1px auto;
+	overflow: hidden;
+}
+
+.summary-current {
+	position: relative;
+	float: left;
+	width: 45%;
+	padding: 1px 13px 5px;
+	box-sizing: border-box;
+}
+.summary-history {
+	position: relative;
+	float: left;
+	width: 45%;
+	padding: 1px 13px 5px;
+	box-sizing: border-box;
+	margin-top:10px;
+}
+
+.summary-total {
+	font-size: 1.3em;
+	color: #22b14c;
+	font-weight: bold;
+}
+
+.summary-day {
+	font-size: 0.5em;
+	color: #22b14c;
+}
+.summary-week {
+	font-size: 0.5em;
+	color: #ed2e26;
+}
+
+.summary-history-data {
+	font-size: 0.6em;
+}
+.bold {
+	font-weight: bold;
+}
+
+.red {
+	color: #ed2e26;
+}
+
+.summary-field {
+	position: relative;
+	width: 30%;
+	box-sizing: border-box;
+	margin: 0% 8% 0% 0%;
+	display: inline-block;
+}
+.content-menu-rank {
+	float: left;
+	width: 35%;
+	height: 40px;
+	line-height: 40px;
+	text-align:center;
+	font-weight: bold;
+	margin-bottom: 1px;
+}
+
+.table-level {
+	margin-top: 6px;
+	width: 100%;
+}
+
+.table-level td{
+	text-align: center;
+	border-bottom: 1px solid #a5a5a5;
+	padding: 13px;
+}
+.table-level th{
+	text-align: center;
+	background: #f7f7f7;
+	padding:7px;
+}
+
+.trend-chart {
+	/*display: inline-block;*/
+	width: 100%;
+	/*border-top: 1px solid #dcdcdc;*/
+	margin: 4px auto;
+	overflow: hidden;
+	height: 150px;
+}
+/****footer*****/
+
+.tabbar{
+	display: flex;
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	text-align: center;
+	background-color: #383f45;
+}
+.tabbar-item{
+	/*display: block;*/
+	text-decoration: none;
+	flex: 1;
+	color: #fff;
+	font-size: 0.8em;
+	padding-bottom: 5px;
+
+}
+.tabbar-item-on{
+    color: #d91e2e;
+}
+.tabbar-icon{
+	padding-top: 5px ;
+}
+
+

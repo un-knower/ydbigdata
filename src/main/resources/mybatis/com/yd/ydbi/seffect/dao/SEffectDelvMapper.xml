@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.seffect.dao.SEffectDelvMapper" >
+  	<sql id="condition_filter">
+		<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+			AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "1" '>
+			AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "2" '>
+			AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "3" '>
+			AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "5" '>
+			AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+		</if>
+	</sql>
+	<!-- #签收时效_日环比_周同比 -->
+	<select id="getSeffectDelv" parameterType="map" resultType="map">
+		#签收时效_日环比_周同比
+		select 
+			a.effect_Delv effect_Delv
+			,(a.effect_Delv-b.ld_effect_Delv)/b.ld_effect_Delv daysFrom
+			,(a.effect_Delv-c.lw_effect_Delv)/c.lw_effect_Delv weeksFrom
+		from
+			( select 
+				(a.odr_Delv_tm/a.odr_Delv_cnt)/60 effect_Delv
+			from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on a.odr_Delv_dbct = k.org_cd
+			<where> a.odr_Delv_tm = #{curDate}
+			<include refid="condition_filter"/>
+    		</where>
+			) a,
+			( select 
+				 (a.odr_Delv_tm/a.odr_Delv_cnt)/60 ld_effect_Delv
+			from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on a.odr_Delv_dbct = k.org_cd
+			<where> a.odr_Delv_tm = DATE_SUB(#{curDate},INTERVAL 1 DAY)
+			<include refid="condition_filter"/>
+     		</where>
+			) b,
+		   (select 
+				(a.odr_Delv_tm/a.odr_Delv_cnt)/60  lw_effect_Delv 
+			from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on a.odr_Delv_dbct = k.org_cd
+			<where> a.odr_Delv_tm = DATE_SUB(#{curDate},INTERVAL 1 WEEK)
+			<include refid="condition_filter"/>
+    		</where>		
+		   ) c
+	</select>
+	
+	<!-- # 签收时效_日月周平均 -->
+	<select id="selectDwmAvgAmount" parameterType="map" resultType="map">
+		# 签收时效_日月周平均
+		select 
+			a.effect_Delv_last_day, b.effect_Delv_week_avg, c.effect_Delv_month_avg
+		FROM
+		(SELECT 
+			(a.odr_Delv_tm / a.odr_Delv_cnt) / 60 effect_Delv_last_day
+		FROM
+			ydbi.bas_s_bigdata_effect_Delv a
+		INNER JOIN ydbi.org_inf k ON a.odr_Delv_dbct = k.org_cd
+		WHERE
+			a.odr_Delv_tm = DATE_SUB('2017-07-21',INTERVAL 1 DAY)
+		) a,
+		(SELECT 
+			 DATE_FORMAT(a.odr_Delv_tm,'%Y'),
+			(sum(a.odr_Delv_tm) / sum(a.odr_Delv_cnt)) / 60 effect_Delv_week_avg
+		FROM
+			ydbi.bas_s_bigdata_effect_Delv a
+		INNER JOIN ydbi.org_inf k ON a.odr_Delv_dbct = k.org_cd
+		WHERE
+			a.odr_Delv_tm > DATE_SUB('2017-07-21',INTERVAL 1 WEEK)
+		and a.odr_Delv_tm &lt;= '2017-07-21'
+		GROUP BY 1
+		) b,
+		(SELECT 
+			 DATE_FORMAT(a.odr_Delv_tm,'%Y-%m'),
+			(sum(a.odr_Delv_tm) / sum(a.odr_Delv_cnt)) / 60 effect_Delv_month_avg
+		FROM
+			ydbi.bas_s_bigdata_effect_Delv a
+		INNER JOIN ydbi.org_inf k ON a.odr_Delv_dbct = k.org_cd
+		WHERE
+			a.odr_Delv_tm > DATE_SUB('2017-07-21',INTERVAL 1 MONTH)
+		and a.odr_Delv_tm &lt;= '2017-07-21'
+		GROUP BY 1) c
+	</select>
+	
+	<!-- 签收时效_日趋势图 -->
+	<select id="seffectDelvDTrend" parameterType="map" resultType="map">
+		SELECT
+			a.ymd ymd,
+			SUM(a.effect_Delv) avtiVal,
+			SUM(b.effect_Delv_last_week) sameTiVal
+		FROM
+		(SELECT
+				a.odr_Delv_dt ymd,
+				sum(a.odr_Delv_tm)/sum(a.odr_Delv_cnt) AS effect_Delv
+			FROM
+				ydbi.bas_s_bigdata_effect_Delv a INNER JOIN org_inf k ON a.odr_Delv_dbct = k.Org_cd
+			WHERE
+				a.odr_Delv_dt > DATE_ADD('2017-07-21', INTERVAL - 15 DAY)
+			AND a.odr_Delv_dt &lt;= '2017-07-21'
+			AND k.start_tm &lt;= a.odr_Delv_dt
+			AND k.end_tm > a.odr_Delv_dt
+			GROUP BY ymd ) a LEFT JOIN 
+			(SELECT
+				date_add(a.odr_Delv_dt, INTERVAL 7 DAY) AS ymd,
+				sum(a.odr_Delv_tm)/sum(a.odr_Delv_cnt) AS effect_Delv_last_week
+			FROM
+				ydbi.bas_s_bigdata_effect_Delv a INNER JOIN org_inf k ON a.odr_Delv_dbct = k.Org_cd
+			WHERE
+				a.odr_Delv_dt > date_add(DATE_ADD('2107-07-21', INTERVAL - 15 DAY),INTERVAL - 7 DAY)
+			AND a.odr_Delv_dt &lt;= date_add('2107-07-21', INTERVAL - 7 DAY)
+			AND k.start_tm &lt;= a.odr_Delv_dt
+			AND k.end_tm > a.odr_Delv_dt
+			GROUP BY ymd
+			) b on a.ymd = b.ymd
+		GROUP BY ymd
+	</select>
+	
+	 <!-- 签收时效(周度趋势) -->
+	 <select id="seffectDelvWTrend" parameterType="map" resultType="map">
+		select 
+			CONCAT(DATE_FORMAT(odr_Delv_dt,'%Y'),'-',WEEKOFYEAR(odr_Delv_dt)) yweek,
+			round(sum(a.odr_Delv_tm)/sum(a.odr_Delv_cnt)*100,2) avtiVal,
+			subdate(odr_Delv_dt,date_format(odr_Delv_dt, '%w') - -7) theDate
+		from ydbi.bas_s_bigdata_effect_Delv a
+		INNER JOIN org_inf k
+		  			ON a.odr_Delv_dbct = k.Org_Cd
+		<where> a.odr_Delv_dt >= DATE_ADD(subdate(#{curDate},date_format(#{curDate},'%w')-1), INTERVAL - 7 WEEK)
+			AND a.odr_Delv_dt &lt;= subdate(#{curDate},date_format(#{curDate},'%w')-7)
+		<include refid="condition_filter"/>
+		</where>
+		GROUP BY 1
+	 </select>
+	 
+	<!-- 签收时效(月度趋势) -->
+	<select id="seffectDelvMTrend" parameterType="map" resultType="map">
+		SELECT a.ym,round(a.effect_Delv,2) monthSameTime,round(b.effect_Delv,2) activeValue,b.theDate
+		from
+			(select 
+				DATE_FORMAT(SUBDATE(ymd,INTERVAL -1 MONTH),'%Y-%m')ym,
+				effect_Delv
+			from(SELECT 
+					DATE_FORMAT(odr_Delv_dt, '%Y-%m-%d') ymd,
+					SUM(a.odr_Delv_tm)/SUM(a.odr_Delv_cnt)*100 effect_Delv
+				FROM 
+					ydbi.bas_s_bigdata_effect_Delv a
+				INNER JOIN org_inf k ON a.odr_Delv_dbct = k.Org_Cd
+				<where> 
+					a.odr_Delv_dt >= DATE_ADD(
+						DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+						INTERVAL - 6 MONTH
+					)
+				AND a.odr_Delv_dt &lt; DATE_ADD(
+					DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+					INTERVAL 0 MONTH
+				)
+				<include refid="condition_filter"/>
+		    	</where>
+				GROUP BY ymd 
+				) a
+				where SUBSTR(a.ymd,-2) = SUBSTR(#{curDate},-2)) a ,
+				
+				(SELECT 
+					DATE_FORMAT(odr_Delv_dt, '%Y-%m') ym,
+					SUM(a.odr_Delv_tm)/SUM(a.odr_Delv_cnt)*100 effect_Delv,
+					DATE_ADD(
+						DATE_FORMAT(odr_Delv_dt, '%Y-%m-%01'),
+						INTERVAL - 1 MONTH
+					) theDate
+				FROM 
+					ydbi.bas_s_bigdata_effect_Delv a
+				INNER JOIN org_inf k ON a.odr_Delv_dbct = k.Org_Cd
+				<where>
+					a.odr_Delv_dt >= DATE_ADD(
+						DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+						INTERVAL - 5 MONTH
+					)
+				AND a.odr_Delv_dt &lt; DATE_ADD(
+					DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+					INTERVAL 1 MONTH
+				)
+				<include refid="condition_filter"/>
+		    	</where>
+				GROUP BY ym )b 
+			where a.ym = b.ym
+	  </select>
+	  
+	  
+  
+  <!-- 签收时效(季度趋势) -->
+  <select id="seffectDelvQTrend" parameterType="map" resultType="map">
+		select 
+			a.yq yq,round(a.effect_Delv,2) actiVal,a.theDate,round(ifnull(c.effect_Delv,0),2) qauterSameTime
+		from
+		(SELECT
+			CONCAT(
+				DATE_FORMAT(odr_Delv_dt, '%Y'),
+				'-',
+				QUARTER (odr_Delv_dt)
+			) yq,
+			SUM(a.odr_Delv_tm)/SUM(a.odr_Delv_cnt)*100 effect_Delv,
+			DATE_ADD(
+				date(
+					concat(
+						YEAR (odr_Delv_dt),
+						'-',
+						elt(QUARTER(odr_Delv_dt), 1, 4, 7, 10),
+						'-',
+						1
+					)
+				),
+				INTERVAL - 1 QUARTER
+			) theDate
+		FROM
+			ydbi.bas_s_bigdata_effect_Delv a
+		INNER JOIN org_inf k ON a.odr_Delv_dbct = k.Org_Cd
+		<where>
+			concat(year(a.odr_Delv_dt),'-',QUARTER(a.odr_Delv_dt)) >= concat(year(DATE_ADD(DATE_FORMAT(#{curDate}, '%Y-%m-%d'),INTERVAL - 1 YEAR)),'-',QUARTER(DATE_ADD(DATE_FORMAT(#{curDate}, '%Y-%m-%d'),INTERVAL - 1 YEAR)))
+		AND concat(year(a.odr_Delv_dt),'-',QUARTER(a.odr_Delv_dt)) &lt;= concat(year(#{curDate}),'-',QUARTER(#{curDate}))
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY yq )a LEFT JOIN
+		(select 
+			CONCAT(SUBSTR(b.yq,1,4)+1,SUBSTR(b.yq,-2)) yq,b.effect_Delv
+		from 
+		(SELECT 
+			CONCAT(
+				DATE_FORMAT(odr_Delv_dt, '%Y'),
+				'-',
+				QUARTER (odr_Delv_dt)
+			) yq,
+			SUM(a.odr_Delv_tm)/SUM(a.odr_Delv_cnt)*100 effect_Delv
+		FROM
+			ydbi.bas_s_bigdata_effect_Delv a
+		INNER JOIN org_inf k ON a.odr_Delv_dbct = k.Org_Cd
+		<where>
+			concat(year(a.odr_Delv_dt),'-',QUARTER(a.odr_Delv_dt)) > concat(year(DATE_ADD(DATE_FORMAT(#{curDate}, '%Y-%m-%d'),INTERVAL - 2 YEAR)),'-',QUARTER(DATE_ADD(DATE_FORMAT(#{curDate}, '%Y-%m-%d'),INTERVAL - 2 YEAR)))
+		AND concat(year(a.odr_Delv_dt),'-',QUARTER(a.odr_Delv_dt)) &lt;= concat(year(DATE_ADD(DATE_FORMAT(#{curDate}, '%Y-%m-%d'),INTERVAL - 1 YEAR)),'-',QUARTER(DATE_ADD(DATE_FORMAT(#{curDate}, '%Y-%m-%d'),INTERVAL - 1 YEAR)))
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY yq )b)c
+		on a.yq = c.yq
+  </select>
+  <!-- 签收时效占比(订单签收量占比) -->
+  <select id="seffectDelvCp" parameterType="map" resultType="map">
+		select 
+			round(a.odr_Delv_cnt_0_3/b.odr_Delv_cnt,2) odr_Delv_cnt_0_3_cp,
+			round(a.odr_Delv_cnt_3_6/b.odr_Delv_cnt,2) odr_Delv_cnt_3_6_cp,
+			round(a.odr_Delv_cnt_6_9/b.odr_Delv_cnt,2) odr_Delv_cnt_6_9_cp,
+			round(a.odr_Delv_cnt_9_24/b.odr_Delv_cnt,2) odr_Delv_cnt_9_24_cp,
+			round(a.odr_Delv_cnt_24/b.odr_Delv_cnt,2) odr_Delv_cnt_24_cp
+		from 
+		(select 
+		  a.odr_Delv_dt,
+		  a.odr_Delv_cnt odr_Delv_cnt_0_3, 
+		  b.odr_Delv_cnt odr_Delv_cnt_3_6,
+		  c.odr_Delv_cnt odr_Delv_cnt_6_9,
+		  d.odr_Delv_cnt odr_Delv_cnt_9_24,
+		  e.odr_Delv_cnt odr_Delv_cnt_24
+		from 
+		(select a.odr_Delv_dt, sum(a.odr_Delv_cnt) odr_Delv_cnt
+		from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+		where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>=0
+		and (a.odr_Delv_tm/a.odr_Delv_cnt)&lt;3
+		and a.odr_Delv_dt = '2017-07-21'
+		GROUP BY a.odr_Delv_dt) a LEFT JOIN 
+		
+		(select a.odr_Delv_dt, sum(a.odr_Delv_cnt) odr_Delv_cnt
+		from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+		where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>=3
+		and (a.odr_Delv_tm/a.odr_Delv_cnt)&lt;6
+		and a.odr_Delv_dt = '2017-07-21' 
+		GROUP BY a.odr_Delv_dt) b on a.odr_Delv_dt = b.odr_Delv_dt LEFT JOIN 
+		
+		(select a.odr_Delv_dt, sum(a.odr_Delv_cnt) odr_Delv_cnt
+		from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+		where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>=6
+		and (a.odr_Delv_tm/a.odr_Delv_cnt)&lt;9
+		and a.odr_Delv_dt = '2017-07-21'
+		GROUP BY 1) c on b.odr_Delv_dt = c.odr_Delv_dt LEFT JOIN 
+		
+		(select a.odr_Delv_dt, sum(a.odr_Delv_cnt) odr_Delv_cnt
+		from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+		where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>=9
+		and (a.odr_Delv_tm/a.odr_Delv_cnt)&lt;24
+		and a.odr_Delv_dt = '2017-07-21'
+		GROUP BY 1) d ON c.odr_Delv_dt = d.odr_Delv_dt LEFT JOIN 
+		
+		(select a.odr_Delv_dt, sum(a.odr_Delv_cnt) odr_Delv_cnt
+		from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+		where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>=24
+		and a.odr_Delv_dt = '2017-07-21'
+		GROUP BY 1) e ON d.odr_Delv_dt = e.odr_Delv_dt
+		) a LEFT JOIN 
+		(select a.odr_Delv_dt, sum(a.odr_Delv_cnt) odr_Delv_cnt
+		from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+		and a.odr_Delv_dt = '2017-07-21'
+		GROUP BY 1) b on a.odr_Delv_dt = b.odr_Delv_dt
+  </select>
+  
+  <!-- 签收时效(机构_时效排名) -->
+  <select id="seffectDelvSort" parameterType="map" resultType="map">
+	select  
+		k.grtr_dist_nm,
+		a.odr_Delv_dt, 
+		sum(a.odr_Delv_tm)/sum(a.odr_Delv_cnt) effect_Delv_cnt
+	from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+	and a.odr_Delv_dt = '2017-07-21'
+	GROUP BY 1
+	ORDER BY effect_Delv_cnt desc
+  </select>
+  
+  <!-- 签收时效(最慢10城市) -->
+  <select id="seffectPicSlowest10City" parameterType="map" resultType="map">
+	select 
+		k.city_nm,
+		a.odr_Delv_dt, 
+		sum(a.odr_Delv_tm)/sum(a.odr_Delv_cnt) effect_Delv_cnt
+	from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+	and a.odr_Delv_dt = '2017-07-21'
+	GROUP BY 1
+	ORDER BY effect_Delv_cnt desc
+	LIMIT 0,10
+  </select>
+  
+  <!-- 签收时效(超时占比最高10城市) -->
+  <select id="seffectDelvHighestOvertimeCp10City" parameterType="map" resultType="map">
+	SELECT
+		a.city_nm,
+		a.odr_Delv_cnt/b.odr_Delv_cnt over_time_cp,
+		a.odr_Delv_cnt
+	from 
+	(select 
+		k.city_nm,
+		a.odr_Delv_dt, 
+		sum(a.odr_Delv_cnt) odr_Delv_cnt
+	from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+	where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>8
+	and a.odr_Delv_dt = '2017-07-21'
+	GROUP BY 1) a LEFT JOIN 
+	
+	(select 
+		k.city_nm,
+		a.odr_Delv_dt, 
+		sum(a.odr_Delv_cnt) odr_Delv_cnt
+	from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+	where  a.odr_Delv_dt = '2017-07-21'
+	GROUP BY 1) b on a.odr_Delv_dt = b.odr_Delv_dt
+	ORDER BY over_time_cp DESC
+	LIMIT 0,10
+  </select>
+  
+  <!-- 签收时效(超时订单最高10城市) -->
+  <select id="seffectDelvHighestOvertimeOder10City" parameterType="map" resultType="map">
+	SELECT
+		a.city_nm,
+		a.odr_Delv_cnt/b.odr_Delv_cnt over_time_cp,
+		a.odr_Delv_cnt
+	from 
+	(select 
+		k.city_nm,
+		a.odr_Delv_dt, 
+		sum(a.odr_Delv_cnt) odr_Delv_cnt
+	from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+	where (a.odr_Delv_tm/a.odr_Delv_cnt)/60>8
+	and a.odr_Delv_dt = '2017-07-21'
+	GROUP BY 1) a LEFT JOIN 
+	
+	(select 
+		k.city_nm,
+		a.odr_Delv_dt, 
+		sum(a.odr_Delv_cnt) odr_Delv_cnt
+	from ydbi.bas_s_bigdata_effect_Delv a INNER JOIN ydbi.org_inf k on k.org_cd = a.odr_Delv_dbct
+	where  a.odr_Delv_dt = '2017-07-21'
+	GROUP BY 1) b on a.odr_Delv_dt = b.odr_Delv_dt
+	ORDER BY odr_Delv_cnt DESC
+	LIMIT 0,10
+  </select>
+</mapper>

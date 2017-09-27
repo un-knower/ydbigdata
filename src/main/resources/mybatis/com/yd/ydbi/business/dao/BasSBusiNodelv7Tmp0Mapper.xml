@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.business.dao.BasSBusiNodelv7Tmp0Mapper" >
+  <resultMap id="BasSBusiNodelv7Tmp0Map" type="com.yd.ydbi.business.model.BasSBusiNodelv7Tmp0" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="nodelv_dt_7" property="nodelvDt7" jdbcType="DATE" />
+    <result column="pick_site_14" property="pickSite14" jdbcType="INTEGER" />
+    <result column="pick_dbct_14" property="pickDbct14" jdbcType="INTEGER" />
+    <result column="pick_cnt" property="pickCnt" jdbcType="BIGINT" />
+    <result column="nodelv_cnt3" property="nodelvCnt3" jdbcType="BIGINT" />
+    <result column="nodelv_7_week" property="nodelv7Week" jdbcType="TIMESTAMP" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, nodelv_dt_7, pick_site_14, pick_dbct_14, pick_cnt, nodelv_cnt3, nodelv_7_week
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BasSBusiNodelv7Tmp0Map" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from bas_s_busi_nodelv_7_tmp0
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  
+</mapper>

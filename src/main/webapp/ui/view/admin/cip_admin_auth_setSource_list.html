@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<style type="text/css">
+.area{
+	height:100%;
+}
+.area .area-title{
+	font-size:12px;
+	padding:0px;
+}
+.area .area-body{	
+	background-color: white;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	/*IE 7 AND 8 DO NOT SUPPORT BORDER RADIUS*/
+	-moz-box-shadow: 0px 0px 3px #c0c0c0;
+	-webkit-box-shadow: 0px 0px 3px #c0c0c0;
+	box-shadow: 0px 0px 3px #c0c0c0;
+	padding:10px 10px 2px 10px;
+	border:1px solid #d2d2d2;	
+}
+.button-section{
+    text-align:right; 
+	margin-top:5px;
+	margin-right:20px
+}
+</style>
+<script type="text/javascript">
+	var objectName = '权限对象授权配置';
+	var listTemplate = '#cip_admin_auth_setSource_list';
+	var listId = "cip_admin_auth_setSource_list";
+	var formSearchTemplate = '#cip_admin_auth_act2obj_searchForm';
+	var searchFormId = "cip_admin_auth_act2obj_searchForm";
+	var gridMenuId = '#cip_admin_auth_setSource_list_menu';
+	var urlSearch = appId
+			+ '/actions/admin_auth_perTree/searchSource.do?actionId=cip_admin_auth_perTree_searchSource&dataArr=';
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var pageId = 'cip_admin_auth_setSource_list';
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {
+		"cip_admin_auth_act2obj_searchData" : urlSearch,
+	}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+	var isDatagridLoaded = false;
+	var today = getToday();
+	var nodeIdArr = [];
+	var dataArr = [];
+	var obj_attr_id = "";
+	var obj_id = "";
+	var root_node_id = "";
+	$(function() {
+		//loadCompanyCombobox();
+		//loadCombobox();
+		init();
+		getAuthButtons(pageId, gridMenuId, authActions, expellActions);
+		loadDatagrid();
+
+	});
+	function init() {
+		var data = $$.QueryString("dataArr");
+		dataArr = data.split(",");
+		root_node_id = dataArr[0];//资源根节点
+		obj_attr_id = dataArr[1];//权限对象id
+		obj_id = dataArr[2];//权限对象属性id 
+
+	}
+	function doAction(pageId, buttonId, actionUrl) {
+		if (authActions.hasOwnProperty(buttonId)) {
+			if (buttonId.indexOf('updataSource') > 0) {
+				updataSource(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('searchSource') > 0) {
+				searchSource(buttonId, appId + actionUrl);
+			} else {
+				//默认操作
+				var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"
+						+ objectName);
+				if (selectRow) {
+					var tempUrl = '';
+					tempUrl = tempUrl + '&obj_attr_id=' + selectRow.obj_attr_id;
+					tempUrl = tempUrl + '&obj_id=' + selectRow.obj_id;
+					tempUrl = tempUrl + '&resource_id=' + selectRow.resource_id;
+					tempUrl = tempUrl + '&root_node_id='
+							+ selectRow.root_node_id;
+					tempUrl += "&actionUrl=" + appId + actionUrl + "&tableId="
+							+ listId + "&refActionId=" + buttonId;
+					$$.openJcdfDialog(urlActionForm + tempUrl, '操作'
+							+ objectName, 500, 600);
+				}
+			}
+		} else {
+			alert('当前用户没有该操作授权!');
+		}
+	};
+	/**------------------批量修改属性值来源------------------------**/
+
+	function updataSource(buttonId, actionUrl) {
+		var checkeds = $(listTemplate).datagrid('getChecked');
+		var length = checkeds.length;
+		var moveUserAry = [];
+		for (var i = 0; i < length; i++) {
+			var resource_id = checkeds[i].resource_id;
+			moveUserAry.push(resource_id);
+		}
+		if (length == 0) {
+			$$.showJcdfMessager('提示消息', "请选择要修改属性值来源的数据资源");
+			return;
+		}
+		/* $('#formWin').dialog({
+			title : '修改属性值来源',
+			width : 500,
+			height : 350,
+			closed : false,
+			cache : false,
+			modal : true
+		}); */
+		var updateFormUrl = "cip_admin_auth_setSource_form.html?actionId=cip_admin_auth_setSource_form&mode=edit&formId=formWin"
+				+ "&obj_attr_id="
+				+ obj_attr_id
+				+ "&obj_id="
+				+ obj_id
+				+ "&root_node_id=" + root_node_id;
+		$$.openJcdfDialog(updateFormUrl + "&tableId=" + listId + "&dataArr="+ moveUserAry, '修改属性值来源',500, 630);
+				
+		/* $('#ifream').attr(
+				"src",
+				updateFormUrl + "&tableId=" + listId + "&dataArr="
+						+ moveUserAry); */
+
+	}
+	/**------------------关闭弹出的修改窗口------------------------**/
+	function closeForm() {
+		$('#formWin').dialog('close');
+	}
+	/**-------------------------查询分配数据来源的权限对象------------------------------**/
+	function searchSource(buttonId, actionUrl) {
+		var params = $$.serializeToJson(formSearchTemplate);
+		var json = {
+			"search_condition" : JSON.stringify(params)
+		};
+		if (isDatagridLoaded) {
+			$(listTemplate).datagrid('load', json);
+		} else {
+			$(listTemplate).datagrid({
+				queryParams : json,
+				url : urlSearch += dataArr
+			});
+			isDatagridLoaded = true;
+		}
+	};
+	/**-------------------------重置查询输入框内容-------------------------------**/
+	function searchReset() {
+		$(formSearchTemplate).form('reset');
+	};
+
+	/**
+	 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+	 */
+	function loadDatagrid() {
+		var urlsetSource = appId
+				+ '/actions/admin_auth_perTree/setSource.do?actionId=cip_admin_auth_perTree_setSource&dataArr=';
+		$(listTemplate).datagrid({
+			url : urlsetSource += dataArr,
+			//title : objectName + '列表',
+			height : $$.getDatagridHeight(),
+			width : $$.getDatagridWidth(),
+			border : true,
+			nowrap : true,
+			checkbox : true,
+			striped : true,
+			fitColumns : true,
+			idField : '',
+			columns : [ [ {
+				field : 'ck',
+				checkbox : true,
+				width : $$.fillsize(0.1),
+				align : 'center'
+			},
+			//{field:'obj_attr_id',title:'权限对象属性id',width:$$.fillsize(0.1),align:'center'},
+			//{field:'obj_id',title:'权限对象id',width:$$.fillsize(0.1),align:'center'},
+			{
+				field : 'resource_id',
+				title : '行为资源id',
+				width : $$.fillsize(0.2),
+				align : 'center'
+			},
+			//{field:'root_node_id',title:'资源根节点',width:$$.fillsize(0.1),align:'center'},
+			{
+				field : 'field_id',
+				title : '表字段id',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'attr_value',
+				title : '权限对象属性值',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, /* {
+							field : 'val_src_type',
+							title : '属性值来源',
+							width : $$.fillsize(0.1),
+							align : 'center'
+						}, *//*  {
+								field : 'incl_sub_flag',
+								title : '包含属性下级标识',
+								width : $$.fillsize(0.1),
+								align : 'center'
+							}, */{
+				field : 'val_src_type_name',
+				title : '属性值来源名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'incl_sub_flag_name',
+				title : '包含属性下级标识名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			} ] ],
+			onBeforeLoad : function() {
+				$$.clearSelect(listId);
+			},
+			queryParams : $$.serializeToJson(searchFormId),
+			pagination : true,
+			rownumbers : true,
+			singleSelect : false,
+			pageSize : 15,
+			pageList : $$.pageList,
+			toolbar : gridMenuId,
+			loadFilter : function(data) {
+				if (data != null && data.errorCode > 0) {
+					if (data.msg != null && data.msg != "") {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+				}
+				return data;
+			}
+		});
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false">
+	<div class="area">
+			<div class="area-title">角色信息列表</div>
+			<div class="area-body">
+			<form id="cip_admin_auth_act2obj_searchForm" class="search-form" method="post">
+				<table cellpadding="2" style="width: 100%">
+					<tr>
+					
+						<td align="right">行为资源id：</td>
+						<td>
+							<input type="text" id="resource_id" name="resource_id" style="width:220px;height:26px" class="easyui-validatebox"
+							data-options="" 
+							 /> 
+						</td>
+					<!-- <tr>
+						<td colspan="8" align="center" >
+							<a class="easyui-linkbutton" iconCls="icon-search" style="margin-right: 20px;" onclick="searchSource('cip_admin_auth_act2obj_searchData',urlSearch)">查询</a>
+							<a class="easyui-linkbutton" iconCls="icon-reload" style="margin-right: 20px;" onclick="searchReset()">重置</a>
+                       <a class="easyui-linkbutton" iconCls="icon-download" style="margin-right: 20px;" onclick="exportExcel('cip_admin_auth_act2obj_exportEntities',urlExport)">导出</a>						</td>
+					</tr> -->
+				</table>
+			</form>
+		<div class="button-section">
+		     <a class="easyui-linkbutton" iconCls="icon-search" style="margin-right: 20px;" onclick="searchSource('cip_admin_auth_act2obj_searchData',urlSearch)">查询</a>
+		     <a class="easyui-linkbutton" iconCls="icon-reload" style="margin-right: 20px;" onclick="searchReset()">重置</a>
+	    </div>
+	</div>
+</div>			
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 2px;">
+		<div id="cip_admin_auth_setSource_list_menu">
+		</div>
+		<table id="cip_admin_auth_setSource_list" fit="true"></table>
+	</div>
+	<!-- <div id="formWin" style="overflow-y:hidden">  
+	 <iframe  marginwidth=0 marginheight=0 height="100%" width="100%" frameborder=0 id="ifream" name="ifream"></iframe> 
+   </div>  -->
+</body>
+</html>

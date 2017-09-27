@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+		var objectName = '角色树资源';
+		var BPlistTemplate = '#cip_admin_BP_list';
+		var BlistTemplate='#cip_admin_B_list';
+		var listId = "cip_admin_roles_list";
+		var searchFormId = "cip_admin_roles_searchForm";
+		var gridBPMenuId = '#cip_admin_roles_BP_menu';
+		var gridBMenuId = '#cip_admin_roles_B_menu';
+		var addFormUrl = 'cip_admin_roles_form.html?actionId=cip_admin_roles_form&mode=add';
+		var updateFormUrl = 'cip_admin_roles_form.html?actionId=cip_admin_roles_form&mode=edit';
+		var getFormUrl = 'cip_admin_roles_form.html?actionId=cip_admin_roles_form&mode=display';
+		var urlBPSearch = appId + '/actions/admin_roles/getBtnAndPage.do?actionId=cip_admin_roles_getBtnAndPage';
+		var urlBSearch = appId + '/actions/admin_roles/getBtn.do?actionId=cip_admin_roles_getBtn';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'cip_admin_rolesTree_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		var expellActions = {
+			"cip_admin_roles_getBtnAndPage":urlBPSearch,
+		};  //当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var BPisDatagridLoaded = false;
+		var BisDatagridLoaded = false;
+		var today = getToday();
+		var root = "default";//资源树的根节点
+		var parentId = "";//当新增资源时:是新增资源的父节点id;当删除资源时:是所选删除资源的id
+		var parentParentId = "";//当删除资源时:是所选删除资源的父节点id
+		var  parameterOne="";
+		var  parameterTwo="";
+	    var resource_type="";//当新增资源时:是新增资源的父节点的类型
+	    var BPtableId="cip_admin_BP_list";
+	    var BtableId="cip_admin_B_list";
+	    var tableId="";	      
+		$(function(){  
+			//loadCompanyCombobox();
+			//loadCombobox();
+			//getAuthButtons(pageId,gridBPMenuId,authActions,expellActions);
+			//getAuthButtons(authActions,expellActions);
+			loadTree();
+			loadBPDatagrid();
+			loadBDatagrid();
+			init();
+		});
+		
+		function init(){
+		    //初始化时中间和右侧的添加资源及分配资源按钮全部隐藏
+		   //hideButton();//隐藏中间按钮
+		   hideEastButton();//隐藏右侧按钮
+		   $("#eastDeleteRes").hide();
+		  $("#eastUpdataRes").hide();
+		  $("#help").hide();//隐藏提示div
+		}
+		/*******************获得所选根节点下的动作与页面资源*********************/
+		function getBtnAndPage(id){
+			var rootId = root;
+			var params = { "root" : rootId,
+							"res_node_id" :id
+			 };
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(BPisDatagridLoaded){
+				$(BPlistTemplate).datagrid('load', json );
+			}else{
+				$(BPlistTemplate).datagrid({
+					queryParams: json,
+					url : urlBPSearch
+				});
+				BPisDatagridLoaded = true;
+			}	
+		};
+	/*******************获得所选节点下的动作资源*********************/
+		function getBtn(id){
+			var rootId = root;
+			var params = { "root" : rootId,
+							"res_node_id" :id
+			 };
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(BisDatagridLoaded){
+				$(BlistTemplate).datagrid('load', json );
+			}else{
+				$(BlistTemplate).datagrid({
+					queryParams: json,
+					url : urlBSearch
+				});
+				BisDatagridLoaded = true;
+			}	
+		};
+	  /************************添加资源页面****************************/
+		function addPage(root,parentId){
+	       var formUrl = "cip_admin_addPage_form.html?actionId=cip_admin_addPage_form&root="+root+"&parentId="+parentId+"&BPtableId="+BPtableId+"&BtableId="+BtableId;
+		   if(parentId==""){
+    			$$.showJcdfMessager('提示消息','请选择资源所属上级','warning');
+        	}else if(resource_type=="B"){
+				$$.showJcdfMessager('提示消息','该资源为按钮资源，不允许有下级资源','warning');
+	    	}else{
+        		$$.openJcdfDialog(formUrl, '请选择添加的资源', 400, 650);
+        	}
+		}
+		
+	  /************************添加资源按钮****************************/
+		function addBtn(root,parentId){
+	       var formUrl = "cip_admin_addBtn_form.html?actionId=cip_admin_addBtn_form&root="+root+"&parentId="+parentId+"&BPtableId="+BPtableId+"&BtableId="+BtableId;
+		   if(parentId==""){
+    			$$.showJcdfMessager('提示消息','请选择资源所属上级','warning');
+        	}else if(resource_type=="B"){
+				$$.showJcdfMessager('提示消息','该资源为按钮资源，不允许有下级资源','warning');
+	    	}else{
+        		$$.openJcdfDialog(formUrl, '请选择添加的资源', 400, 650);
+        	}
+		}
+		
+		/************************添加资源菜单项****************************/
+		
+		function addMenu(root,parentId){
+	       var formUrl = "cip_admin_addMenu_form.html?actionId=cip_admin_addMenu_form&root="+root+"&parentId="+parentId+"&BPtableId="+BPtableId+"&BtableId="+BtableId;
+		   if(parentId==""){
+    			$$.showJcdfMessager('提示消息','请选择资源所属上级','warning');
+        	}else if(resource_type=="B"){
+				$$.showJcdfMessager('提示消息','该资源为按钮资源，不允许有下级资源','warning');
+	    	}else{
+        		$$.openJcdfDialog(formUrl, '请选择添加的资源', 400, 650);
+        	}
+		}
+		
+		/************************添加资源菜单组****************************/
+		function addMegroup(root,parentId){
+	       var formUrl = "cip_admin_addMegroup_form.html?actionId=cip_admin_addMegroup_form&root="+root+"&parentId="+parentId+"&BPtableId="+BPtableId+"&BtableId="+BtableId;
+		   if(parentId==""){
+    			$$.showJcdfMessager('提示消息','请选择资源所属上级','warning');
+        	}else if(resource_type=="B"){
+				$$.showJcdfMessager('提示消息','该资源为按钮资源，不允许有下级资源','warning');
+	    	}else{
+        		$$.openJcdfDialog(formUrl, '请选择添加的资源', 400, 650);
+        	}
+		}	
+		/************************删除资源****************************/
+		function deleteRes(root,parentId,parentParentId){
+	       var formUrl = appId + '/actions/admin_roles/deleteRes.do?actionId=cip_admin_roles_deleteRes';
+    			 $.messager.confirm('确认', "确定删除所选的资源?", function(r) {
+				if (r) {
+					deleteById(root,parentId,parentParentId,formUrl);
+				}
+			});
+		}
+		/************************添加角色资源****************************/
+         function addNodeDialog(root,parentId){
+           var formUrl = "cip_admin_new_role_resource_list.html?actionId=cip_admin_new_role_resource_list&root="+root+"&parentId="+parentId+"&BPtableId="+BPtableId+"&BtableId="+BtableId+"&resource_type="+resource_type;
+		   if(parentId==""){
+    			$$.showJcdfMessager('提示消息','请选择资源所属上级','warning');
+        	}else if(resource_type=="B"){
+				$$.showJcdfMessager('提示消息','该资源为按钮资源，不允许有下级资源','warning');
+	    	}else{
+        		$$.openJcdfDialog(formUrl, '请选择添加的资源', 700, 1000);
+        	}
+            
+	    	
+	    }
+		function deleteById(root,parentId,parentParentId,formUrl){
+			var jsonData = {
+			   				"root_node_id":root,
+			   				"res_node_id":parentId,
+			   				"res_node_sup":parentParentId
+						};
+						
+			$.ajax({
+			   type: "POST",
+			   url: formUrl,
+			   dataType:"json",
+			   data : JSON.stringify(jsonData),
+			   contentType: "application/json",
+			   success: function(data){
+			   	 	$$.closeProcessingDialog();
+					if (data && data.errorCode == 0) {
+						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						if (tableId != "") {
+							$$.refreshJcdfDatagrid(tableId);
+						} else {
+							$$.refreshJcdfTree("role_res_tree");
+						}
+					} else {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+			   }
+			});
+		}
+			
+	  /************************显示center添加动作按钮*********************************/	
+		function showButton(){
+		   $("#addPage").show();
+		   $("#addBtn").show();
+		   $("#addMenu").show();
+		   $("#addMegroup").show();
+		   $("#addNodes").show();
+		 //  $("#deleteRes").show();
+		}   
+		/************************隐藏center添加动作按钮*********************************/	
+		function hideButton(){
+		   $("#addPage").hide();
+		   $("#addBtn").hide();
+		   $("#addMenu").hide();
+		   $("#addMegroup").hide();
+		   $("#addNodes").hide();
+		 //  $("#deleteRes").hide();
+		} 
+		/************************显示east添加动作按钮*********************************/	
+		function showEastButton(){
+		   $("#eastAddPage").show();
+		   $("#eastAddBtn").show();
+		   $("#eastAddMenu").show();
+		   $("#eastAddMegroup").show();
+		   $("#eastAddNodes").show();
+		  $("#eastDeleteRes").show();
+			$("#eastUpdataRes").show();
+		}   
+		/************************隐藏east添加动作按钮*********************************/	
+		function hideEastButton(){
+		   $("#eastAddPage").hide();
+		   $("#eastAddBtn").hide();
+		   $("#eastAddMenu").hide();
+		   $("#eastAddMegroup").hide();
+		   $("#eastAddNodes").hide();
+		    $("#eastDeleteRes").hide();
+			$("#eastUpdataRes").hide();
+		}     
+		/************************加载根节点下的树的资源****************************/		
+		function loadTree(){
+			$("#role_res_tree").tree({
+				url:appId + '/actions/admin_roles/getDefaultTree.do?actionId=cip_admin_role_getDefaultTreeData&root='+root,
+				animate : true,
+				lines : true,
+				dnd: true,
+				onBeforeLoad : function(node, param){
+				//	param.roleId = nowRoleId;
+				},
+ 				loadFilter: function(data){
+					if (data.length==0){
+						$$.showJcdfMessager('提示消息', '当前角色不存在或已删除', 'warning');
+					}
+					return data;
+				}, 
+				onDragEnter : function(target, source) {
+					if ($(this).tree('isLeaf', target)
+							&& $(this).tree('getNode', target).attributes.type == "B")
+						return false;
+				},
+				onLoadSuccess : function(node,data){
+					var firstnode = $('#role_res_tree').tree('find', root);
+					$('#role_res_tree').tree('select', firstnode.target);
+					getBtnAndPage(root);	
+				},
+				onClick : function(node){
+					 var parentNodeId = node.id; //点击获取父节点的id
+				     getBtnAndPage(parentNodeId);
+				     parentId = node.id;
+				     parameterOne=parentId;
+				     resource_type = node.attributes.type;//上级资源类型
+				     if(resource_type!="R"){
+				     var parentParent = $('#role_res_tree').tree('getParent', node.target);
+				     	parentParentId = parentParent.id;
+				     }else{
+				     	parentParentId="";
+				     }
+				     	tableId='';
+				      //当点击数节点事件触发后，中间层的添加按钮资源显示，右侧的继续隐藏。
+				      showButton();	
+				      hideEastButton();
+				     //当选中上级资源类型为菜单组 ‘A’时 只能添加页面和按钮，不能添加菜单组和菜单项
+				     //当选中上级资源类型为页面 ‘P’时  只能添加按钮，不能添加菜单组 菜单项 
+				     if(parentId=="default"){//&& resource_type == "R"
+				     	 $("#addMenu").show();
+		                $("#addMegroup").show();
+				     }else if(resource_type == "F"&& parentId!="admin"){
+				     	$("#addMegroup").hide();
+				  	 }else if(resource_type == "A"){
+			            $("#addMenu").hide();
+		                $("#addMegroup").hide();
+			         }else if(resource_type == "P"){
+		                $("#addMenu").hide();
+		                $("#addMegroup").hide();
+		                $("#addPage").hide();
+			         }
+				}
+		    });
+		};
+		
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示,此表主要是显示菜单项下的动作和页面资源
+		 */
+		function loadBPDatagrid() {
+			$(BPlistTemplate).datagrid({
+				height:$$.getDatagridHeight(),
+				width:$$.getDatagridWidth(),
+				border: false,
+				nowrap: true,
+				striped: true,
+				fitColumns: true,
+				idField:'',
+				columns:[[
+						{field:'icon_id',title:'图标id',width:$$.fillsize(0.02),align:'center',formatter:function(value,row,index){					
+						    var link = '<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text"></span><span class="l-btn-icon '+row.icon_id+'">&nbsp;</span></span>';
+					           return link;
+					        }					
+						},
+						{field:'resource_name',title:'资源名称',width:$$.fillsize(0.06),align:'center',},
+						{field:'resource_id',title:'资源Id',width:$$.fillsize(0.08),align:'center',},
+						{field:'resource_type_name',title:'资源类型',width:$$.fillsize(0.03),align:'center',},
+						{field:'操作',title:'操作',width:$$.fillsize(0.02),align:'center',
+							formatter:function (value, row, index){
+						return '<a onclick=\'getResData("'+row.resource_id+'")\' class=\'link\'>查看</a>';
+						}		
+						}]],
+				onBeforeLoad:function(){$$.clearSelect(listId);},
+				queryParams:$$.serializeToJson(searchFormId),
+				//pagination:true,
+				rownumbers:true,
+				singleSelect:true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar: gridBPMenuId,
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data; 
+				},
+	           onClickRow : function(index, data) {
+	           var parentGridId = data.resource_id;
+			   getBtn(parentGridId);
+			   parentParentId=parameterOne; 
+			   parentId = data.resource_id;
+			   parameterTwo=parentId;
+			   resource_type = data.resource_type;
+			   tableId=BPtableId;
+			   //当点击中间datagrid事件触发后，中间层的添加按钮资源隐藏，右侧的添加按钮显示。	
+				hideButton();
+				showEastButton();
+				$("#deleteRes").show();
+				$("#updataRes").show();
+				$("#eastDeleteRes").hide();
+		  		$("#eastUpdataRes").hide();
+			  //当选中上级资源类型为菜单组 ‘A’时 只能添加页面和按钮，不能添加菜单组和菜单项
+			  //当选中上级资源类型为页面 ‘P’时  只能添加按钮，不能添加菜单组 菜单项 
+				if(resource_type == "A"){
+			       $("#eastAddMenu").hide();
+		          $("#eastAddMegroup").hide();
+			      }else if(resource_type == "P"){
+		           $("#eastAddMenu").hide();
+		           $("#eastAddMegroup").hide();
+		          // $("#eastAddPage").hide();
+			      }else if(resource_type == "B"){
+			      	hideEastButton();
+			      }
+			}
+
+		});
+	}
+	
+	/**
+	 * 页面加载时初始化datagrid列表并加载列表数据进行显示,此表主要是显示页面下的动作资源
+	 */
+	function loadBDatagrid() {
+		$(BlistTemplate).datagrid({
+			title : '下下级资源列表',
+			height : $$.getDatagridHeight(),
+			width : $$.getDatagridWidth(),
+			border : true,
+			nowrap : true,
+			striped : true,
+			fitColumns : true,
+			idField : '',
+			columns : [ [ 
+			{	field:'icon_id',
+				title:'图标id',
+				width:$$.fillsize(0.02),
+				align:'center',
+				formatter:
+				function(value,row,index){					
+					 var link = '<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text"></span><span class="l-btn-icon '+row.icon_id+'">&nbsp;</span></span>';
+					     return link;
+				 }					
+			},
+			
+			{
+				field : 'resource_name',
+				title : '资源名称',
+				width : $$.fillsize(0.06),
+				align : 'center'
+			},
+			{
+				field : 'resource_id',
+				title : '资源Id',
+				width : $$.fillsize(0.08),
+				align : 'center'
+			} ,
+			{
+				field : 'resource_type_name',
+				title : '资源类型',
+				width : $$.fillsize(0.03),
+				align : 'center'
+			},
+			{field:'操作',title:'操作',width:$$.fillsize(0.02),align:'center',
+							formatter:function (value, row, index){
+						return '<a onclick=\'getResData("'+row.resource_id+'")\' class=\'link\'>查看</a>';
+						}		
+			}
+			 ] ],
+			onBeforeLoad : function() {
+				$$.clearSelect(listId);
+			},
+			queryParams : $$.serializeToJson(searchFormId),
+			//pagination : true,
+			rownumbers : true,
+			singleSelect : true,
+			pageSize : $$.pageSize,
+			pageList : $$.pageList,
+			toolbar : gridBMenuId,
+			loadFilter : function(data) {
+				if (data != null && data.errorCode > 0) {
+					if (data.msg != null && data.msg != "") {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+				}
+				return data;
+			},
+			onClickRow : function(index, data) {
+				parentParentId=parameterTwo;
+	       	   parentId = data.resource_id;
+			   resource_type = data.resource_type;
+			   tableId=BtableId;
+			  //当选中上级资源类型为菜单组 ‘A’时 只能添加页面和按钮，不能添加菜单组和菜单项
+			  //当选中上级资源类型为页面 ‘P’时  只能添加按钮，不能添加菜单组 菜单项 
+			  	hideButton();	
+			  	showEastButton();
+			  	$("#deleteRes").hide();
+			  	$("#updataRes").hide();
+			  	$("#eastDeleteRes").show();
+				$("#eastUpdataRes").show();
+			  if(resource_type == "A"){
+			      // $("#addMenu").hide();
+		           $("#eastAddMegroup").hide();
+			      }else if(resource_type == "P"){
+		           $("#eastAddMenu").hide();
+		           $("#eastAddMegroup").hide();
+			      }else{
+			       hideEastButton();
+			       $("#eastDeleteRes").show();
+				   $("#eastUpdataRes").show();
+			   }
+			}  
+		});
+	}
+	function getResData(id){
+		var ResformUrl="cip_admin_resource_form.html?actionId=cip_admin_resource_form&resource_id="+id+"&mode=display";
+		$$.openJcdfDialog(ResformUrl, '资源详细信息', 500, 650);
+	}
+	function updataRes(){
+		if (parentId=="") {
+			$$.showJcdfMessager('提示消息', '请选择所要查看的资源');
+		}else{
+		var actionUrl= appId+ '/actions/admin_resource/updateData.do';
+		var buttonId= 'cip_admin_resource_updateData';
+		var tempUrl = '';
+   		tempUrl += "&actionUrl="+actionUrl+"&refActionId="+buttonId+"&resource_id="+parentId+"&tableId="+tableId+"&mode=edit";
+		var ResformUrl="cip_admin_updataResource_form.html?actionId=cip_admin_updataResource_form";
+		$$.openJcdfDialog(ResformUrl+tempUrl, '修改资源详细信息', 500, 650);
+		}
+	}
+	/*************************帮助手册**************************/
+	function help(){
+	$("#help").show();   
+	$('#help').dialog({
+			title : '操作提示',
+			width : 400,
+			height : 400,
+			closed : false,
+			cache : false,
+			modal : true
+       });
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'west', split:false, border:true,title:'default资源树'" style="width: 20%;">
+		<ul id="role_res_tree" fit="true" style="margin-top: 2px;"></ul>
+
+</div>
+
+	<div data-options="region:'center', split:false, border:true,title:'下级资源列表',tools:[
+    				{
+    					iconCls:'icon-help',
+    					handler:function(){ help()}
+       				}]" 
+		style="padding: 0 2px;">	
+		<div id="cip_admin_roles_BP_menu">
+			<div style="padding: 5px;">
+			<a id="addPage" href="#" onclick="addPage(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增页面</a>
+			<a id="addBtn" href="#" onclick="addBtn(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增动作</a>
+			<a id="addMenu" href="#" onclick="addMenu(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增菜单项</a>
+			<a id="addMegroup" href="#" onclick="addMegroup(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增菜单组</a>
+			<a id="addNodes" href="#" onclick="addNodeDialog(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">添加资源</a>  
+			<a id="deleteRes" href="#" onclick="deleteRes(root,parentId,parentParentId)"
+				class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a> 
+			<a id="updataRes" href="#" onclick="updataRes(parentId)"
+				class="easyui-linkbutton" iconCls="icon-edit" plain="true">修改资源</a> 
+			</div>			
+		</div>
+		<table id="cip_admin_BP_list" fit="true"></table>
+	</div>
+	   <div data-options="region:'east', split:false, border:false,"
+		style="padding: 0 2px;width: 41%;">
+		<div id="cip_admin_roles_B_menu">
+			<div style="padding: 5px;">
+			<a id="eastAddPage" href="#" onclick="addPage(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增页面</a>
+			<a id="eastAddBtn" href="#" onclick="addBtn(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增动作</a>
+			<a id="eastAddMenu" href="#" onclick="addMenu(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增菜单项</a>
+			<a id="eastAddMegroup" href="#" onclick="addMegroup(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">新增菜单组</a>
+			<a id="eastAddNodes" href="#" onclick="addNodeDialog(root,parentId)"
+				class="easyui-linkbutton" iconCls="icon-add" plain="true">添加资源</a>   
+			<a id="eastDeleteRes" href="#" onclick="deleteRes(root,parentId,parentParentId)"
+				class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+			<a id="eastUpdataRes" href="#" onclick="updataRes(parentId)"
+				class="easyui-linkbutton" iconCls="icon-edit" plain="true">修改资源</a> 			
+			</div>
+		</div>
+		<table id="cip_admin_B_list" fit="true"></table>
+	</div>
+	<div id="help">
+		<h2>&nbsp;一 、新增资源:</h2>
+		<div Style="margin-left:70px">
+			<ul style="color:green;font-size: 15px">
+				<li>选择上级模块，保存新增资源时，根据选择的上下级关系，自动将资源配置到关系资源库</li>
+				<li>上级资源类型：菜单组
+					<ul>
+						<li>新增页面</li>
+						<li>新增动作</li>
+						<li>新增菜单项</li>
+					</ul>
+				</li>
+				<li>上级资源类型：菜单项
+					<ul>
+						<li>新增页面</li>
+						<li>新增动作</li>
+					</ul>
+				</li>
+				<li>上级资源类型：页面
+					<ul>
+						<li>新增动作</li>
+					</ul>
+				</li>
+				<li>上级资源类型：动作（PS:不存在下级资源）</li>
+				<li>上级资源类型：根节点
+					<ul>
+						<li>新增页面</li>
+						<li>新增动作</li>
+						<li>新增菜单项</li>
+						<li>新增菜单组</li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+		<h2>&nbsp;二 、添加资源:</h2>
+		<div Style="margin-left:70px">
+			<ul style="color:green;font-size: 15px">
+				<li>添加资源（PS:配置已存在资源到关系资源库）
+					<ul>
+						<li>选择上级模块，点击添加资源按钮，即可将已新增资源配置到关系资源库</li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+		<h2>&nbsp;三 、操作资源:</h2>
+		<div Style="margin-left:70px">
+			<ul style="color:green;font-size: 15px">
+				<li>修改资源
+					<ul>
+						<li>选择资源,点击删除按钮,即可删除（PS:删除关系资源库数据，但不删除资源库数据）</li>
+					</ul>
+				</li>
+				<li>删除资源
+					<ul>
+						<li>选择资源,点击修改资源按钮,即可修改（PS:修改资源库数据，资源id不可修改）</li>
+					</ul>
+				</li>
+				<li>查看资源
+					<ul>
+						<li>选择资源,点击查看</li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+	</div>
+</body>
+</html>

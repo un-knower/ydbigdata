@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>发车数量</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body class="back-body">
+<div class="container">
+    <div class="area-detail-top">
+        <div class="area-detail-all">
+            <span class="time-show-area" id="info-time"></span>
+            <div class="area-detail-left">
+                <p class="area-detail-name">发车数</p>
+                <p class="area-detail-value" id="car-num">---</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio"  id="car-num-ratio">
+                       <span class="area-ratio-area ratio-down-num">日环比
+                            <span class="area-ratio-info">---</span>
+                            <span class="area-ratio-img ratio-img-top-up"></span>
+                        </span>
+                        <span class="area-ratio-area ratio-up-num" style="margin-left: 4px;">周同比
+                            <span class="area-ratio-info">---</span>
+                            <span class="area-ratio-img ratio-img-top-up"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="area-detail-right">
+                <p class="area-detail-name">上一日发车数</p>
+                <p class="area-detail-value" id="car-work-num">---</p>
+                <div class="area-ratio" id="perv-day-info">
+                    <p class="area-menu-item-ratio">
+                        <span class="area-ratio-area">周均---</span>
+                        <span class="area-ratio-area" style="margin-left: 4px;">月均---</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab">
+                    <div class="echart-tab-item" id="tq-remark">
+                        <span class="echart-name echart-tab-yel">周同期</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item margin-top-5">
+                        <span class="echart-name ratio-up-num">实际值</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="day"  class="echart-tab-list-active">日趋势</li>
+                        <li data-value="week">周趋势</li>
+                        <li data-value="month">月趋势</li>
+                        <li data-value="quarter">季度趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="dispatch-detail-menu water-remark-area" id="car-detail">
+        <!--<div class="dispatch-detail-item">-->
+            <!--<div class="dispatch-detail-item-top">-->
+                <!--<span class="dispatch-title-remark echart-tab-yel-bg">网点</span>-->
+                <!--<span class="dispatch-title-title">内蒙古呼和浩特赛罕区二公司师范大学保卫处近邻宝寄存点</span>-->
+            <!--</div>-->
+            <!--<ul class="dispatch-detail-item-bottom">-->
+                <!--<li class="dispatch-detail-bottom-list">发车数量(辆):<span class="dispatch-info-remark">50</span>-->
+                <!--</li>-->
+                <!--<li class="dispatch-detail-bottom-list">日环比:-->
+                    <!--<span class="pick-ratio-num ratio-up-num">0.83%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</li>-->
+                <!--<li class="dispatch-detail-bottom-list">周同比:-->
+                    <!--<span class="pick-ratio-num ratio-up-num">1.19%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</li>-->
+            <!--</ul>-->
+        <!--</div>-->
+        <!--<div class="dispatch-detail-item">-->
+            <!--<div class="dispatch-detail-item-top">-->
+                <!--<span class="dispatch-title-remark echart-tab-yel-bg">网点</span>-->
+                <!--<span class="dispatch-title-title">内蒙古呼和浩特新城区公司</span>-->
+            <!--</div>-->
+            <!--<ul class="dispatch-detail-item-bottom">-->
+                <!--<li class="dispatch-detail-bottom-list">发车数量(辆):<span class="dispatch-info-remark">50</span>-->
+                <!--</li>-->
+                <!--<li class="dispatch-detail-bottom-list">日环比:-->
+                    <!--<span class="pick-ratio-num ratio-up-num">0.83%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</li>-->
+                <!--<li class="dispatch-detail-bottom-list">周同比:-->
+                    <!--<span class="pick-ratio-num ratio-up-num">1.19%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</li>-->
+            <!--</ul>-->
+        <!--</div>-->
+        <!--<div class="dispatch-detail-item">-->
+            <!--<div class="dispatch-detail-item-top">-->
+                <!--<span class="dispatch-title-remark echart-tab-yel-bg">网点</span>-->
+                <!--<span class="dispatch-title-title">内蒙古呼和浩特新城区公司海拉尔便民服务站</span>-->
+            <!--</div>-->
+            <!--<ul class="dispatch-detail-item-bottom">-->
+                <!--<li class="dispatch-detail-bottom-list">发车数量(辆):<span class="dispatch-info-remark">50</span>-->
+                <!--</li>-->
+                <!--<li class="dispatch-detail-bottom-list">日环比:-->
+                    <!--<span class="pick-ratio-num ratio-up-num">0.83%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</li>-->
+                <!--<li class="dispatch-detail-bottom-list">周同比:-->
+                    <!--<span class="pick-ratio-num ratio-up-num">1.19%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</li>-->
+            <!--</ul>-->
+        <!--</div>-->
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getSendCarNumURL = appId + "/action/transport/wdsendcar.do";
+    var trendType = "day";
+    var isFirst = true; //用于判断是否初次加载
+    var orgType = YDM.QueryString("sendType");
+    var orgId = YDM.QueryString("dataOrg");
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs();
+        getData();  //获取echart值
+        refreshInfo();  //刷新页面内容
+        refreshCtrl();
+        commonFun(); //公用方法
+    }
+
+    function refreshInfo() {
+        getSendCarInfo(dataTime,"");
+    }
+
+    function getSendCarInfo(getdate,ajaxData) {
+        var conditonStr;
+        var trendTypeNum;
+        if(trendType == "day") {
+            trendTypeNum = "1";
+        }else if(trendType == "week") {
+            trendTypeNum = "2";
+        }else if(trendType == "month") {
+            trendTypeNum = "3";
+        }else if(trendType == "quarter") {
+            trendTypeNum = "4";
+        }
+        $.showLoading("加载中");
+        if(orgType == "area_id") {
+            conditonStr = "{'area_id':'" + orgId +"'}"
+        }else if(orgType == "prov_id") {
+            conditonStr = "{'prov_id':'" + orgId +"'}"
+        }else if(orgType == "com_id") {
+            conditonStr = "{'com_id':'" + orgId +"'}"
+        }
+        var survParams = {
+            "date_time": getdate,
+            "trend_type" : trendTypeNum,
+            "conditonStr":conditonStr
+        };
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getSendCarNumURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    if(ajaxData != "") {
+                        prepareEchartData(oData.data.altrend, ajaxData);
+                    }else {
+                        addBashInfo(oData.data);
+                    }
+
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addBashInfo(data) {
+        if(isFirst) {
+            $("#car-num").text(changeData(data.allCars,"abs","辆"));
+            var carstr = "<span class='area-ratio-area ratio-"+ changeData(data.allCDoD,"symbol") +"-num'>日环比<span class='area-ratio-info margin-left-2'>"+ changeData(data.allCDoD,"abs","%") +"</span><span class='area-ratio-img ratio-img-top-"+ changeData(data.allCDoD,"symbol") +"'></span></span><span class='area-ratio-area ratio-"+ changeData(data.allCWoW,"symbol") +"-num' style='margin-left: 4px;'>周同比<span class='area-ratio-info margin-left-2'>"+ changeData(data.allCWoW,"abs","%") +"</span><span class='area-ratio-img ratio-img-top-"+ changeData(data.allCWoW,"symbol") +"'></span></span>"
+            $("#car-num-ratio").empty().append(carstr);
+
+            $("#car-work-num").text(changeData(data.lday,"abs","辆"));
+            var carwork = "<p class='area-menu-item-ratio'><span class='area-ratio-area'>周均"+ data.wave +"</span><span class='area-ratio-area' style='margin-left: 4px;'>月均"+ data.mave +"</span></p>";
+            $("#perv-day-info").empty().append(carwork);
+            $("#car-detail").empty();
+            $.each(data.sCDetail,function(index,val) {
+                var strDetail = "<div class='dispatch-detail-item'> <div class='dispatch-detail-item-top'><span class='dispatch-title-remark echart-tab-yel-bg'>网点</span><span class='dispatch-title-title'>"+ val.fbcode +"</span></div><ul class='dispatch-detail-item-bottom'><li class='dispatch-detail-bottom-list'>发车数量(辆):<span class='dispatch-info-remark'>"+ val.knum +"</span></li><li class='dispatch-detail-bottom-list'>日环比:<span class='pick-ratio-num ratio-"+ changeData(val.knd,"symbol") +"-num'>"+ changeData(val.knd,"abs","%") +"</span> <span class='pick-ratio-img ratio-img-top-"+ changeData(val.knd,"symbol") +"'></span></li><li class='dispatch-detail-bottom-list'>周同比:<span class='pick-ratio-num ratio-"+ changeData(val.knw,"symbol") +"-num'>"+ changeData(val.knw,"abs","%") +"</span><span class='pick-ratio-img ratio-img-top-"+ changeData(val.knw,"symbol") +"'></span></li></ul></div>";
+                $("#car-detail").append(strDetail);
+            })
+        }
+        // 渲染echart图标
+        prepareEchartData(data.altrend);
+    }
+
+    function viewJs() {
+        $("#info-time").text(dataTime);
+        $(".echart-tab-list li").on("click",function() {
+            $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+            trendType = $(this).attr("data-value");
+            var index = $(this).index();
+            var showView = $("#tq-remark").show().next().removeClass("margin-top-8").end().children(".echart-name:first-child");
+            switch (index) {
+                case 0 : showView.text("周同期").parents(".echart-tab-item").next().children(".echart-name:first-child").text("实际值");break;
+                case 1 : $("#tq-remark").hide().next().addClass("margin-top-8");break;
+                case 2 : showView.text("月同期").parents(".echart-tab-item").next().children(".echart-name:first-child").text("实际值");break;
+                case 3 : showView.text("季度同期").parents(".echart-tab-item").next().children(".echart-name:first-child").html("实际值<span style='opacity:0'>填</span>");break;
+            }
+            isFirst = false;
+            getSendCarInfo(dataTime,"");
+            getData();
+        })
+    }
+    /** 初始化chart数据*/
+    function getData() {
+        var xDataNum;
+        var getXFormatter = prepareXFormatter();
+        var seriesName = ['实际值'];
+        if(trendType == "day") {
+            xDataNum = 15;
+            seriesName.push('周同期');
+        }else if(trendType == "week") {
+            xDataNum = 8;
+        }else if(trendType == "month") {
+            xDataNum = 6;
+            seriesName.push('月同期');
+        }else if(trendType == "quarter") {
+            xDataNum = 4;
+            seriesName.push('季度同期');
+        }
+        var getYFormatter = prepareYFormatter();
+        var initoptions = {
+            //getNextData: getNextSendCarInfo,
+            getPreviousData: getPreviousSendCarInfo,
+            xDataNum: xDataNum,
+            chartFieldId: "chartDv",
+            getXFormatter:getXFormatter,
+            trendType:trendType == "day" ? trendType : 'week',
+            getYFormatter:getYFormatter,
+            seriesName:seriesName
+        } ;
+        BDC.doChart(initoptions);
+    }
+    /**准备X轴的坐标格式*/
+    function prepareXFormatter() {
+        var getXFormatter;
+        if(trendType == "day") {
+            xDataNum = 15;
+            getXFormatter = function (value) {
+                if (value) {
+                    return value.split('-')[2];
+                }
+            }
+        }else if(trendType == "week") {
+            xDataNum = 8;
+            getXFormatter = function (value) {
+                if (value) {
+                    return value + '周';
+                }
+            }
+        }else if(trendType == "month") {
+            xDataNum = 6;
+            getXFormatter = function (value) {
+                if (value) {
+                    return value.split('-')[1] + '月';
+                }
+            }
+        }else if(trendType == "quarter") {
+            xDataNum = 4;
+            getXFormatter = function (value) {
+                if (value) {
+                    var month = value.split('-')[1];
+                    if (month == '1' || month == '2' || month == '3'){
+                        return '一季度';
+                    } else if (month == '4' || month == '5' || month == '6') {
+                        return '二季度';
+                    } else if (month == '7' || month == '8' || month == '9') {
+                        return '三季度';
+                    } else {
+                        return '四季度';
+                    }
+                }
+            }
+        }
+        return getXFormatter;
+    }
+    /**准备Y轴的坐标格式*/
+    function prepareYFormatter() {
+        return function (value) {
+            return value;
+        }
+    }
+    /** 处理chart数据*/
+    function prepareEchartData (altrend, ajaxName) {
+        if (!altrend) {
+            return;
+        }
+        var weekRequestDate = '';
+        var xData = [];
+        var yData = [];
+        var realnumArr = [];
+        var onsamenumArr = []
+        yData.push(realnumArr);
+        yData.push(onsamenumArr);
+        $.each(altrend, function (index, altrendData) {
+            if(trendType == "month" || trendType == "quarter") {
+                xData.unshift(altrendData.startdate);
+            }else if(trendType == 'week'){
+            	//var weekX = getWeekNumber(altrendData.enddate).toString();
+            	xData.unshift(altrendData.startdate);
+            } else {
+            	xData.unshift(altrendData.startdate);
+            }
+            yData[0].unshift(altrendData.realnum);
+            yData[1].unshift (altrendData.onsamenum);
+            weekRequestDate = altrendData.enddate
+            
+        });
+        if (ajaxName === 'previous') {
+            BDC.preparePreviousData(xData, yData, weekRequestDate);
+        } else {
+            BDC.prepareCurrentData(xData, yData, weekRequestDate);
+        }
+        /* if (ajaxName === 'next') {
+         BDC.prepareNextData(xData, yData);
+         } else if (ajaxName === 'previous') {
+         BDC.preparePreviousData(xData, yData);
+         } else {
+         BDC.prepareCurrentData(xData, yData)
+         } */
+    }
+    /** 拿到next的chart数据*/
+    /* var getNextSendCarInfo = function (date) {
+     var ajaxName = 'next';
+     getSendCarInfoAjax(date, ajaxName);
+     }  */
+    /** 拿到previous的chart数据*/
+    var getPreviousSendCarInfo = function (date) {
+
+        var ajaxName = 'previous';
+        getSendCarInfo(date, ajaxName)
+    }
+</script>
+</body>
+</html>

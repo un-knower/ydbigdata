@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.matrix.dao.Matrix_shipment_detailMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.matrix.model.Matrix_shipment_detail" >
+    <result column="ship_id" property="shipId" jdbcType="BIGINT" />
+    <result column="oper_typ" property="operTyp" jdbcType="INTEGER" />
+    <result column="dbct_name" property="dbctName" jdbcType="VARCHAR" />
+    <result column="scan_tm" property="scanTm" jdbcType="DATE" />
+    <result column="eqpt_id" property="eqptId" jdbcType="VARCHAR" />
+    <result column="ln_id" property="lnId" jdbcType="VARCHAR" />
+    <result column="ph_port_cd" property="phPortCd" jdbcType="VARCHAR" />
+    <result column="port_name" property="portName" jdbcType="VARCHAR" />
+    <result column="scan_per" property="scanPer" jdbcType="INTEGER" />
+    <result column="frgt_wgt" property="frgtWgt" jdbcType="INTEGER" />
+  </resultMap>
+ 
+  <select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+		    SELECT
+				d.ship_id AS ship_id,
+				if(d.oper_typ = 0,'矩阵发出','矩阵到达') AS oper_typ,
+				CONCAT(g1.mc,'(',d.dbct_cd,')') AS dbct_name,
+				d.eqpt_id AS eqpt_id,
+				d.ln_id AS ln_id,
+				d.phys_port_cd as ph_port_cd,
+				CONCAT(g2.mc,'(',d.port_cd,')') as port_name,
+				DATE_FORMAT(d.scan_tm,'%Y/%m/%d %H:%i:%s') AS scan_tm,
+				d.scan_pers AS scan_per,
+				SUM(d.frgt_wgt) AS frgt_wgt
+			FROM
+				matrix.daw_s_hei_dbct_ship_dtl_v d
+			LEFT JOIN 
+				ydserver.gs g1
+			ON 
+				d.dbct_cd = g1.bm
+			LEFT JOIN
+				ydserver.gs g2
+			on 
+				d.port_cd = g2.bm
+			WHERE
+				d.scan_tm >=DATE_FORMAT(#{start_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND
+				d.scan_tm <= DATE_FORMAT(#{end_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND 
+				d.dbct_cd = if(#{sel_dbct_id,jdbcType=INTEGER}=0,d.dbct_cd,#{sel_dbct_id,jdbcType=INTEGER})
+			AND
+				d.oper_typ = if(#{oper_typ,jdbcType=INTEGER}=0,d.oper_typ,#{oper_typ,jdbcType=INTEGER}-1)
+			AND
+				d.eqpt_id = if(#{eqpt_id,jdbcType=VARCHAR}="",d.eqpt_id,#{eqpt_id,jdbcType=VARCHAR})
+			AND
+				d.ln_id = if(#{ln_id,jdbcType=VARCHAR}="",d.ln_id,#{ln_id,jdbcType=VARCHAR})
+			AND
+				d.ship_id = if(#{ship_id,jdbcType=BIGINT}=0,d.ship_id,#{ship_id,jdbcType=BIGINT})
+			AND
+				d.phys_port_cd = if(#{phy_port_id,jdbcType=VARCHAR}="",d.phys_port_cd,#{phy_port_id,jdbcType=VARCHAR})
+			AND
+				CASE WHEN #{port_id,jdbcType=INTEGER} = "" THEN d.port_cd
+					 ELSE #{port_id,jdbcType=INTEGER}+'0'
+					 END = d.port_cd
+		    group by 1,2,3,4,5,6,7
+		    ORDER BY 1,2,3,4,5,6,7
+		    LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+		]]>
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+		    SELECT
+				count(*) AS ship_id
+			FROM
+				matrix.daw_s_hei_dbct_ship_dtl_v d
+			LEFT JOIN 
+				ydserver.gs g1
+			ON 
+				d.dbct_cd = g1.bm
+			LEFT JOIN
+				ydserver.gs g2
+			on 
+				d.port_cd = g2.bm
+			WHERE
+				d.scan_tm >=DATE_FORMAT(#{start_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND
+				d.scan_tm <= DATE_FORMAT(#{end_dt,jdbcType=DATE},'%Y-%m-%d %H:%i:%s')
+			AND 
+				d.dbct_cd = if(#{sel_dbct_id,jdbcType=INTEGER}=0,d.dbct_cd,#{sel_dbct_id,jdbcType=INTEGER})
+			AND
+				d.oper_typ = if(#{oper_typ,jdbcType=INTEGER}=0,d.oper_typ,#{oper_typ,jdbcType=INTEGER}-1)
+			AND
+				d.eqpt_id = if(#{eqpt_id,jdbcType=VARCHAR}="",d.eqpt_id,#{eqpt_id,jdbcType=VARCHAR})
+			AND
+				d.ln_id = if(#{ln_id,jdbcType=VARCHAR}="",d.ln_id,#{ln_id,jdbcType=VARCHAR})
+			AND
+				d.ship_id = if(#{ship_id,jdbcType=INTEGER}=0,d.ship_id,#{ship_id,jdbcType=INTEGER})
+			AND
+				d.phys_port_cd = if(#{phy_port_id,jdbcType=VARCHAR}="",d.phys_port_cd,#{phy_port_id,jdbcType=VARCHAR})
+			AND
+				CASE WHEN #{port_id,jdbcType=INTEGER} = "" THEN d.port_cd
+					 ELSE #{port_id,jdbcType=INTEGER}+'0'
+					 END = d.port_cd
+		]]>
+  </select>
+</mapper>

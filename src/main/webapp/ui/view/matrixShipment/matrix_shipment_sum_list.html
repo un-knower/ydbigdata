@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/gray/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	<script type="text/javascript" src="../../js/echarts-all.js"></script>
+	<script type="text/javascript" src="../../js/combobox-company.js"></script>
+	<script type="text/javascript" src="../../js/tool.js"></script>
+	<script type="text/javascript">
+		var objectName = '高拍矩阵操作件量统计';
+		var listTemplate = '#matrix_shipment_sum_list';
+		var listId = "matrix_shipment_sum_list";
+		var formSearchTemplate = '#matrix_shipment_sum_searchForm';
+		var searchFormId = "matrix_shipment_sum_searchForm";
+		var gridMenuId = '#matrix_shipment_sum_list_menu';
+		var urlSearch = appId + '/actions/matrixShipment/sum/searchData.do?actionId=matrix_shipment_sum_searchData';
+		var urlExport= appId + '/actions/matrixShipment/sum/exportEntities.do?actionId=matrix_shipment_sum_exportEntities';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'matrix_shipment_sum_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		//当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		
+		$(function(){
+			$('#start_dt,#end_dt').datetimebox({'editable':false});
+			//$('#start_dt,#end_dt').datetimebox('setValue', getNowDate(0,-1));
+			authControl();
+			loadDatagrid();
+		});
+		function authControl(){
+			var userData = null;
+			$.ajax({
+				type : "POST",
+				url : c_url_get_user_profile,
+				cache : false,
+				async: false,
+				dataType : "json",
+				success : function(data) {
+					if (null != data && data.errorCode==0) {
+						userData = data.data;
+					} else {
+						$.messager.alert('提示消息', data.msg); 
+					}
+				}
+			});
+			$.each( userData.user_roles, function(i, n){
+		             var roleVales = n.split("_");  
+		             if(roleVales[0] == "dbct"){
+		            	 var dbctName = '';
+		            	 $.ajax({
+		     				type : "POST",
+		     				url :  appId+"/actions/tool/getOrgInf.do?actionId=tool_getOrgInf&sel_cd="+roleVales[1],
+		     				cache : false,
+		     				async: false,
+		     				dataType : "json",
+		     				success : function(data) {
+		     					if (null != data && data.errorCode==0) {
+		     						dbctName = data.data.orgName+'('+data.data.orgCd+')';
+		     					} else {
+		     						$.messager.alert('提示消息', data.msg); 
+		     					}
+		     				}
+		     			});
+		            	 $('#sel_dbct').val(dbctName);
+		         		$('#dbctE').attr("disabled",false);
+		         		 $('#dbctE').val(roleVales[1]);
+		         		$('#sel_dbct').attr("disabled",true);
+		         		 return false;
+		             }else if(roleVales[0] == "hq" || roleVales[0] == "superAdmin"){
+		            	 $('#sel_dbct').combobox({
+		     			    url:appId+"/actions/tool/getRegion.do?actionId=tool_getRegion&sel_level=444&sel_cd=",    
+		     			    valueField:'id',    
+		     			    textField:'name',
+		     				//editable:false ,
+			     			/*filter: function(q, row){
+			                      var opts = $(this).combobox('options');
+			                      if((row[opts.textField].match(q))!=null){
+			                       return true;
+			                      }else{
+			                    	  return false;
+			                      }
+			                 }, */
+		     			   filter: function(q, row){
+								var opts = $(this).combobox('options');
+								return row[opts.textField].indexOf(q) > -1;
+							},
+			                 onHidePanel : function() {  
+			                	    var _options = $(this).combobox('options');  
+			                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+			                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+			                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+			                	    for (var i = 0; i < _data.length; i++) {  
+			                	        if (_data[i][_options.valueField] == _value) {  
+			                	            _b=true;  
+			                	            break;  
+			                	        }  
+			                	    }  
+			                	    if(!_b){  
+			                	        $(this).combobox('setValue', '');  
+			                	    }  
+			                	}, 
+		     			    loadFilter:function(oData){
+		     			    	var data = oData.data;
+		     			    	for(var i in data){
+		     			    		data[i].name = data[i].name + "(" + data[i].id + ")";
+		     			    	}
+		     			    	data.unshift({"id":"","name":"请选择"});
+		     			    	return data;
+		     			    }
+		     			});
+		            	return false;
+		             }
+				});
+		}
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$.messager.alert('提示消息', '操作成功');
+						} else {
+							$.messager.alert('提示消息', data.msg);
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			var start=$("#start_dt").datetimebox("getValue"); 
+			var end=$("#end_dt").datetimebox("getValue");
+			if(start == "" || end == ""){
+				$.messager.alert('提示信息','日期不得为空');
+				return false;
+			}
+	   
+			start = start.replace(/-/g,'/'); 
+			end = end.replace(/-/g,'/'); 
+			var timestampStart = new Date(start).getTime();
+			
+			var timestampEnd = new Date(end).getTime();
+			var result=timestampEnd-timestampStart;
+			if(result<0){
+				$.messager.alert('提示消息', '起止日期不能大于结束日期');
+			}
+			else{
+			var params = $$.serializeToJson(formSearchTemplate);
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(isDatagridLoaded){
+				$(listTemplate).datagrid('load', json );
+			}else{
+				$(listTemplate).datagrid({
+					queryParams: json,
+					url:urlSearch			
+				});
+				isDatagridLoaded = true;
+			}	
+			}
+		};
+		
+		function exportExcel(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			$('#'+searchFormId).form('submit',{    
+			    url:actionUrl,    
+			    onSubmit: function(param){
+			    	param.search_condition = JSON.stringify(params)
+			    },
+			    success: function(data){  
+			    	if (data==null || data==""){
+				        $.messager.alert('提示消息', "上次请求未完成，请稍候！");
+			    	}else{
+				    	var oData = JSON.parse(data);
+				        if (oData&&oData.errorCode){   
+				        	$.messager.alert('提示消息', oData.msg);   
+				        } 
+			      }
+			    } 
+			}); 		
+		};
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+			$("#sel_dbct").val($("#dbctE").val());
+			//$('#start_dt,#end_dt').datetimebox('setValue', getNowDate(0,-1));
+		};
+		
+		function redirctDetail(dbctName, eqptId,lnId){
+			  var dbctcd=dbctName.split('(')[1].split(')')[0];
+			  var start_date=$("#start_dt").datetimebox("getValue");
+			  var end_date=$("#end_dt").datetimebox("getValue");
+			  var detailUrl = "../../ui/view/matrixShipment/matrix_shipment_detail_list.html?actionId=matrix_shipment_detail_list";
+			  var href = detailUrl+"&dbct="+dbctcd+"&start_date="+start_date+"&end_date="+end_date+"&eqpt_id="+eqptId+"&ln_id="+lnId;
+			  href = href.replace(/ /g, "%20");
+			  window.parent.openNewTab2("高拍矩阵操作票件明细表",href);
+			 }
+		
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			$(listTemplate).datagrid({
+				title:objectName+'列表',
+				height:$$.getDatagridHeight(),
+				width:$$.getDatagridWidth(),
+				idField:'',
+				columns:[
+				         	[
+								{field:'dbctName',title:'分拨中心',width:200,align:'center',rowspan:1,
+									styler: function(value,row,index){
+								          if(row.dbctName != '合计'){
+								          return 'text-decoration:underline;color:blue;';
+								          }else{
+								           return value;
+								          }
+								        }, 
+								         formatter:function(value, row, index){
+								          if(row.dbctName != '合计'){
+								           return "<a onclick=\"redirctDetail('"+row.dbctName+"','"+row.eqptId+"','"+row.lnId+"')\">"+value+"</a>";
+								          }else{
+								           return value;
+								          }
+								         }
+								},
+								{field:'eqptId',title:'设备编号',width:260,align:'center',rowspan:1},
+								{field:'lnId',title:'线体号',width:200,align:'center',rowspan:1},
+								{field:'operCnt',title:'操作总件数',width:160,align:'center',rowspan:1},
+								{field:'operWgt',title:'操作总重量',width:300,align:'center',rowspan:1}
+							]
+				         ],
+				onBeforeLoad:function(){$$.clearSelect(listId);},
+				queryParams:$$.serializeToJson(searchFormId),
+				border: true,
+				nowrap: true,
+				striped: true,
+				pagination:true,
+				rownumbers:true,
+				showFooter:false, 
+				singleSelect:true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar: gridMenuId,
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$.messager.alert('提示消息', data.msg);
+						}
+					}
+					return data; 
+				}
+			});
+		};
+	</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false" style="padding: 4px 0;">
+		<fieldset style="padding: 5px; border: 1px solid #d4a375;">
+			<legend>信息查询</legend>
+			<form id="matrix_shipment_sum_searchForm" class="search-form" method="post">
+				<input type="hidden" id="area" name="area_id" value="" />
+				<input type="hidden" id="dbct" name="dbct_id" value="" />
+				<input type="hidden" id="dbctE" name="sel_dbct_id" disabled="disabled"> 
+				<table cellpadding="2" style="width: 100%">
+				<tr>
+						<td align="right">开始日期：</td>
+						<td>
+							<input type="text" id="start_dt" name="start_dt" class="easyui-datetimebox"
+							data-options="" 
+							 /> 
+						</td>
+						<td align="right">结束日期：</td>
+						<td>
+							<input type="text" id="end_dt" name="end_dt" class="easyui-datetimebox"
+							data-options="" 
+							 /> 
+						</td>
+						<td align="right">分拨中心：</td>
+						<td colspan="5" >
+							<input type="text" id="sel_dbct" name="sel_dbct_id" style="width: 200px;" />
+						</td>
+						
+					</tr>
+					<tr>
+						<td align="right">设备编号：</td>
+						<td>
+							<input type="text" id="eqptCd" name="eqpt_id" 
+								onkeyup="this.value=this.value.replace(/[\W]/g,'')" onblur="this.value=this.value.replace(/[\W]/g,'')"/>
+						</td>
+						<!-- <td align="center">到</td> -->
+						<td align="right">线体号：</td>
+						<td>
+							<input type="text" id="lnId" name="ln_id" 
+								onkeyup="this.value=this.value.replace(/[\W]/g,'')" onblur="this.value=this.value.replace(/[\W]/g,'')"/>
+						</td>
+						<td>
+						<a class="easyui-linkbutton" iconCls="icon-search" style="margin-right: 20px;" onclick="searchData('matrix_shipment_sum_searchData',urlSearch)">查询</a>
+						</td>
+						<td align="center">
+						<a class="easyui-linkbutton" iconCls="icon-reload" style="margin-right: 20px;" onclick="searchReset()">重置</a>
+						</td>
+						<td align="center">
+						<a class="easyui-linkbutton" iconCls="icon-download" style="margin-right: 20px;" onclick="exportExcel('matrix_shipment_sum_exportEntities',urlExport)">导出</a>
+						</td>
+					</tr>
+					<!-- <tr>
+						<td colspan="8" align="center" >
+							<a class="easyui-linkbutton" iconCls="icon-download" style="margin-right: 20px;" onclick="exportExcel('matrix_shipment_sum_exportEntities',urlExport)">导出</a>
+						</td>
+					</tr> -->
+				</table>
+			</form>
+		</fieldset>
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 0px;">
+		<table id="matrix_shipment_sum_list" fit="true"></table>
+	</div>
+</body>
+</html>

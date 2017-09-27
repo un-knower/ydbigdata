@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript">
+	var objectName = '角色未分配资源信息';
+	var listTemplate = '#cip_admin_role_resource_list';
+	var listId = "cip_admin_role_resource_list";
+	var formSearchTemplate = '#cip_admin_role_resource_searchForm';
+	var searchFormId = "cip_admin_role_resource_searchForm";
+	var gridMenuId = '#cip_admin_role_resource_list_menu';
+	var getFormUrl = 'cip_admin_role_resource_form.html?actionId=cip_admin_role_resource_form&mode=display';
+	//		var urlExport= appId + '/actions/admin_resource/exportEntities.do?actionId=cip_admin_role_resource_exportEntities';
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var pageId = 'cip_admin_new_role_resource_list';
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlSearch = appId
+			+ '/actions/admin_roles/getResources.do?actionId=cip_admin_new_role_resource_getResource&root='
+			+ $$.QueryString("root") + '&resource_type='
+			+ $$.QueryString("resource_type");
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {
+		"cip_admin_role_resource_searchData" : urlSearch,
+	//	"cip_admin_role_resource_exportEntities":urlExport
+	}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+	var today = getToday();
+	var roleId = "";
+	var root = "";
+	var parentId = "";
+	var BPtableId = "";
+	var BtableId = "";
+	$(function() {
+		//loadCompanyCombobox();
+		//loadCombobox();
+		init();
+		getAuthButtons(pageId, gridMenuId, authActions, expellActions);
+		loadDatagrid();
+	});
+	function init() {
+		root = $$.QueryString("root");//资源根节点
+		parentId = $$.QueryString("parentId");//资源上级节点
+		resource_type = $$.QueryString("resource_type");
+		//alert(resource_type);
+		loadCombobox('resource_type', 'resource_type');
+		BPtableId = $$.QueryString("BPtableId");
+		BtableId = $$.QueryString("BtableId");
+	}
+	function doAction(pageId, buttonId, actionUrl) {
+		if (authActions.hasOwnProperty(buttonId)) {
+			if (buttonId.indexOf('addData') > 0) {
+				addData(buttonId, appId + actionUrl);
+			} else {
+				//默认操作
+				var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"
+						+ objectName);
+
+				if (selectRow) {
+					var tempUrl = '';
+					tempUrl = tempUrl + '&resource_id=' + selectRow.resource_id;
+					tempUrl += "&actionUrl=" + appId + actionUrl + "&tableId="
+							+ listId + "&refActionId=" + buttonId;
+					$$.openJcdfDialog(urlActionForm + tempUrl, '操作'
+							+ objectName, 500, 600);
+				}
+			}
+		} else {
+			alert('当前用户没有该操作授权!');
+		}
+	};
+
+	function searchData(buttonId, actionUrl) {
+		var params = $$.serializeToJson(formSearchTemplate);
+		var json = {
+			"search_condition" : JSON.stringify(params)
+		};
+		$(listTemplate).datagrid('load', json);
+	};
+
+	function searchReset() {
+		$(formSearchTemplate).form('reset');
+	};
+	/********************添加未分配过的资源*******************************/
+	function addData(buttonId, actionUrl) {
+		var urlAdd = appId
+				+ '/actions/admin_resource_2_resource/addResources.do?actionId=cip_admin_new_role_resource_addResource&root='
+				+ root + '&parentId=' + parentId;
+		var selectRows = $(listTemplate).datagrid('getChecked');
+		var dataAry = [];
+		for (var i = 0; i < selectRows.length; i++) {
+			var data = selectRows[i].resource_id;
+			dataAry.push(data);
+		}
+		if (selectRows.length == 0) {
+			$$.showJcdfMessager('提示消息', '请选择未添加的资源');
+			return;
+		}
+		$.ajax({
+			type : "POST",
+			url : urlAdd,
+			dataType : "json",
+			data : JSON.stringify(dataAry),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(BPtableId);
+					$$.refreshJcdfDatagrid(BtableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	/**
+	 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+	 */
+	function loadDatagrid() {
+		$(listTemplate).datagrid({
+			//title : objectName + '列表',
+			height : $$.getDatagridHeight(),
+			width : $$.getDatagridWidth(),
+			border : true,
+			nowrap : true,
+			striped : true,
+			fitColumns : true,
+			url : urlSearch,
+			idField : '',
+			columns : [ [ {
+				field : 'ck',
+				checkbox : true,
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'resource_id',
+				title : '资源id',
+				width : $$.fillsize(0.2),
+				align : 'center'
+			}, {
+				field : 'resource_name',
+				title : '资源名称',
+				width : $$.fillsize(0.2),
+				align : 'center'
+			}, {
+				field : 'sys_uri',
+				title : '访问URI',
+				width : $$.fillsize(0.3),
+				align : 'center'
+			}, {
+				field : 'resource_type',
+				title : '资源类型',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'resource_type_name',
+				title : '资源类型名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			} ] ],
+			onBeforeLoad : function() {
+				$$.clearSelect(listId);
+			},
+			//				pagination:true,
+			rownumbers : true,
+			singleSelect : false,
+			pageSize : $$.pageSize,
+			pageList : $$.pageList,
+			toolbar : gridMenuId,
+			loadFilter : function(data) {
+				if (data != null && data.errorCode > 0) {
+					if (data.msg != null && data.msg != "") {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+				}
+				return data;
+			}
+		});
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false">
+		<div class="area">
+			<div class="area-title">信息查询</div>
+			<div class="area-body">
+				<form id="cip_admin_role_resource_searchForm" class="search-form"
+					method="post">
+					<table cellpadding="2" style="width: 100%">
+						<tr>
+							<td align="right">资源id：</td>
+							<td align="left"><input id="resource_id" name="resource_id"
+								class="easyui-validatebox" data-options="" style="height:26px;width:220px"/></td>
+							<td align="right">资源名称：</td>
+							<td align="left"><input id="resource_name"
+								name="resource_name" class="easyui-validatebox" data-options="" style="height:26px;width:220px"/></td>
+					</table>
+				</form>
+				<div class="button-section">
+					<a class="easyui-linkbutton" iconCls="icon-search"
+						style="margin-right: 20px;"
+						onclick="searchData('cip_admin_role_resource_searchData',urlSearch)">查询</a>
+					<a class="easyui-linkbutton" iconCls="icon-reload"
+						style="margin-right: 20px;" onclick="searchReset()">重置</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div data-options="region:'center', split:false, border:false">
+		<div class="area">
+			<div class="area-title">未分配资源列表</div>
+			<div class="area-body autoAdapt">
+				<div id="cip_admin_role_resource_list_menu">
+					<a id="button_add" href="#" onclick="addData()"
+						class="easyui-linkbutton" iconCls="icon-add" plain="true">分配资源</a>
+				</div>
+				<table id="cip_admin_role_resource_list" fit="true"></table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

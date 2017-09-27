@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<link rel="stylesheet" href="../../js/codemirror/lib/codemirror.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript"
+	src="../../js/codemirror/lib/codemirror.js"></script>
+<script type="text/javascript" src="../../js/codemirror/mode/sql/sql.js"></script>
+<style>
+.CodeMirror {
+	height: 150px;
+}
+
+td.right {
+	width: 200px;
+}
+</style>
+<script type="text/javascript">
+	var id_queryId = "";
+	var pageId = 'cip_admin_commonquery_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_commonquery/getData.do?actionId=cip_admin_commonquery_getData";
+	var formTemplate = "#form_cip_admin_commonquery";
+	var listId = "cip_admin_commonquery_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+	paramFormUrl = 'cip_admin_commonquery_param_form.html?actionId=cip_admin_commonquery_param_form&mode=add';
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+	var codeMirrorEditor;
+
+	$(function() {
+		var textarea = document.getElementById('statement');
+		codeMirrorEditor = CodeMirror.fromTextArea(textarea, {
+			mode : "text/x-mariadb",
+			lineNumbers : true,
+			width : "100%",
+			height : "200px",
+			textWrapping : true,
+			autoMatchParens : true,
+		});
+		var textarea2 = document.getElementById('count_statement');
+		codeMirrorEditor2 = CodeMirror.fromTextArea(textarea2, {
+			mode : "text/x-mariadb",
+			lineNumbers : true,
+			width : "100%",
+			height : "100px",
+			textWrapping : true,
+			autoMatchParens : true,
+		});
+		init();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			submitData();
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+		//保存并关闭当前页面 按钮单价事件
+		$("#btn_saClose").bind("click", function() {
+			saCloseSubmitData();
+		});
+	});
+
+	function init() {
+		id_queryId = $$.QueryString("queryId");
+		//	alert(id_queryId);
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		loadCombobox('pagination', 'pagination');
+		loadCombobox('singleRec', 'singleRec');
+		if (mode == "edit") {
+			loadEditData();
+			$('#queryId').attr({
+				editable : false
+			});
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+			$('#btn_saClose').hide();
+		} else if (mode == "add") {
+			$('#queryId').val('');
+			$('#queryId').val('');
+			$('#description').val('');
+			$('#paramlist').val('');
+			$('#statement').val('');
+			$('#count_statement').val('');
+			$('#pagination').combobox('setValue', '');
+			$('#singleRec').combobox('setValue', '');
+			//	$('#btn_test').hide();
+		}
+	};
+	function hideDiv() {
+		//初始化，当是否多条为 ‘是’ 1 的时候 count语句框显示 当为‘否’ 0的时候 隐藏
+		var code = $('#singleRec').combobox('getValue');
+		// alert(code);
+		if (code == 1) {
+			$('#count').show();
+			$('#count_left').show();
+		} else {
+			$('#count').hide();
+			$('#count_left').hide();
+		}
+	}
+	function test() {
+	    id_queryId = $('#queryId').val();
+		var paramlist = $("#paramlist").val();
+		var pagination = $('#pagination').combobox('getValue');
+		openParamJcdfDialog(paramFormUrl + "&paramlist=" + paramlist
+				+ "&queryId=" + id_queryId + "&pagination=" + pagination,
+				"请填写参数测试运行sql", 600, 600);
+	}
+	function openParamJcdfDialog(href, title, maxHeight, maxWidth, widthRate) {
+		if (!widthRate) {
+			widthRate = 0.98;
+		}
+		paramJcdfDialog(window.self.name, href, title, maxHeight, maxWidth,
+				widthRate);
+	}
+	function paramJcdfDialog(frameName, href, title, maxHeight, maxWidth,
+			widthRate, closable) {
+		if (closable == undefined) {
+			closable = true;
+		}
+		sonFrameName = frameName;
+		var dialogDiv = $("#jcdfDiglogParam");
+		if (!dialogDiv || dialogDiv.length <= 0) {
+			var html = '<div id="jcdfDiglogParam" style="display: none;">'
+					+ '<iframe id="jcdfDiglogParamIframe" name="jcdfDiglogParamIframe" width="100%" height="200" src="" frameborder="0" scrolling="auto" marginheight="0" marginwidth="0"></iframe>'
+					+ '</div>';
+			$("body").append(html);
+		}
+		$("#jcdfDiglogParamIframe").attr('src', href);
+		$('#jcdfDiglogParam').css('display', '');
+		$('#jcdfDiglogParam').dialog(
+				{
+					title : title,
+					modal : true,
+					maximizable : true,
+					resizable : true,
+					closable : closable,
+					closed : false,
+					onOpen : function() {
+						$$.fillDialogWidthAndHeight("jcdfDiglogParam",
+								widthRate, maxHeight, maxWidth);
+						$("#jcdfDiglogParamIframe")
+								.height(
+										$("#jcdfDiglogParamIframe").parent()
+												.height() - 4);
+					},
+					onResize : function() {
+						$("#jcdfDiglogParamIframe")
+								.height(
+										$("#jcdfDiglogParamIframe").parent()
+												.height() - 4);
+					},
+					onClose : function() {
+						$("#jcdfDiglogParamIframe").attr('src', 'about:blank');
+					}
+				});
+	}
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"queryId" : id_queryId
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+					codeMirrorEditor.getDoc().setValue(
+							editHistoryData.statement);
+					codeMirrorEditor2.getDoc().setValue(
+							editHistoryData.count_statement);
+					hideDiv();
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+	/**--------------------保存当前页面内容，不关闭页面-------------------------**/
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		codeMirrorEditor.save();
+		codeMirrorEditor2.save();
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+	/**----------------保存当前页面数据并关闭当前页面----------------**/
+	function saCloseSubmitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		codeMirrorEditor.save();
+		codeMirrorEditor2.save();
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_commonquery" class="form">
+			<table>
+				<tr>
+					<td class="right">
+						<div style="width:100px">
+							<label for="queryId">查询id:</label>
+						</div>
+					</td>
+					<td class="left"><input type="text"
+						id="queryId" name="queryId" class="easyui-validatebox" style="width:220px;height:26px"
+						data-options="required:true,validType:'length[0,50]'" /></td>
+				</tr>
+				<tr>
+					<td class="right">
+						<div style="width:100px">
+							<label for="description">查询说明:</label>
+						</div>
+					</td>
+					<td class="left"><textarea type="text" id="description"
+							name="description" class="easyui-validatebox"
+							data-options="required:false,validType:'length[0,100]'"
+							style="width:220px;height:50px"></textarea></td>
+				</tr>
+				<tr>
+					<td class="right">
+						<div style="width:100px">
+							<label for="singleRec">是否多条:</label>
+						</div>
+
+					</td>
+					<td class="left"><input type="text" id="singleRec"
+						name="singleRec" class="easyui-combobox" style="width:232px;height:28px"
+						data-options="required:true,validType:'length[0,1]',onSelect : function(record) {				   
+					var str = $('#singleRec').combobox('getValue');
+					if (str == 1) {
+					    $('#count_left').show();
+						$('#count').show();
+					} else {
+					    $('#count_left').hide();
+						$('#count').hide();
+					}
+				}" />
+					</td>
+				</tr>
+				<tr>
+					<td class="right">
+						<div style="width:100px">
+							<label for="pagination">是否分页:</label>
+						</div>
+					</td>
+					<td class="left"><input type="text" id="pagination"
+						name="pagination" class="easyui-comboboxx" style="width:232px;height:28px"
+						data-options="required:false,validType:'length[0,1]'" /></td>
+				</tr>
+				<tr>
+					<td class="right">
+						<div style="width:100px">
+							<label for="paramlist">查询参数列表:</label>
+						</div>
+					</td>
+					<td class="left"><textarea type="text" id="paramlist"
+							name="paramlist" class="easyui-validatebox" style="width:220px;height:50px"
+							data-options="required:false,validType:'length[0,300]'"
+							style="height:35px;width:90%"></textarea></td>
+				</tr>
+				<tr>
+					<td class="right">
+						<div style="width:100px">
+							<label for="statement">查询语句:</label>
+						</div>
+					</td>
+					<td class="left">
+						<!-- <textarea type="text" id="statement" name="statement"  class="easyui-validatebox" 
+						data-options="required:true,validType:'length[0,65535]'"  style="height:55px;width:300px"></textarea> -->
+						<div style="width:600px;height:150px">
+							<textarea id="statement" name="statement"></textarea>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="right">
+						<div id="count_left" style="width:100px">
+							<label for="count_statement">统计语句:</label>
+						</div>
+					</td>
+					<td class="left">
+						<!-- <textarea type="text" id="count_statement" name="count_statement"  class="easyui-validatebox" 
+						data-options="required:false,validType:'length[0,65535]'" style="height:55px;width:90%"> </textarea> -->
+						<div style="width:600px;height:150px" id="count">
+							<textarea id="count_statement" name="count_statement"></textarea>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<div class="button-section">
+		<a id="btn_saClose" href="#" class="easyui-linkbutton"
+			iconCls="icon-ok">保存关闭</a> <a id="btn_save" href="#"
+			class="easyui-linkbutton" iconCls="icon-ok">保存</a> <a id="btn_cancel"
+			href="#" class="easyui-linkbutton" iconCls="icon-cancel">取消</a> <a
+			id="btn_test" href="#" class="easyui-linkbutton" iconCls="icon-set"
+			onclick="test()">测试</a>
+	</div>
+
+</body>
+</html>

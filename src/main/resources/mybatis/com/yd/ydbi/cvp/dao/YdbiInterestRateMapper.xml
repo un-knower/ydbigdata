@@ -1,0 +1,2542 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.api.quality.dao.YdbiInterestRateMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.api.quality.model.YdbiInterestRate">
+		<result column="rate_flag" property="rate_flag" jdbcType="VARCHAR" />
+		<result column="org_name" property="org_name" jdbcType="VARCHAR" />
+		<result column="rate_num" property="rate_num" jdbcType="VARCHAR" />
+		<result column="interest_rate" property="interest_rate" jdbcType="VARCHAR" />
+		<result column="day_percent" property="day_percent" jdbcType="VARCHAR" />
+		<result column="week_with_percent" property="week_with_percent" jdbcType="VARCHAR" />
+		<result column="day_time" property="day_time" jdbcType="VARCHAR" />
+		<result column="week_num" property="week_num" jdbcType="VARCHAR" />
+		<result column="month_num" property="month_num" jdbcType="VARCHAR" />
+		<result column="week_rate" property="week_rate" jdbcType="VARCHAR" />
+		<result column="month_rate" property="month_rate" jdbcType="VARCHAR" />
+		
+	</resultMap>
+
+	<!--延误率-->
+	<select id="selectDelay" parameterType="java.util.Map" resultMap="BaseResultMap">
+	SELECT
+			'延误率'  AS rate_flag,
+			Round(a.dly_rte*100,2) AS interest_rate,
+			Round((a.dly_rte-b.dly_rte)/b.dly_rte*100,2) AS day_percent,
+			Round((a.dly_rte-c.dly_rte)/c.dly_rte*100,2) AS week_with_percent,
+			Round(b.dly_rte*100,2)   AS day_time,
+			Round(d.dly_snd_cnt,2) AS week_num,
+			Round(e.dly_snd_cnt,2) AS month_num,
+			Round(d.dly_rte*100,2) AS week_rate,
+			Round(e.dly_rte*100,2) AS month_rate
+			FROM (
+			SELECT 
+			#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				 when #{sel_level} = '2' then o.prov_cd
+				 when #{sel_level} = '5' then o.org_cd
+				 else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) 	AS dly_rte	
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)a
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				 when #{sel_level} = '2' then o.prov_cd
+				 when #{sel_level} = '5' then o.org_cd
+				 else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) 	AS dly_rte 	
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) 	AS dly_rte 
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)c
+	ON a.stats_dt = c.stats_dt
+	AND a.dbct_cd = c.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/7  AS dly_snd_cnt,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt >= DATE_SUB(subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1),INTERVAL 1 WEEK)
+				AND a.stats_dt &lt; subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)d
+	ON a.stats_dt = d.stats_dt
+	AND a.dbct_cd = d.dbct_cd
+	LEFT JOIN(
+			SELECT
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/#{betweendays}  AS dly_snd_cnt,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				
+				<![CDATA[	
+					AND  a.stats_dt BETWEEN #{monthstart} AND #{data_date}
+					AND o.org_typ = '3'
+					AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt 
+					]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)e
+	ON a.stats_dt = e.stats_dt
+	AND a.dbct_cd = e.dbct_cd
+	</select>
+	<!--错发率-->
+	<select id="selectWrong" parameterType="java.util.Map" resultMap="BaseResultMap">
+	SELECT
+			'错发率'  AS rate_flag,
+			Round(a.err_rte2*100,2) AS interest_rate,
+			Round((a.err_rte2-b.err_rte2)/b.err_rte2*100,2) AS day_percent,
+			Round((a.err_rte2-c.err_rte2)/c.err_rte2*100,2) AS week_with_percent,
+			Round(b.err_rte2*100,2)    AS day_time,
+			Round(d.err_snd_cnt,2) AS week_num,
+			Round(e.err_snd_cnt,2) AS month_num,
+			Round(d.err_rte2*100,2) AS week_rate,
+			Round(e.err_rte2*100,2) AS month_rate
+			FROM (
+			SELECT 
+			#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+			SUM(a.err_snd_cnt)/SUM(a.oper_cnt)	AS err_rte2	
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)a
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt)	AS err_rte2	
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt)	AS err_rte2 
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)c
+	ON a.stats_dt = c.stats_dt
+	AND a.dbct_cd = c.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.err_snd_cnt)/7  AS err_snd_cnt,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt >= DATE_SUB(subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1),INTERVAL 1 WEEK)
+				AND a.stats_dt &lt; subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)d
+	ON a.stats_dt = d.stats_dt
+	AND a.dbct_cd = d.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				when #{sel_level} = '2' then o.prov_cd
+				when #{sel_level} = '5' then o.org_cd
+				else '000000'  end  AS dbct_cd,
+				SUM(a.err_snd_cnt)/#{betweendays}  AS err_snd_cnt,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				
+				<![CDATA[	
+					AND  a.stats_dt BETWEEN #{monthstart} AND #{data_date}
+					AND o.org_typ = '3'
+					AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt 
+					]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)e
+	ON a.stats_dt = e.stats_dt
+	AND a.dbct_cd = e.dbct_cd
+	</select>
+	<!--错分率-->
+	<select id="selectWrongpoints" parameterType="java.util.Map" resultMap="BaseResultMap">
+	SELECT
+			'错分率'  AS rate_flag,
+			Round(a.err_rte1*100,2) AS interest_rate,
+			Round((a.err_rte1-b.err_rte1)/b.err_rte1*100,2) AS day_percent,
+			Round((a.err_rte1-c.err_rte1)/c.err_rte1*100,2) AS week_with_percent,
+			Round(b.err_rte1*100,2)    AS day_time,
+			Round(d.issue_err_sum,2) AS week_num,
+			Round(e.issue_err_sum,2) AS month_num,
+			Round(d.err_rte1*100,2) AS week_rate,
+			Round(e.err_rte1*100,2) AS month_rate
+			FROM (
+			SELECT 
+			#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+			SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)	AS err_rte1
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)a
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)	AS err_rte1
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)	AS err_rte1
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)c
+	ON a.stats_dt = c.stats_dt
+	AND a.dbct_cd = c.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.issue_err_sum)/7  AS issue_err_sum,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt >= DATE_SUB(subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1),INTERVAL 1 WEEK)
+				AND a.stats_dt &lt; subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)d
+	ON a.stats_dt = d.stats_dt
+	AND a.dbct_cd = d.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.issue_err_sum)/#{betweendays}  AS issue_err_sum,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				
+				<![CDATA[	
+					AND  a.stats_dt BETWEEN #{monthstart} AND #{data_date}
+					AND o.org_typ = '3'
+					AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt 
+					]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)e
+	ON a.stats_dt = e.stats_dt
+	AND a.dbct_cd = e.dbct_cd
+	</select>
+	<!--集错包率-->
+	<select id="selectWrongpackage" parameterType="java.util.Map" resultMap="BaseResultMap">
+	SELECT
+			'集错包率'  AS rate_flag,
+			Round(a.err_rte3*100,2) AS interest_rate,
+			Round((a.err_rte3-b.err_rte3)/b.err_rte3*100,2) AS day_percent,
+			Round((a.err_rte3-c.err_rte3)/c.err_rte3*100,2) AS week_with_percent,
+			Round(b.err_rte3*100,2)    AS day_time,
+			Round(d.pk_error_num,2) AS week_num,
+			Round(e.pk_error_num,2) AS month_num,
+			Round(d.err_rte3*100,2) AS week_rate,
+			Round(e.err_rte3*100,2) AS month_rate
+			FROM (
+			SELECT 
+			#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+			SUM(a.pk_error_num)/SUM(a.pk_tot_num)	AS err_rte3
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)a
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num)	AS err_rte3
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	LEFT JOIN(
+			SELECT 
+			#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+			SUM(a.pk_error_num)/SUM(a.pk_tot_num)	AS err_rte3
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)c
+	ON a.stats_dt = c.stats_dt
+	AND a.dbct_cd = c.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.pk_error_num)/7  AS pk_error_num,
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt >= DATE_SUB(subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1),INTERVAL 1 WEEK)
+				AND a.stats_dt &lt; subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)d
+	ON a.stats_dt = d.stats_dt
+	AND a.dbct_cd = d.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.pk_error_num)/#{betweendays}  AS pk_error_num,
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				
+				<![CDATA[	
+					AND  a.stats_dt BETWEEN #{monthstart} AND #{data_date}
+					AND o.org_typ = '3'
+					AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt
+					]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)e
+	ON a.stats_dt = e.stats_dt
+	AND a.dbct_cd = e.dbct_cd
+	</select>
+	<!--遗失率-->
+	<select id="selectLoss" parameterType="java.util.Map" resultMap="BaseResultMap">
+	SELECT
+			'遗失率'  AS rate_flag,
+			Round(a.lost_rte*10000,2) AS interest_rate,
+			Round((a.lost_rte-b.lost_rte)/b.lost_rte*100,2) AS day_percent,
+			Round((a.lost_rte-c.lost_rte)/c.lost_rte*100,2) AS week_with_percent,
+			Round(b.lost_rte*10000,2)    AS day_time,
+			Round(d.dob_tot_cnt,2) AS week_num,
+			Round(e.dob_tot_cnt,2) AS month_num,
+			Round(d.lost_rte*10000,2) AS week_rate,
+			Round(e.lost_rte*10000,2) AS month_rate
+			FROM (
+			SELECT
+			#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+			Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8)	AS lost_rte
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)a
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8)	AS lost_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)b
+	ON a.stats_dt = b.stats_dt
+	AND a.dbct_cd = b.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.lost_cnt)/SUM(a.dob_tot_cnt)	AS lost_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)c
+	ON a.stats_dt = c.stats_dt
+	AND a.dbct_cd = c.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.lost_cnt)/7  AS dob_tot_cnt,
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt >= DATE_SUB(subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1),INTERVAL 1 WEEK)
+				AND a.stats_dt &lt; subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)d
+	ON a.stats_dt = d.stats_dt
+	AND a.dbct_cd = d.dbct_cd
+	LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+			case when #{sel_level} = '1' then o.grtr_dist_cd
+			when #{sel_level} = '2' then o.prov_cd
+			when #{sel_level} = '5' then o.org_cd
+			else '000000'  end  AS dbct_cd,
+				SUM(a.lost_cnt)/#{betweendays}  AS dob_tot_cnt,
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				
+				<![CDATA[	
+					AND  a.stats_dt BETWEEN #{monthstart} AND #{data_date}
+					AND o.org_typ = '3'
+					AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt
+					]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)e
+	ON a.stats_dt = e.stats_dt
+	AND a.dbct_cd = e.dbct_cd
+	</select>
+	<!--疑似遗留率-->
+	<select id="selectRetention" parameterType="java.util.Map" resultMap="BaseResultMap">
+			SELECT
+'疑似遗失率'  AS rate_flag,
+Round(a.y_lost_rte*10000,2) AS interest_rate,
+Round((a.y_lost_rte-b.y_lost_rte)/b.y_lost_rte*100,2) AS day_percent,
+Round((a.y_lost_rte-c.y_lost_rte)/c.y_lost_rte*100,2) AS week_with_percent,
+Round(b.y_lost_rte*10000,2)    AS day_time,
+Round(d.dob_lost_cnt,2) AS week_num,
+Round(e.dob_lost_cnt,2) AS month_num,
+Round(d.y_lost_rte*10000,2) AS week_rate,
+Round(e.y_lost_rte*10000,2) AS month_rate
+FROM (
+SELECT 
+#{data_date} AS stats_dt,
+case when #{sel_level} = '1' then o.grtr_dist_cd
+when #{sel_level} = '2' then o.prov_cd
+when #{sel_level} = '5' then o.org_cd
+else '000000'  end  AS dbct_cd,
+Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8)	AS y_lost_rte
+FROM ydbi.bas_s_bigdata_qut_ctl a
+LEFT JOIN ydbi.org_inf o
+ON a.dbct_cd = o.org_cd
+<where> 
+	AND  a.stats_dt=#{data_date}
+	<![CDATA[	
+	AND o.org_typ = '3'
+	AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+	<if test='sel_cd =="0" and sel_level == "0" '>
+		 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+	</if>
+	<if test='sel_level!=null and sel_level == "1" '>
+		AND o.grtr_dist_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "2" '>
+		AND o.prov_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "5" '>
+		AND o.org_cd =#{sel_cd}
+	</if>
+</where>
+)a
+LEFT JOIN(
+SELECT 
+	#{data_date} AS stats_dt,
+case when #{sel_level} = '1' then o.grtr_dist_cd
+when #{sel_level} = '2' then o.prov_cd
+when #{sel_level} = '5' then o.org_cd
+else '000000'  end  AS dbct_cd,
+	Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8)	AS y_lost_rte
+FROM  ydbi.bas_s_bigdata_qut_ctl a
+LEFT JOIN ydbi.org_inf o
+ON a.dbct_cd = o.org_cd
+<where> 
+	AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+	<![CDATA[	
+	AND o.org_typ = '3'
+	AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+	<if test='sel_cd =="0" and sel_level == "0" '>
+		 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+	</if>
+	<if test='sel_level!=null and sel_level == "1" '>
+		AND o.grtr_dist_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "2" '>
+		AND o.prov_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "5" '>
+		AND o.org_cd =#{sel_cd}
+	</if>
+</where>
+)b
+ON a.stats_dt = b.stats_dt
+AND a.dbct_cd = b.dbct_cd
+LEFT JOIN(
+SELECT 
+	#{data_date} AS stats_dt,
+case when #{sel_level} = '1' then o.grtr_dist_cd
+when #{sel_level} = '2' then o.prov_cd
+when #{sel_level} = '5' then o.org_cd
+else '000000'  end  AS dbct_cd,
+	SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt)	AS y_lost_rte
+FROM  ydbi.bas_s_bigdata_qut_ctl a
+LEFT JOIN ydbi.org_inf o
+ON a.dbct_cd = o.org_cd
+<where> 
+	AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+	<![CDATA[	
+	AND o.org_typ = '3'
+	AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+	<if test='sel_cd =="0" and sel_level == "0" '>
+		 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+	</if>
+	<if test='sel_level!=null and sel_level == "1" '>
+		AND o.grtr_dist_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "2" '>
+		AND o.prov_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "5" '>
+		AND o.org_cd =#{sel_cd}
+	</if>
+</where>
+)c
+ON a.stats_dt = c.stats_dt
+AND a.dbct_cd = c.dbct_cd
+LEFT JOIN(
+SELECT 
+	#{data_date} AS stats_dt,
+case when #{sel_level} = '1' then o.grtr_dist_cd
+when #{sel_level} = '2' then o.prov_cd
+when #{sel_level} = '5' then o.org_cd
+else '000000'  end  AS dbct_cd,
+	SUM(a.dob_lost_cnt)/7  AS dob_lost_cnt,
+	Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte
+FROM  ydbi.bas_s_bigdata_qut_ctl a
+LEFT JOIN ydbi.org_inf o
+ON a.dbct_cd = o.org_cd
+<where> 
+	AND  a.stats_dt BETWEEN subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-1)
+	AND subdate(#{data_date},if(date_format(#{data_date},'%w')=0,7,date_format(#{data_date},'%w'))-7)
+	<![CDATA[	
+	AND o.org_typ = '3'
+	AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+	<if test='sel_cd =="0" and sel_level == "0" '>
+		 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+	</if>
+	<if test='sel_level!=null and sel_level == "1" '>
+		AND o.grtr_dist_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "2" '>
+		AND o.prov_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "5" '>
+		AND o.org_cd =#{sel_cd}
+	</if>
+</where>
+)d
+ON a.stats_dt = d.stats_dt
+AND a.dbct_cd = d.dbct_cd
+LEFT JOIN(
+SELECT 
+	#{data_date} AS stats_dt,
+case when #{sel_level} = '1' then o.grtr_dist_cd
+when #{sel_level} = '2' then o.prov_cd
+when #{sel_level} = '5' then o.org_cd
+else '000000'  end  AS dbct_cd,
+	SUM(a.dob_lost_cnt)/#{betweendays}  AS dob_lost_cnt,
+	Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte
+FROM  ydbi.bas_s_bigdata_qut_ctl a
+LEFT JOIN ydbi.org_inf o
+ON a.dbct_cd = o.org_cd
+<where> 
+	
+	<![CDATA[	
+		AND  a.stats_dt BETWEEN #{monthstart} AND #{data_date}
+		AND o.org_typ = '3'
+		AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt 
+		]]>
+	<if test='sel_cd =="0" and sel_level == "0" '>
+		 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+	</if>
+	<if test='sel_level!=null and sel_level == "1" '>
+		AND o.grtr_dist_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "2" '>
+		AND o.prov_cd =#{sel_cd}
+	</if>
+	<if test='sel_level!=null and sel_level == "5" '>
+		AND o.org_cd =#{sel_cd}
+	</if>
+</where>
+)e
+ON a.stats_dt = e.stats_dt
+AND a.dbct_cd = e.dbct_cd
+	</select>
+	<!--延误率-列表-->
+	<select id="selectDelayline" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	(
+		SELECT
+			'延误率-前十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.dly_snd_cnt AS rate_num,               
+			Round(a.dly_rte*100,2) AS interest_rate,
+			Round((a.dly_rte-b.dly_rte)/b.dly_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.dly_snd_cnt) AS dly_snd_cnt,               
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte 	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+					<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd, 
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte 				
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'延误率-后十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.dly_snd_cnt AS rate_num,               
+			Round(a.dly_rte*100,2) AS interest_rate,
+			Round((a.dly_rte-b.dly_rte)/b.dly_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.dly_snd_cnt) AS dly_snd_cnt,               
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte 	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+					<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd, 
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte 				
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate 
+		LIMIT 0,10
+		)
+		UNION
+		(
+		SELECT
+			'延误率-全部'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.dly_snd_cnt AS rate_num,               
+			Round(a.dly_rte*100,2) AS interest_rate,
+			Round((a.dly_rte-b.dly_rte)/b.dly_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.dly_snd_cnt) AS dly_snd_cnt,               
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte 	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+					<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd, 
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) AS dly_rte 				
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC
+		LIMIT 0,1000 
+		)
+	</select>
+	<!--错发率-列表-->
+	<select id="selectWrongline" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	(
+			SELECT
+			'错发率-前十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.err_snd_cnt AS rate_num,               
+			Round(a.err_rte2*100,2) AS interest_rate,
+			Round((a.err_rte2-b.err_rte2)/b.err_rte2*100,2) AS day_percent
+		FROM (
+			SELECT
+				#{data_date}  AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.err_snd_cnt) AS err_snd_cnt,               
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2				
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC 
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'错发率-后十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.err_snd_cnt AS rate_num,               
+			Round(a.err_rte2*100,2) AS interest_rate,
+			Round((a.err_rte2-b.err_rte2)/b.err_rte2*100,2) AS day_percent
+		FROM (
+			SELECT
+				#{data_date}  AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.err_snd_cnt) AS err_snd_cnt,               
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2				
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate 
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'错发率-全部'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.err_snd_cnt AS rate_num,               
+			Round(a.err_rte2*100,2) AS interest_rate,
+			Round((a.err_rte2-b.err_rte2)/b.err_rte2*100,2) AS day_percent
+		FROM (
+			SELECT
+				#{data_date}  AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.err_snd_cnt) AS err_snd_cnt,               
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt) AS err_rte2				
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC 
+		LIMIT 0,1000
+		)
+	</select>
+	<!--错分率-列表-->
+	<select id="selectWrongpointsline" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	(
+			SELECT
+			'错分率-前十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.issue_err_sum AS rate_num,               
+			Round(a.err_rte1*100,2) AS interest_rate,
+			Round((a.err_rte1-b.err_rte1)/b.err_rte1*100,2) AS day_percent 
+		FROM (
+				SELECT
+			#{data_date}  AS stats_dt,
+			case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+			case when #{sel_level} = '1' then o.org_nm 
+				when #{sel_level} = '2' then o.org_nm 
+				when #{sel_level} = '5' then o.org_nm											
+				else o.org_nm end AS dbct_name,
+			SUM(a.issue_err_sum) AS issue_err_sum,               
+			SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1
+		FROM  ydbi.org_inf o
+		LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+		ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'错分率-后十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.issue_err_sum AS rate_num,               
+			Round(a.err_rte1*100,2) AS interest_rate,
+			Round((a.err_rte1-b.err_rte1)/b.err_rte1*100,2) AS day_percent 
+		FROM (
+				SELECT
+			#{data_date}  AS stats_dt,
+			case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+			case when #{sel_level} = '1' then o.org_nm 
+				when #{sel_level} = '2' then o.org_nm 
+				when #{sel_level} = '5' then o.org_nm											
+				else o.org_nm end AS dbct_name,
+			SUM(a.issue_err_sum) AS issue_err_sum,               
+			SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1
+		FROM  ydbi.org_inf o
+		LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+		ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate 
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'错分率-全部'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.issue_err_sum AS rate_num,               
+			Round(a.err_rte1*100,2) AS interest_rate,
+			Round((a.err_rte1-b.err_rte1)/b.err_rte1*100,2) AS day_percent 
+		FROM (
+				SELECT
+			#{data_date}  AS stats_dt,
+			case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+			case when #{sel_level} = '1' then o.org_nm 
+				when #{sel_level} = '2' then o.org_nm 
+				when #{sel_level} = '5' then o.org_nm											
+				else o.org_nm end AS dbct_name,
+			SUM(a.issue_err_sum) AS issue_err_sum,               
+			SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1
+		FROM  ydbi.org_inf o
+		LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+		ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum) AS err_rte1   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC
+		LIMIT 0,1000
+		)	
+	</select>
+	<!--集错包率-列表-->
+	<select id="selectWrongpackageline" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	(
+			SELECT
+			'集错包率-前十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.pk_error_num AS rate_num,               
+			Round(a.err_rte3*100,2) AS interest_rate,
+			Round((a.err_rte3-b.err_rte3)/b.err_rte3*100,2) AS day_percent 
+		FROM (
+			SELECT
+				#{data_date}  AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.pk_error_num) AS pk_error_num,               
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+					<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3 	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'集错包率-后十'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.pk_error_num AS rate_num,               
+			Round(a.err_rte3*100,2) AS interest_rate,
+			Round((a.err_rte3-b.err_rte3)/b.err_rte3*100,2) AS day_percent 
+		FROM (
+			SELECT
+				#{data_date}  AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.pk_error_num) AS pk_error_num,               
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+					<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3 	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate 
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'集错包率-全部'  AS rate_flag,
+			a.dbct_cd AS org_id,
+			a.dbct_name AS org_name,
+			a.pk_error_num AS rate_num,               
+			Round(a.err_rte3*100,2) AS interest_rate,
+			Round((a.err_rte3-b.err_rte3)/b.err_rte3*100,2) AS day_percent 
+		FROM (
+			SELECT
+				#{data_date}  AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+				case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm end AS dbct_name,
+				SUM(a.pk_error_num) AS pk_error_num,               
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+					<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+			)a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num) AS err_rte3 	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate DESC
+		LIMIT 0,1000
+		)		
+	</select>
+	<!--遗失率-列表-->
+	<select id="selectLossline" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	(
+			SELECT
+			'遗失率-前十'  AS rate_flag,
+			a.org_name AS org_name,
+			a.dob_tot_cnt AS rate_num,               
+			Round(a.lost_rte*10000,2) AS interest_rate,
+			Round((a.lost_rte-b.lost_rte)/b.lost_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+					case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm END AS org_name,
+					SUM(a.lost_cnt) AS dob_tot_cnt,  
+					Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte   	
+				FROM  ydbi.org_inf o
+				LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+				ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+		) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.lost_cnt)/SUM(a.dob_tot_cnt)	AS lost_rte   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate  DESC
+		LIMIT 0,10
+		)
+		UNION
+		(
+		SELECT
+			'遗失率-后十'  AS rate_flag,
+			a.org_name AS org_name,
+			a.dob_tot_cnt AS rate_num,               
+			Round(a.lost_rte*10000,2) AS interest_rate,
+			Round((a.lost_rte-b.lost_rte)/b.lost_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+					case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm END AS org_name,
+					SUM(a.lost_cnt) AS dob_tot_cnt,  
+					Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte   	
+				FROM  ydbi.org_inf o
+				LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+				ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+		) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.lost_cnt)/SUM(a.dob_tot_cnt)	AS lost_rte   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate  
+		LIMIT 0,10
+		)
+		UNION
+		(
+		SELECT
+			'遗失率-全部'  AS rate_flag,
+			a.org_name AS org_name,
+			a.dob_tot_cnt AS rate_num,               
+			Round(a.lost_rte*10000,2) AS interest_rate,
+			Round((a.lost_rte-b.lost_rte)/b.lost_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+					case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm END AS org_name,
+					SUM(a.lost_cnt) AS dob_tot_cnt,  
+					Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8) AS lost_rte   	
+				FROM  ydbi.org_inf o
+				LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+				ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+		) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.lost_cnt)/SUM(a.dob_tot_cnt)	AS lost_rte   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate  DESC
+		LIMIT 0,1000
+		)
+	</select>
+	<!--疑似遗留率-列表-->
+	<select id="selectRetentionline" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	(
+			SELECT
+			'疑似遗失率-前十'  AS rate_flag,
+			a.org_name AS org_name,
+			a.dob_lost_cnt AS rate_num,               
+			Round(a.y_lost_rte*10000,2) AS interest_rate,
+			Round((a.y_lost_rte-b.y_lost_rte)/b.y_lost_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+					case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm END AS org_name,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,  
+					Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte   	
+				FROM  ydbi.org_inf o
+				LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+				ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+		) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt)	AS y_lost_rte   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate  DESC
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'疑似遗失率-后十'  AS rate_flag,
+			a.org_name AS org_name,
+			a.dob_lost_cnt AS rate_num,               
+			Round(a.y_lost_rte*10000,2) AS interest_rate,
+			Round((a.y_lost_rte-b.y_lost_rte)/b.y_lost_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+					case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm END AS org_name,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,  
+					Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte   	
+				FROM  ydbi.org_inf o
+				LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+				ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+		) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt)	AS y_lost_rte   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate  
+		LIMIT 0,10
+		)
+		UNION
+		(
+			SELECT
+			'疑似遗失率-全部'  AS rate_flag,
+			a.org_name AS org_name,
+			a.dob_lost_cnt AS rate_num,               
+			Round(a.y_lost_rte*10000,2) AS interest_rate,
+			Round((a.y_lost_rte-b.y_lost_rte)/b.y_lost_rte*100,2) AS day_percent
+		FROM (
+			SELECT 
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then o.org_cd 
+					when #{sel_level} = '2' then o.org_cd 
+					when #{sel_level} = '5' then o.org_cd
+					else o.org_cd  end AS dbct_cd,
+					case when #{sel_level} = '1' then o.org_nm 
+					when #{sel_level} = '2' then o.org_nm 
+					when #{sel_level} = '5' then o.org_nm											
+					else o.org_nm END AS org_name,
+					SUM(a.dob_lost_cnt) AS dob_lost_cnt,  
+					Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8) AS y_lost_rte   	
+				FROM  ydbi.org_inf o
+				LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+				ON a.dbct_cd = o.org_cd
+				<where> 
+					AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+			</where>
+				GROUP BY 1,2
+		) a
+		LEFT JOIN (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.org_cd 
+				when #{sel_level} = '2' then o.org_cd 
+				when #{sel_level} = '5' then o.org_cd
+				else o.org_cd  end AS dbct_cd,
+				SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt)	AS y_lost_rte   	
+			FROM  ydbi.org_inf o
+			LEFT JOIN ydbi.bas_s_bigdata_qut_ctl a
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			GROUP BY 1,2
+		)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		ORDER BY interest_rate  DESC
+		LIMIT 0,1000
+		)
+	</select>
+</mapper>

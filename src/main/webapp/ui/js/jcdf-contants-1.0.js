@@ -1,0 +1,12 @@
+var appId = '/ydbi';
+var c_url_login = appId+"/login.html";
+var c_url_logout = appId+"/actions/common/user/logout.do?actionId=system_logout";
+var c_url_change_pwd = appId+"/actions/org/reset_password.do";
+var c_url_has_pwd = appId+"/actions/org/has_password.do";
+var c_url_get_user_profile =appId+'/actions/common/user/getUserProfile.do?actionId=system_getUserProfile';
+var c_url_get_resources =appId+"/actions/common/user/getResources.do?actionId=system_getResources";
+var c_url_ddic =appId+'/actions/common/domain/getDomains.do?domainId=system_getDomains';
+var c_url_get_dealthings =appId+'/actions/common/user/getDealThingsCount.do?actionId=system_getDealThingsCount';
+var c_war_name = appId;
+var version='v2.0';
+var appTitle='韵达大数据分析平台';

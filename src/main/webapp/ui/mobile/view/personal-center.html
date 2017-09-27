@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>个人中心</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body class="back-body">
+<div class="container">
+    <div class="person-center-top">
+        <div class="person-center-img"></div>
+        <p class="person-center-id">15514508666</p>
+    </div>
+    <div class="person-center-menu">
+        <div class="person-center-item">
+            <div class="person-center-hd person-center-collection"></div>
+            <div class="person-center-bd">
+                <p class="person-center-info">我的收藏</p>
+            </div>
+            <div class="point-next"></div>
+        </div>
+        <div class="person-center-item">
+            <div class="person-center-hd person-center-scan"></div>
+            <div class="person-center-bd">
+                <p class="person-center-info">浏览记录</p>
+            </div>
+            <div class="point-next"></div>
+        </div>
+        <div class="person-center-item">
+            <div class="person-center-hd person-center-pass"></div>
+            <div class="person-center-bd">
+                <p class="person-center-info" style="border-bottom: none">重置密码</p>
+            </div>
+            <div class="point-next"></div>
+        </div>
+    </div>
+    <div class="close-btn">退出当前登录</div>
+</div>
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    $(function() {
+        init();
+    });
+    function init() {
+        getNum();    //用于显示网点
+        viewJs();
+        setView();
+        linkTab();  //导航栏设置
+    }
+    function viewJs() {
+        //设置tab滚动
+        var windowWid = $(window).width();
+        var listIndex = $(".tab-list").length;
+        $(".tab-all").css("width",listIndex*windowWid/5).children().css("width",windowWid/5);
+        //下拉展现数据
+        $(".business-menu-top").on("click",function() {
+            if($(this).attr("data-show") == "false") {
+                $(this).attr("data-show","true").children(".business-menu-img").removeClass("business-menu-img-down").addClass("business-menu-img-up").end().next().slideDown(200);
+             //   $(this).parent(".business-menu").siblings().find(".business-menu-top").attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);   //可以出发其他关闭
+            }else {
+                $(this).attr("data-show","false").children(".business-menu-img").removeClass("business-menu-img-up").addClass("business-menu-img-down").end().next().slideUp(200);
+            }
+        });
+
+        //为了使第一个展开
+        $(".business-menu-top").eq(0).trigger("click");
+
+        //点击进入详情
+        $(".business-menu-item-detail").on("click",function() {
+            window.location.href="traffic-pick-up.html"
+        })
+    }
+</script>
+</body>
+</html>

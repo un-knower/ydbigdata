@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.matrix.dao.Matrix_cross_portId_rtMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.matrix.model.Matrix_cross_portId_rt" >
+    <result column="dbct_cd" property="dbctCd" jdbcType="INTEGER" />
+     <result column="dbct_name" property="dbctName" jdbcType="VARCHAR" />
+    <result column="ship_typ" property="shipTyp" jdbcType="SMALLINT" />
+    <result column="oper_cnt" property="operCnt" jdbcType="BIGINT" />
+    <result column="snd_tot_cnt" property="sndTotCnt" jdbcType="BIGINT" />
+    <result column="snd_id_cnt" property="sndIdCnt" jdbcType="BIGINT" />
+     <result column="snd_tot_rate" property="sndTotRate" jdbcType="VARCHAR" />
+     <result column="snd_id_rate" property="sndIdRate" jdbcType="VARCHAR" />
+    <result column="arv_tot_cnt" property="arvTotCnt" jdbcType="BIGINT" />
+    <result column="arv_id_cnt" property="arvIdCnt" jdbcType="BIGINT" />
+     <result column="arv_recog_rate" property="arvRecogRate" jdbcType="VARCHAR" />
+     <result column="total_recog_rate" property="totalRecogRate" jdbcType="VARCHAR" />
+    <result column="un_id_cnt" property="unIdCnt" jdbcType="BIGINT" />
+    <result column="stats_tm" property="statsTm" jdbcType="DATE" />
+  </resultMap>
+ 
+  <select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+	  	SELECT
+		  	CONCAT(g.mc, '(', a.dbct_cd, ')') AS dbct_name,
+			(CASE ship_typ
+				WHEN 1 THEN
+					'31/60面单'
+				WHEN 2 THEN
+					'38/39面单'
+				WHEN 3 THEN
+					'34面单'
+				WHEN 4 THEN
+					'77面单'
+				WHEN 5 THEN
+					'66/68面单'
+				WHEN 6 THEN
+					'80/88面单'
+				WHEN 7 THEN
+					'普通面单'
+				WHEN 0 THEN
+					'无效面单'
+				ELSE
+					''
+				END
+			) AS ship_typ,
+			sum(a.oper_cnt) AS oper_cnt,
+			sum(a.snd_tot_cnt) AS snd_tot_cnt,
+			sum(a.snd_id_cnt) AS snd_id_cnt,
+			round((sum(a.snd_tot_cnt) / sum(a.oper_cnt)) * 100,2) AS snd_tot_rate,
+			round((sum(a.snd_id_cnt) / sum(a.oper_cnt)) * 100,2) AS snd_id_rate,
+			sum(a.arv_tot_cnt) AS arv_tot_cnt,
+			sum(a.arv_id_cnt) AS arv_id_cnt,
+			round((sum(a.arv_id_cnt) / sum(a.oper_cnt)) * 100,2) AS arv_recog_rate,
+			round(((sum(a.snd_id_cnt) + sum(a.arv_id_cnt)) / sum(a.oper_cnt)) * 100,2) AS total_recog_rate,
+			un_id_cnt
+	  	FROM matrix.daw_s_cross_port_id_rt a
+	  	LEFT JOIN
+			ydserver.gs g
+		ON
+			a.dbct_cd = g.bm
+	 ]]>
+	  	<where> 
+			<if test='start_dt !=null and start_dt !="" '>
+			   <![CDATA[ AND a.stats_tm >=  #{start_dt,jdbcType=DATE} ]]>
+			</if>
+			<if test='end_dt !=null and end_dt !="" '>
+			   <![CDATA[ AND a.stats_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+			</if>
+			<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+			   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+			</if>
+			<if test='ship_typ !=null and ship_typ !="" '>
+			   <![CDATA[ AND a.ship_typ =  #{ship_typ,jdbcType=INTEGER} ]]>
+			</if>
+			<if test='sel_level != 0  and sel_dbct_id ==""'>
+			   <![CDATA[ AND a.dbct_cd in (
+			   			select distinct
+							gsa.bm as id
+						from ydserver.gs gsa
+						inner join ydserver.county b ON gsa.szd = b.CountyID
+						inner join ydserver.city c ON b.CityID = c.CityID
+						where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+						and gsa.lb = 3
+			   )]]>
+			</if>
+  		</where> 
+			GROUP BY a.dbct_cd,ship_typ
+			ORDER by a.dbct_cd,ship_typ
+			LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	 <![CDATA[
+	  SELECT 
+	  		COUNT(*)  AS dbct_cd
+	  ]]>
+      FROM(
+      		<![CDATA[
+		  	SELECT
+			  	CONCAT(g.mc, '(', a.dbct_cd, ')') AS dbct_name,
+				(CASE ship_typ
+					WHEN 1 THEN
+						'31/60面单'
+					WHEN 2 THEN
+						'38/39面单'
+					WHEN 3 THEN
+						'34面单'
+					WHEN 4 THEN
+						'77面单'
+					WHEN 5 THEN
+						'66/68面单'
+					WHEN 6 THEN
+						'80/88面单'
+					WHEN 7 THEN
+						'普通面单'
+					WHEN 0 THEN
+						'无效面单'
+					ELSE
+						''
+					END
+				) AS ship_typ,
+				sum(a.oper_cnt) AS oper_cnt,
+				sum(a.snd_tot_cnt) AS snd_tot_cnt,
+				sum(a.snd_id_cnt) AS snd_id_cnt,
+				round((sum(a.snd_tot_cnt) / sum(a.oper_cnt)) * 100,2) AS snd_tot_rate,
+				round((sum(a.snd_id_cnt) / sum(a.oper_cnt)) * 100,2) AS snd_id_rate,
+				sum(a.arv_tot_cnt) AS arv_tot_cnt,
+				sum(a.arv_id_cnt) AS arv_id_cnt,
+				round((sum(a.arv_id_cnt) / sum(a.oper_cnt)) * 100,2) AS arv_recog_rate,
+				round(((sum(a.snd_id_cnt) + sum(a.arv_id_cnt)) / sum(a.oper_cnt)) * 100,2) AS total_recog_rate,
+				un_id_cnt
+		  	FROM matrix.daw_s_cross_port_id_rt a
+		  	LEFT JOIN
+				ydserver.gs g
+			ON
+				a.dbct_cd = g.bm
+		 ]]>
+		  	<where> 
+				<if test='start_dt !=null and start_dt !="" '>
+				   <![CDATA[ AND a.stats_tm >=  #{start_dt,jdbcType=DATE} ]]>
+				</if>
+				<if test='end_dt !=null and end_dt !="" '>
+				   <![CDATA[ AND a.stats_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+				</if>
+				<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+				   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+				</if>
+				<if test='ship_typ !=null and ship_typ !="" '>
+				   <![CDATA[ AND a.ship_typ =  #{ship_typ,jdbcType=INTEGER} ]]>
+				</if>
+				<if test='sel_level != 0  and sel_dbct_id ==""'>
+				   <![CDATA[ AND a.dbct_cd in (
+				   			select distinct
+								gsa.bm as id
+							from ydserver.gs gsa
+							inner join ydserver.county b ON gsa.szd = b.CountyID
+							inner join ydserver.city c ON b.CityID = c.CityID
+							where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+							and gsa.lb = 3
+				   )]]>
+				</if>
+	  		</where> 
+				GROUP BY a.dbct_cd,ship_typ
+				ORDER by a.dbct_cd,ship_typ
+	    ) b
+  </select>
+  
+  <!-- 全国汇总 -->
+  <select id="searchSumData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+	  	SELECT 
+	  		'合计' AS dbct_name,
+	  		'' AS ship_typ,
+	  		sum(oper_cnt) as oper_cnt,
+	  		sum(snd_tot_cnt) as snd_tot_cnt,
+	  		sum(snd_id_cnt) as snd_id_cnt,
+	  		round((sum(snd_tot_cnt)/sum(oper_cnt))*100,2) AS snd_tot_rate,
+	  		round((sum(snd_id_cnt)/sum(oper_cnt))*100,2) AS snd_id_rate,
+	  		sum(arv_tot_cnt) as arv_tot_cnt,
+	  		sum(arv_id_cnt) as arv_id_cnt,
+	  		round((sum(arv_id_cnt)/sum(oper_cnt))*100,2) AS arv_recog_rate,
+	  		round(((sum(snd_id_cnt)+sum(arv_id_cnt))/sum(oper_cnt))*100,2) AS total_recog_rate,
+	  		sum(un_id_cnt) as un_id_cnt
+	  	FROM matrix.daw_s_cross_port_id_rt a
+	  	LEFT JOIN
+			ydserver.gs g
+		ON
+			a.dbct_cd = g.bm
+		 ]]>
+	  	<where> 
+			<if test='start_dt !=null and start_dt !="" '>
+			   <![CDATA[ AND a.stats_tm >=  #{start_dt,jdbcType=DATE} ]]>
+			</if>
+			<if test='end_dt !=null and end_dt !="" '>
+			   <![CDATA[ AND a.stats_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+			</if>
+			<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+			   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+			</if>
+			<if test='ship_typ !=null and ship_typ !="" '>
+			   <![CDATA[ AND a.ship_typ =  #{ship_typ,jdbcType=INTEGER} ]]>
+			</if>
+			<if test='sel_level != 0  and sel_dbct_id ==""'>
+			   <![CDATA[ AND a.dbct_cd in (
+			   			select distinct
+							gsa.bm as id
+						from ydserver.gs gsa
+						inner join ydserver.county b ON gsa.szd = b.CountyID
+						inner join ydserver.city c ON b.CityID = c.CityID
+						where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+						and gsa.lb = 3
+			   )]]>
+			</if>
+  		</where> 
+  </select>
+</mapper>

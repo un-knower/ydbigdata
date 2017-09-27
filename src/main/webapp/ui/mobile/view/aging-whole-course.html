@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>全程时效</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <div class="aging-top-area">
+            <div class="aging-top-time" id="info-time">---</div>
+        </div>
+        <div class="area-detail-all">
+            <div class="area-detail-left">
+                <p class="area-detail-name" id="info-name">---</p>
+                <p class="area-detail-value"  id="aging-num">---</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio" id="ratio-area">
+                       <span class="area-ratio-area ratio-down-num">日环比
+                            <span class="area-ratio-info">---</span>
+                        </span>
+                        <span class="area-ratio-area ratio-down-num" style="margin-left: 4px;">周同比
+                            <span class="area-ratio-info">---</span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="area-detail-right">
+                <p class="area-detail-name" id="prev-name">---</p>
+                <p class="area-detail-value" id="prev-aging-num">---</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio" id="prev-info-area">
+                        <span class="area-ratio-area">周均---</span>
+                        <span class="area-ratio-area" style="margin-left: 4px;">月均---</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab aging-echart-tab">
+                    <div class="echart-tab-item">
+                        <span class="echart-name echart-tab-yel ">同期值</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item margin-top-5">
+                        <span class="echart-name ratio-up-num ">实际值</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab aging-echart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="d" class="echart-tab-list-active">日趋势</li>
+                        <li data-value="w">周趋势</li>
+                        <li data-value="m">月趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="dispatch-detail-menu">
+        <div class="aging-tab-out-area">
+            <ul class="course-detail-ul">
+                <li class="course-tab-li-active" data-value="propor">件量占比</li>
+                <li  data-value="lowPro">最慢10省</li>
+                <li data-value="lowCity">最慢10市线</li>
+            </ul>
+        </div>
+        <table class="area-detail-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead" id="bottom-thead">
+            <tr>
+                <td width="50%">时长</td>
+                <td width="50%">占比</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody" id="bottom-tbody">
+            <!--<tr>-->
+                <!--<td>0-12小时</td>-->
+                <!--<td>占比30.99%</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>12-24小时</td>-->
+                <!--<td>占比30.99%</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>24-36小时</td>-->
+                <!--<td>占比30.99%</td>-->
+            <!--<tr>-->
+                <!--<td>36-48小时</td>-->
+                <!--<td>占比30.99%</td>-->
+            <!--</tr>-->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getBaskInfoURL = {
+        transURL:{
+            getTopBaskInfoURL:appId + "/action/bas_s_trans_bigdata/getSeffect.do",
+            getTrendInfoURL:appId + "/action/bas_s_trans_bigdata/getTrend.do",
+            getProporInfoURL:appId + "/action/bas_s_trans_bigdata/getCntProportion.do",
+            getLowTenProInfoURL:appId + "/action/bas_s_trans_bigdata/getSlowly10ProvLine.do",
+            getLowTenCityInfoURL:appId + "/action/bas_s_trans_bigdata/getSlowly10CityLine.do"
+        },
+        courseURL:{
+            getTopBaskInfoURL:appId + "/action/bas_s_all_bigdata/getSeffect.do",
+            getTrendInfoURL:appId + "/action/bas_s_all_bigdata/getTrend.do",
+            getProporInfoURL:appId + "/action/bas_s_all_bigdata/getCntProportion.do",
+            getLowTenProInfoURL:appId + "/action/bas_s_all_bigdata/getSlowly10ProvLine.do",
+            getLowTenCityInfoURL:appId + "/action/bas_s_all_bigdata/getSlowly10CityLine.do"
+        }
+    };
+    var getAgingInfoURL,getTrendBaskInfoURL,getProporBaskInfoURL,getLowTenProURL,getLowTenCityURL,baskName;
+    var orgType = YDM.QueryString("sendType");
+    var orgId = YDM.QueryString("dataOrg");
+    var pageInfo = YDM.QueryString("dataInfo");
+    var showInfo = "d",dataInfo = "propor";
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs();
+        refreshInfo();  //刷新页面内容
+        refreshCtrl();
+        getData(); //初始化图表
+        commonFun(); //公用方法
+    }
+    function refreshInfo() {
+        judgePrevInfo(); //判断页面
+    }
+
+    function judgePrevInfo() {
+        if(pageInfo == 'trans') {
+            baskName = "中转";
+            getAgingInfoURL = getBaskInfoURL.transURL.getTopBaskInfoURL;
+            getTrendBaskInfoURL = getBaskInfoURL.transURL.getTrendInfoURL;
+            getProporBaskInfoURL = getBaskInfoURL.transURL.getProporInfoURL;
+            getLowTenProURL = getBaskInfoURL.transURL.getLowTenProInfoURL;
+            getLowTenCityURL = getBaskInfoURL.transURL.getLowTenCityInfoURL;
+        }else if(pageInfo == 'course') {
+            baskName = "全程";
+            getAgingInfoURL = getBaskInfoURL.courseURL.getTopBaskInfoURL;
+            getTrendBaskInfoURL = getBaskInfoURL.courseURL.getTrendInfoURL;
+            getProporBaskInfoURL = getBaskInfoURL.courseURL.getProporInfoURL;
+            getLowTenProURL = getBaskInfoURL.courseURL.getLowTenProInfoURL;
+            getLowTenCityURL = getBaskInfoURL.courseURL.getLowTenCityInfoURL;
+        }
+        writerBaskInfo();
+        getTopDetailInfo();    //获取左边顶部信息
+        getTrendInfo();    //获取趋势图信息
+        addBottomListInfo();    //获取底部信息
+    }
+
+    function writerBaskInfo() {
+        document.title = baskName + "时效";
+        $("#info-name").text(baskName + "时效");
+        $("#prev-name").text("上一日" + baskName);
+    }
+
+    function getTopDetailInfo() {
+        $.showLoading("加载中");
+        var survParams = {
+            "curDate": dataTime
+        };
+        survParams[orgType] = orgId;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getAgingInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addTopListInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    function addTopListInfo(data) {
+        $("#aging-num").text(data.seffect_dayFrom_weekFrom.effect);
+        var strLeft = "<span class='area-ratio-area ratio-"+ changeData(data.seffect_dayFrom_weekFrom.dayFrom,'symbol') +"-num'>日环比<span class='area-ratio-info margin-left-2'>"+ changeData(data.seffect_dayFrom_weekFrom.dayFrom,'abs','%') +"</span><span class='area-ratio-img ratio-img-top-"+ changeData(data.seffect_dayFrom_weekFrom.dayFrom,'symbol') +"'></span></span><span class='area-ratio-area ratio-"+ changeData(data.seffect_dayFrom_weekFrom.weekFrom,'symbol') +"-num' style='margin-left: 4px;'>周同比<span class='area-ratio-info margin-left-2'>"+ changeData(data.seffect_dayFrom_weekFrom.weekFrom,'abs','%') +"</span><span class='area-ratio-img ratio-img-top-"+ changeData(data.seffect_dayFrom_weekFrom.weekFrom,'symbol') +"'></span></span>"
+        $("#ratio-area").empty().append(strLeft);
+        $("#prev-aging-num").text(data.DwmAvg.last_day);
+        var strRight = "<span class='area-ratio-area'>周均"+ data.DwmAvg.week_avg +"小时</span><span class='area-ratio-area' style='margin-left: 4px;'>月均"+ data.DwmAvg.month_avg +"小时</span>";
+        $("#prev-info-area").empty().append(strRight);
+    }
+
+    //获取趋势图信息
+    function getTrendInfo(getdate, ajaxName) {
+        $.showLoading("加载中");
+        var requestDate = dataTime;
+        if (getdate) {
+        	requestDate = getdate;
+        }
+        var survParams = {
+            "curDate": requestDate,
+            "trendType":showInfo
+        };
+        survParams[orgType] = orgId;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTrendBaskInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addTrtendListInfo(oData.data.listEffect, ajaxName);   //趋势图
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addTrtendListInfo(data, ajaxName) {
+        //TODO 趋势图
+    	prepareEchartData(data, ajaxName);
+    }
+
+    function addBottomListInfo() {
+        $.showLoading("加载中");
+        $("#traffic-volume").empty();
+        var getURL;
+        switch (dataInfo) {
+            case "propor" : getURL = getProporBaskInfoURL;break;
+            case "lowPro" : getURL = getLowTenProURL;break;
+            case "lowCity" : getURL = getLowTenCityURL;break;
+        }
+        var survParams = {
+            "curDate": dataTime
+        };
+        survParams[orgType] = orgId;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addBottomInfo(oData.data);   //趋势图
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    function addBottomInfo(data) {
+        var strTit;
+        if(dataInfo == "propor") {
+            strTit = "<tr><td width='50%'>时长</td><td width='50%'>占比</td></tr>";
+            $("#bottom-thead").empty().append(strTit);
+            $("#bottom-tbody").empty();
+            $.each(data,function(index,val) {
+                var strBody = "<tr><td>"+ val.effect_scope +"</td><td>"+ val.proportion +"%</td></tr>";
+                $("#bottom-tbody").append(strBody);
+            })
+        }else if(dataInfo == "lowPro") {
+            strTit = "<tr><td width='40%'>线路名称</td><td width='30%'>时效(小时)</td><td width='30%'>排名</td></tr>";
+            $("#bottom-thead").empty().append(strTit);
+            $("#bottom-tbody").empty();
+            $.each(data,function(index,val) {
+                var strBody = "<tr><td>"+ val.ProvinceName_start +"-"+ val.ProvinceName_end +"</td><td class='ratio-up-num'>"+ val.useTime +"</td><td>"+ val.rank +"</td></tr>";
+                $("#bottom-tbody").append(strBody);
+            })
+        }else if(dataInfo == "lowCity") {
+            strTit = "<tr><td width='40%'>线路名称</td><td width='30%'>时效(小时)</td><td width='30%'>排名</td></tr>";
+            $("#bottom-thead").empty().append(strTit);
+            $("#bottom-tbody").empty();
+            $.each(data,function(index,val) {
+                var strBody = "<tr><td>"+ val.CityName_start +"-"+ val.CityName_end +"</td><td class='ratio-up-num'>"+ val.useTime +"</td><td>"+ val.rank +"</td></tr>";
+                $("#bottom-tbody").append(strBody);
+            })
+        }
+    }
+
+
+    function viewJs() {
+        $("#info-time").text(dataTime);
+        $(".course-detail-ul li").on("click",function() {
+            $(this).addClass("course-tab-li-active").siblings().removeClass("course-tab-li-active");
+            dataInfo = $(this).attr("data-value");
+            addBottomListInfo(); //获取底部信息
+        });
+        $(".echart-tab-list li").on("click",function() {
+            $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+            showInfo = $(this).attr("data-value");
+            getData();
+            getTrendInfo();
+        })
+    }
+    
+    /** 初始化chart数据*/
+    function getData() {
+    	var xDataNum;
+    	var trendType;
+    	var seriesName = ['实际值', '同期值'];
+    	if(showInfo == "d") {
+    		xDataNum = 15; 
+    		trendType = 'day';
+        }else if(showInfo == "w") {
+        	xDataNum = 8; 
+        	trendType = 'week';
+        }else if(showInfo == "m") {
+        	xDataNum = 6;   
+        	trendType = 'month';
+        }
+    	var getXFormatter = prepareXFormatter();    	
+    	var getYFormatter = prepareYFormatter();
+    	var initoptions = {
+			//getNextData: getNextSendCarInfo,
+			getPreviousData: getPreviousTrendInfo,
+			xDataNum: xDataNum,
+			chartFieldId: "chartDv",
+			getXFormatter:getXFormatter,
+			getYFormatter: getYFormatter,
+			trendType: trendType,
+			seriesName:seriesName
+    	} 
+        BDC.doChart(initoptions);
+    }
+    /**准备Y轴的坐标格式*/
+    function prepareYFormatter() {
+    	return function (value) {
+    		return value;
+    	}
+    }
+    /**准备X轴的坐标格式*/
+    function prepareXFormatter() {
+    	var getXFormatter;
+    	if(showInfo == "d") {
+    		xDataNum = 15;
+    		getXFormatter = function (value) {
+    			if (value) {
+    				return value.split('-')[2];
+    			}
+    		}
+        }else if(showInfo == "w") {
+        	xDataNum = 8;
+        	getXFormatter = function (value) {
+    			if (value) {
+    				return value.split('-')[1] + '周';
+    			}
+    		}
+        }else if(showInfo == "m") {
+        	xDataNum = 6;
+        	getXFormatter = function (value) {
+    			if (value) {
+    				return value.split('-')[1] + '月';
+    			}
+    		}
+        }
+    	return getXFormatter;
+    }
+    /** 处理chart数据*/ 
+    function prepareEchartData (altrend, ajaxName) {
+    	if (altrend.length < 0) {
+    		return;
+    	}
+    	var weekRequestDate = '';
+    	var xData = [];
+    	var yData = [];
+    	var realnumArr = [];
+    	var onsamenumArr = []
+    	yData.push(realnumArr);
+    	yData.push(onsamenumArr);
+    	$.each(altrend, function (index, altrendData) {
+	        xData.push(altrendData.dateline);
+	    	yData[0].push(altrendData.active_val);
+	    	yData[1].push(altrendData.same_time_val);
+    		if (0 === index) {
+    			weekRequestDate = altrendData.theDate;
+    		}
+    	});
+    	if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData, weekRequestDate);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+    	} 
+    }
+    
+    var getPreviousTrendInfo = function (date) {
+        var ajaxName = 'previous';
+        getTrendInfo(date, ajaxName);
+    }
+</script>
+</body>
+</html>

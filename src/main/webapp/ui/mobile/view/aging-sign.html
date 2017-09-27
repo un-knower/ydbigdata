@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>签收时效</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <div class="aging-top-area">
+            <div class="aging-top-time">2017-10-11</div>
+        </div>
+        <div class="area-detail-all">
+            <div class="area-detail-left">
+                <p class="area-detail-name">签收时效</p>
+                <p class="area-detail-value">8.00小时</p>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio">
+                       <span class="area-ratio-area ratio-down-num">日环比
+                            <span class="area-ratio-info">0.55%</span>
+                            <span class="area-ratio-img ratio-img-top-down"></span>
+                        </span>
+                        <span class="area-ratio-area ratio-down-num" style="margin-left: 4px;">周同比
+                            <span class="area-ratio-info">1.19%</span>
+                            <span class="area-ratio-img ratio-img-top-down"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="area-detail-right">
+                <p class="area-detail-name">行业平均</p>
+                <div class="aging-file-top-info">
+                    <p class="aging-file-value">8.00小时</p>
+                    <span class="aging-right-info">
+                        <div class="aging-embrace-prev">上一日7小时</div>
+                        <div class="aging-embrace-remark">
+                            <span class="volume-ratio-info-size ratio-up-num">排名2 +1</span>
+                            <span class="volume-ratio-img ratio-img-top-up"></span>
+                        </div>
+                    </span>
+                </div>
+                <div class="area-ratio">
+                    <p class="area-menu-item-ratio">
+                        <span class="area-ratio-area">周均0.59小时</span>
+                        <span class="area-ratio-area" style="margin-left: 4px;">月均6.1小时</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab aging-echart-tab">
+                    <div class="echart-tab-item">
+                        <span class="echart-name echart-tab-yel ">上周同期值</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item">
+                        <span class="echart-name ratio-up-num ">实际值<span style="opacity: 0">填充</span></span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                    <div class="echart-tab-item">
+                        <span class="echart-name ratio-up-down-num ">日行业均值</span>
+                        <span class="echart-show-line ratio-up-down-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab aging-echart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="day" class="echart-tab-list-active">日趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="dispatch-detail-menu">
+        <div class="aging-tab-out-area">
+            <ul class="aging-detail-ul">
+                <li class="aging-tab-li-active">时效占比</li>
+                <li>区域时效排名</li>
+                <li>最慢10城市</li>
+                <li>超时占比最高10城</li>
+                <li>超时单最多10城</li>
+            </ul>
+        </div>
+        <table class="area-detail-table aging-table" cellspacing="0" cellpadding="0" style="display: table">
+            <thead class="area-detail-thead">
+            <tr>
+                <td width="50%">时长</td>
+                <td width="50%">占比</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody">
+            <tr>
+                <td>0-12小时</td>
+                <td>占比39.33%</td>
+            </tr>
+            <tr>
+                <td>12-24小时</td>
+                <td>占比9.33%</td>
+            </tr>
+            <tr>
+                <td>24-36小时</td>
+                <td>占比10.33%</td>
+            </tr>
+            <tr>
+                <td>36-48小时</td>
+                <td>占比22.33%</td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="area-detail-table aging-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead">
+            <tr>
+                <td width="33.33%">区域</td>
+                <td width="33.33%">时效(小时)</td>
+                <td width="33.33%">行业均值(小时)</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody">
+            <tr>
+                <td>东北</td>
+                <td class="ratio-up-num">8.00</td>
+                <td class="ratio-up-num">7.10</td>
+            </tr>
+            <tr>
+                <td>西北</td>
+                <td class="ratio-up-num">7.90</td>
+                <td class="ratio-up-num">8.00</td>
+            </tr>
+            <tr>
+                <td>东中</td>
+                <td class="ratio-up-num">7.89</td>
+                <td class="ratio-up-num">7.10</td>
+            </tr>
+            <tr>
+                <td>华东</td>
+                <td class="ratio-up-num">7.29</td>
+                <td class="ratio-up-num">6.10</td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="area-detail-table aging-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead">
+            <tr>
+                <td width="33.33%">区域</td>
+                <td width="33.33%">时效(小时)</td>
+                <td width="33.33%">行业均值(小时)</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody">
+            <tr>
+                <td>杭州</td>
+                <td class="ratio-up-num">10.00</td>
+                <td class="ratio-up-num">7.10</td>
+            </tr>
+            <tr>
+                <td>上海</td>
+                <td class="ratio-up-num">8.90</td>
+                <td class="ratio-up-num">8.00</td>
+            </tr>
+            <tr>
+                <td>西安</td>
+                <td class="ratio-up-num">7.89</td>
+                <td class="ratio-up-num">7.10</td>
+            </tr>
+            <tr>
+                <td>黑龙江</td>
+                <td class="ratio-up-num">7.29</td>
+                <td class="ratio-up-num">6.10</td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="area-detail-table aging-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead">
+            <tr>
+                <td width="25%">城市名称</td>
+                <td width="25%">超时占比</td>
+                <td width="25%">超时单量</td>
+                <td width="25%">排名</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody">
+            <tr>
+                <td>甘肃平凉</td>
+                <td class="ratio-up-num">59.92%</td>
+                <td class="ratio-up-num">61</td>
+                <td><span class="aging-car-num aging-num-one">1</span></td>
+            </tr>
+            <tr>
+                <td>广东东莞</td>
+                <td class="ratio-up-num">58.92%</td>
+                <td class="ratio-up-num">781</td>
+                <td><span class="aging-car-num aging-num-two">2</span></td>
+            </tr>
+            <tr>
+                <td>河南洛阳</td>
+                <td class="ratio-up-num">54.55%</td>
+                <td class="ratio-up-num">1481</td>
+                <td><span class="aging-car-num aging-num-three">3</span></td>
+            </tr>
+            <tr>
+                <td>山西长治</td>
+                <td class="ratio-up-num">51.55%</td>
+                <td class="ratio-up-num">1681</td>
+                <td><span class="aging-car-num">4</span></td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="area-detail-table aging-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead">
+            <tr>
+                <td width="25%">城市名称</td>
+                <td width="25%">超时占比</td>
+                <td width="25%">超时单量</td>
+                <td width="25%">排名</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody">
+            <tr>
+                <td>甘肃平凉</td>
+                <td class="ratio-up-num">59.92%</td>
+                <td class="ratio-up-num">61</td>
+                <td><span class="aging-car-num aging-num-one">1</span></td>
+            </tr>
+            <tr>
+                <td>广东东莞</td>
+                <td class="ratio-up-num">58.92%</td>
+                <td class="ratio-up-num">781</td>
+                <td><span class="aging-car-num aging-num-two">2</span></td>
+            </tr>
+            <tr>
+                <td>河南洛阳</td>
+                <td class="ratio-up-num">54.55%</td>
+                <td class="ratio-up-num">1481</td>
+                <td><span class="aging-car-num aging-num-three">3</span></td>
+            </tr>
+            <tr>
+                <td>山西长治</td>
+                <td class="ratio-up-num">51.55%</td>
+                <td class="ratio-up-num">1681</td>
+                <td><span class="aging-car-num">4</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    $(function() {
+        init();
+    });
+    function init() {
+        getData();  //获取echart值
+        viewJs();
+    }
+    function getData() {
+        doChart('quarter');
+    }
+    function viewJs() {
+        $(".aging-detail-ul li").on("click",function() {
+//            var scrollLeft = $(this).offset().left;
+//            var selfWid = $(this).outerWidth(true);
+//            var windowWid = $(window).width();
+//            var srcollDis = scrollLeft + selfWid - windowWid;
+//            if(srcollDis > 0) {
+//                $(".aging-detail-ul").scrollLeft(scrollLeft)
+//            }else {
+//                $(".aging-detail-ul").scrollLeft(scrollLeft-selfWid)
+//            }
+            var index = $(this).index();
+            $(".aging-table").eq(index).show().siblings(".aging-table").hide();
+            $(this).addClass("aging-tab-li-active").siblings().removeClass("aging-tab-li-active");
+        });
+        $(".echart-tab-list li").on("click",function() {
+            $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+            var showInfo = $(this).attr("data-value");
+            doChart(showInfo);
+        })
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.matrix.dao.Matrix_cross_ship_dtlMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.matrix.model.Matrix_cross_ship_dtl" >
+    <result column="ship_id" property="shipId" jdbcType="BIGINT" />
+    <result column="ship_typ" property="shipTyp" jdbcType="SMALLINT" />
+    <result column="oper_typ" property="operTyp" jdbcType="SMALLINT" />
+    <result column="dbct_cd" property="dbctCd" jdbcType="INTEGER" />
+    <result column="dbct_name" property="dbctName" jdbcType="VARCHAR" />
+    <result column="eqpt_id" property="eqptId" jdbcType="VARCHAR" />
+    <result column="itm_id" property="itmId" jdbcType="VARCHAR" />
+    <result column="phys_port_cd" property="physPortCd" jdbcType="VARCHAR" />
+    <result column="add_cd" property="addCd" jdbcType="VARCHAR" />
+    <result column="port_cd" property="portCd" jdbcType="INTEGER" />
+    <result column="scan_tm" property="scanTm" jdbcType="DATE" />
+    <result column="scan_pers" property="scanPers" jdbcType="INTEGER" />
+    <result column="frgt_wgt" property="frgtWgt" jdbcType="INTEGER" />
+  </resultMap>
+  
+   <resultMap id="shipTypMap" type="com.yd.ydbi.matrix.model.Matrix_cross_comboxBean" >
+    <result column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+  </resultMap>
+ 
+  <select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+	  	SELECT 
+	  		ship_id,
+	  		(CASE 
+	  			ship_typ
+			  WHEN 1 THEN '31/60面单'
+			  WHEN 2 THEN '38/39面单'
+			  WHEN 3 THEN '34面单'
+			  WHEN 4 THEN '77面单'
+			  WHEN 5 THEN '66/68面单'
+			  WHEN 6 THEN '80/88面单'
+			  WHEN 7 THEN '普通面单'
+			  WHEN 0 THEN '无效面单'
+		  	  ELSE ''
+			END) AS ship_typ,
+			if(a.oper_typ = 0,'发出交叉带','到达交叉带') AS oper_typ,
+			CONCAT(g.mc,'(',a.dbct_cd,')') AS dbct_name,
+			eqpt_id,itm_id,phys_port_cd,add_cd,port_cd,scan_tm,scan_pers,frgt_wgt
+			
+	  	FROM matrix.daw_s_cross_dbct_ship_dtl a
+	  	LEFT JOIN 
+			ydserver.gs g
+		ON 
+			a.dbct_cd = g.bm			
+  	  ]]>
+	  	<where> 
+			<if test='start_dt !=null and start_dt !="" '>
+			   <![CDATA[ AND a.scan_tm >=  #{start_dt,jdbcType=DATE} ]]>
+			</if>
+			<if test='end_dt !=null and end_dt !="" '>
+			   <![CDATA[ AND a.scan_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+			</if>
+			<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+			   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+			</if>
+			<if test='eqpt_id !=null and eqpt_id !="" '>
+			   <![CDATA[ AND a.eqpt_id = #{eqpt_id,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='itm_id !=null and itm_id !="" '>
+			   <![CDATA[ AND a.itm_id =  #{itm_id,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='ship_id !=null and ship_id !="" '>
+			   <![CDATA[ AND a.ship_id = #{ship_id,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='phys_port_cd !=null and phys_port_cd !="" '>
+			   <![CDATA[ AND a.phys_port_cd =  #{phys_port_cd,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='add_cd!=null and add_cd !="" '>
+			   <![CDATA[ AND a.add_cd <> '' ]]>
+			</if>
+			<if test='port_cd !=null and port_cd !="" '>
+			   <![CDATA[ AND a.port_cd =  #{port_cd,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='ship_typ !=null and ship_typ !="" '>
+			   <![CDATA[ AND a.ship_typ =  #{ship_typ,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='oper_typ !=null and oper_typ !="" '>
+			   <![CDATA[ AND a.oper_typ =  #{oper_typ,jdbcType=VARCHAR} ]]>
+			</if>
+			<if test='sel_level != 0  and sel_dbct_id ==""'>
+			   <![CDATA[ AND a.dbct_cd in (
+			   			select distinct
+							gsa.bm as id
+						from ydserver.gs gsa
+						inner join ydserver.county b ON gsa.szd = b.CountyID
+						inner join ydserver.city c ON b.CityID = c.CityID
+						where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+						and gsa.lb = 3
+			   )]]>
+			</if>
+	  	</where> 
+	  	LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+	  	SELECT
+				count(*) AS ship_id
+  	  ]]>
+		FROM 
+	  	( 
+			<![CDATA[
+		  	SELECT 
+		  		ship_id,
+		  		(CASE 
+		  			ship_typ
+				  WHEN 1 THEN '31/60面单'
+				  WHEN 2 THEN '38/39面单'
+				  WHEN 3 THEN '34面单'
+				  WHEN 4 THEN '77面单'
+				  WHEN 5 THEN '66/68面单'
+				  WHEN 6 THEN '80/88面单'
+				  WHEN 7 THEN '普通面单'
+				  WHEN 0 THEN '无效面单'
+			  	  ELSE ''
+				END) AS ship_typ,
+				if(a.oper_typ = 0,'发出交叉带','到达交叉带') AS oper_typ,
+				CONCAT(g.mc,'(',a.dbct_cd,')') AS dbct_name,
+				eqpt_id,itm_id,phys_port_cd,add_cd,port_cd,scan_tm,scan_pers,frgt_wgt
+				
+		  	FROM matrix.daw_s_cross_dbct_ship_dtl a
+		  	LEFT JOIN 
+				ydserver.gs g
+			ON 
+				a.dbct_cd = g.bm			
+	  	  ]]>
+		  	<where> 
+				<if test='start_dt !=null and start_dt !="" '>
+				   <![CDATA[ AND a.scan_tm >=  #{start_dt,jdbcType=DATE} ]]>
+				</if>
+				<if test='end_dt !=null and end_dt !="" '>
+				   <![CDATA[ AND a.scan_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+				</if>
+				<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+				   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+				</if>
+				<if test='eqpt_id !=null and eqpt_id !="" '>
+				   <![CDATA[ AND a.eqpt_id = #{eqpt_id,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='itm_id !=null and itm_id !="" '>
+				   <![CDATA[ AND a.itm_id =  #{itm_id,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='ship_id !=null and ship_id !="" '>
+				   <![CDATA[ AND a.ship_id = #{ship_id,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='phys_port_cd !=null and phys_port_cd !="" '>
+				   <![CDATA[ AND a.phys_port_cd =  #{phys_port_cd,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='add_cd!=null and add_cd !="" '>
+				   <![CDATA[ AND a.add_cd <> '' ]]>
+				</if>
+				<if test='port_cd !=null and port_cd !="" '>
+				   <![CDATA[ AND a.port_cd =  #{port_cd,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='ship_typ !=null and ship_typ !="" '>
+				   <![CDATA[ AND a.ship_typ =  #{ship_typ,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='oper_typ !=null and oper_typ !="" '>
+				   <![CDATA[ AND a.oper_typ =  #{oper_typ,jdbcType=VARCHAR} ]]>
+				</if>
+				<if test='sel_level != 0  and sel_dbct_id ==""'>
+				   <![CDATA[ AND a.dbct_cd in (
+				   			select distinct
+								gsa.bm as id
+							from ydserver.gs gsa
+							inner join ydserver.county b ON gsa.szd = b.CountyID
+							inner join ydserver.city c ON b.CityID = c.CityID
+							where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+							and gsa.lb = 3
+				   )]]>
+				</if>
+		  	</where> 	  	
+	  	) b
+  </select>
+  
+   <select id="getShipTypName"  resultMap="shipTypMap" >
+	  <![CDATA[
+			SELECT  
+				ship_typ AS id,
+				remarks AS namess
+			FROM
+				matrix.daw_s_hei_port_ship_typ
+			WHERE ship_typ <=7
+			ORDER BY id
+		]]>
+  </select>
+			
+</mapper>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>开通车线</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <span class="time-show-area" id="info-time"></span>
+        <div class="carline-detail-all">
+            <p class="carline-title">车线(条)</p>
+            <p class="carline-num" id="car-line-num">---</p>
+            <div class="carline-detail">
+                <div class="carline-detail-item">
+                    <span class="carline-img carline-img-add"></span>
+                    <span class="carline-detail-name">新增车线：</span>
+                    <span class="carline-detail-num ratio-up-num" id="car-add-num">---</span>
+                </div>
+                <div class="carline-detail-item">
+                    <span class="carline-img carline-img-delete"></span>
+                    <span class="carline-detail-name">撤销车线：</span>
+                    <span class="carline-detail-num echart-tab-yel" id="car-cancel-num">---</span>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab" style="width: 50%;">
+                    <div class="echart-tab-item">
+                        <span class="echart-name ratio-up-num">新增车线</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                    <div class="echart-tab-item">
+                        <span class="echart-name echart-tab-yel">撤销车线</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="area-detail-menu water-remark-area">
+        <div class="area-detail-tab-list">
+            <ul class="carline-detail-ul">
+                <li class="area-tab-li-active" id="add-car-line-num">新增(-)</li>
+                <li id="cancel-car-line-num">撤销(-)</li>
+            </ul>
+            <div class="area-detail-active-show"></div>
+        </div>
+        <div class="carline-table">
+            <div class="carline-thead">
+                <ul>
+                    <li>起点</li>
+                    <li>终点</li>
+                </ul>
+            </div>
+            <div class="carline-tbody" id="car-line-detail">
+                <!--<ul class="carline-tbody-tr carline-judge-img">-->
+                    <!--<li>上海</li>-->
+                    <!--<li>北京</li>-->
+                <!--</ul>-->
+                <!--<ul class="carline-tbody-tr carline-judge-img">-->
+                    <!--<li>北京</li>-->
+                    <!--<li>杭州</li>-->
+                <!--</ul>-->
+                <!--<ul class="carline-tbody-tr carline-judge-img">-->
+                    <!--<li>广州</li>-->
+                    <!--<li>湖北</li>-->
+                <!--</ul>-->
+                <!--<ul class="carline-tbody-tr carline-judge-img">-->
+                    <!--<li>兰州</li>-->
+                    <!--<li>西安</li>-->
+                <!--</ul>-->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/index.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script>
+    var getCarLineNumURL = appId + "/action/openline/carline.do";
+    var trendType = "day";
+    var isFirst = true; //用于判断是否初次加载
+    var orgType = YDM.QueryString("sendType");
+    var orgId = YDM.QueryString("dataOrg");
+    $(function() {
+        init();
+    });
+    function init() {
+        viewJs();
+        refreshInfo();  //刷新页面内容
+        getData();  //获取echart值
+        refreshCtrl();
+        commonFun(); //公用方法
+    }
+    function refreshInfo() {
+        getSendCarInfo(dataTime,"");
+    }
+
+    function getSendCarInfo(getdate,ajaxData) {
+        var conditonStr;
+        var trendTypeNum;
+        if(trendType == "day") {
+            trendTypeNum = "1";
+        }else if(trendType == "week") {
+            trendTypeNum = "2";
+        }else if(trendType == "month") {
+            trendTypeNum = "3";
+        }else if(trendType == "quarter") {
+            trendTypeNum = "4";
+        }
+        $.showLoading("加载中");
+        if(orgType == "area_id") {
+            conditonStr = "{'area_id':'" + orgId +"'}"
+        }else if(orgType == "prov_id") {
+            conditonStr = "{'prov_id':'" + orgId +"'}"
+        }else if(orgType == "com_id") {
+            conditonStr = "{'com_id':'" + orgId +"'}"
+        }
+        var survParams = {
+            "date_time": getdate,
+            "trend_type" : trendTypeNum,
+            "conditonStr":conditonStr
+        };
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getCarLineNumURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    if(ajaxData != "") {
+                        prepareEchartData(oData.data.iocTrend, ajaxData);
+                    }else {
+                    	addBashInfo(oData.data);
+                    }
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addBashInfo(data) {
+        if(isFirst) {
+            $("#car-line-num").text(data.carLinenum);
+            $("#car-add-num").text(data.increased);
+            $("#car-cancel-num").text(data.canceled);
+            $("#add-car-line-num").text("新增(" + data.increased + ")");
+            $("#cancel-car-line-num").text("撤销(" + data.canceled + ")");
+            $.each(data.iocCar.incCars,function(index,val) {
+                var str = "<ul class='carline-tbody-tr carline-judge-img'><li style='float: left;'>"+ val.startdot +"</li><li style='float: right;'>"+ val.enddot +"</li></ul>"
+                $("#car-line-detail").append(str);
+            });
+            getAddOrCancelDetail(data.iocCar);
+        }
+
+        prepareEchartData(data.iocTrend);
+
+    }
+
+    function getAddOrCancelDetail(info) {
+        $(".carline-detail-ul li").on("click",function() {
+            $("#car-line-detail").empty();
+            $(this).addClass("area-tab-li-active").siblings().removeClass("area-tab-li-active");
+            var index = $(this).index();
+            $(".area-detail-active-show").animate({"left":(50*index+10) + "%"},100);
+            if(index == 0) {
+                $.each(info.incCars,function(index,val) {
+                    var str = "<ul class='carline-tbody-tr carline-judge-img'><li style='float: left;'>"+ val.startdot +"</li><li style='float: right;'>"+ val.enddot +"</li></ul>"
+                    $("#car-line-detail").append(str);
+                })
+            }else {
+                $.each(info.canCars,function(index,val) {
+                    var str = "<ul class='carline-tbody-tr carline-judge-img carline-judge-img-del'><li style='float: left;'>"+ val.startdot +"</li><li style='float: right;'>"+ val.enddot +"</li></ul>"
+                    $("#car-line-detail").append(str);
+                })
+            }
+        });
+    }
+
+    function viewJs() {
+        $("#info-time").text(dataTime);
+        $(".echart-tab-list li").on("click",function() {
+            $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+            trendType = $(this).attr("data-value");
+            isFirst = false;
+            getSendCarInfo(dataTime,"");
+        })
+    }
+    
+    /** 初始化chart数据*/
+    function getData() {
+    	var xDataNum = 4;
+    	var isXShow = 'notShow';
+    	var getXFormatter = prepareXFormatter();
+    	var getYFormatter = prepareYFormatter();
+    	var seriesName = ['新增车线','撤销车线'];
+    	var initoptions = {
+			//getNextData: getNextSendCarInfo,
+			getPreviousData: getPreviousInfo,
+			xDataNum: xDataNum,
+			chartFieldId: "chartDv",
+			getXFormatter:getXFormatter,
+			isXShow:isXShow,
+			trendType:'carLine',
+			getYFormatter:getYFormatter,
+			xMargin:2,
+			gridBottom:'3%',
+			seriesName:seriesName
+    	} ;
+        BDC.doChart(initoptions);
+    }
+    /**准备X轴的坐标格式*/
+    function prepareXFormatter() {
+    	return function (value) {
+			if (value) {
+				return value;
+			}
+		}	
+    }
+    /**准备Y轴的坐标格式*/
+    function prepareYFormatter() {
+    	return function (value) {
+    		return value;
+    	}
+    }
+    /** 处理chart数据*/ 
+    function prepareEchartData (altrend, ajaxName) {
+    	if (!altrend) {
+    		return;
+    	}
+    	var weekRequestDate = '';
+    	var xData = [];
+    	var yData = [];
+    	var realnumArr = [];
+    	var onsamenumArr = []
+    	yData.push(realnumArr);
+    	yData.push(onsamenumArr);
+    	$.each(altrend, function (index, altrendData) {
+    		if (altrendData.datetime) {
+    			xData.unshift(altrendData.datetime);
+        		yData[0].unshift(altrendData.increase);
+        		yData[1].unshift (altrendData.cancle);
+        		
+    		}
+    		if (0 === index) {
+    			weekRequestDate = altrendData.datetime
+    		}
+    	    
+    	});
+    	if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData, weekRequestDate);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+    	} 
+    	/* if (ajaxName === 'next') {
+    		BDC.prepareNextData(xData, yData);
+    	} else if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData)
+    	} */
+    }
+    /** 拿到next的chart数据*/
+    /* var getNextSendCarInfo = function (date) {
+    	var ajaxName = 'next';
+    	getSendCarInfoAjax(date, ajaxName);
+    }  */
+    /** 拿到previous的chart数据*/
+    var getPreviousInfo = function (date) {
+    	
+        var ajaxName = 'previous';
+        getSendCarInfo(date, ajaxName)
+    }
+</script>
+</body>
+</html>

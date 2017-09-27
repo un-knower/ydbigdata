@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.cainiao.dao.CaiNiaoMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.cainiao.model.CaiNiao" >
+    <result column="stats_dt" property="statsDt" jdbcType="DATE" />
+    <result column="full_path_nm" property="fullPathNm" jdbcType="BIGINT" />
+    <result column="full_path_tlns" property="fullPathTlns" jdbcType="DECIMAL" />
+    <result column="indust_avg_tlns" property="industAvgTlns" jdbcType="DECIMAL" />
+    <result column="entr_pers" property="entrPers" jdbcType="VARCHAR" />
+    <result column="entr_tm" property="entrTm" jdbcType="TIMESTAMP" />
+    <result column="rmk" property="rmk" jdbcType="VARCHAR" />
+  </resultMap>
+ 
+ <sql id="Base_Column_List" >
+    stats_dt, full_path_nm, full_path_tlns, indust_avg_tlns, entr_pers, entr_tm, rmk
+  </sql>
+ 
+  <select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	 SELECT stats_dt AS statsDt,
+			  full_path_nm as fullPathNm,
+			  full_path_tlns as fullPathTlns,
+			  indust_avg_tlns as industAvgTlns,
+			  entr_pers as entrPers,
+			  entr_tm as entrTm,
+			  rmk
+  	 FROM cainiao_data 
+  	 WHERE stats_dt <![CDATA[>=]]> #{statsDt1} 
+  	 	AND stats_dt <![CDATA[<=]]> #{statsDt2}
+	LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT count(*) AS fullPathNm
+	FROM(
+		 SELECT stats_dt AS statsDt,
+			  full_path_nm as fullPathNm,
+			  full_path_tlns as fullPathTlns,
+			  indust_avg_tlns as industAvgTlns,
+			  entr_pers as entrPers,
+			  entr_tm as entrTm,
+			  rmk
+	  	 FROM cainiao_data 
+	  	 WHERE stats_dt <![CDATA[>=]]> #{statsDt1} 
+	  	 	AND stats_dt <![CDATA[<=]]> #{statsDt2}
+	) B
+  </select>
+  
+  
+  <select id="getCaiNiaoBystatsDt" parameterType="java.util.Map" resultMap="BaseResultMap">
+  	select 
+    	<include refid="Base_Column_List" />
+    from cainiao_data
+    where stats_dt = #{statsDt,jdbcType=DATE}	
+  </select>
+  
+  
+  <insert id="insertCn" parameterType="java.util.Map">
+  			INSERT INTO cainiao_data (
+				stats_dt,
+				full_path_nm,
+				full_path_tlns,
+				indust_avg_tlns,
+				entr_pers,
+				rmk
+			)
+			VALUES
+				(
+				#{statsDt},#{fullPathNm},#{fullPathTlns},#{industAvgTlns},#{entrPers},#{rmk}
+				)
+  </insert>
+  <update id="updateData"  parameterType="java.util.Map">
+		update cainiao_data
+			<set>
+				<if test="fullPathNm != null">
+					full_path_nm = #{fullPathNm,jdbcType=BIGINT},
+				</if>
+				<if test="fullPathTlns != null">
+					full_path_tlns = #{fullPathTlns,jdbcType=DECIMAL},
+				</if>
+				<if test="industAvgTlns != null">
+					indust_avg_tlns = #{industAvgTlns,jdbcType=DECIMAL},
+				</if>
+				<if test="entrPers != null">
+					entr_pers = #{entrPers,jdbcType=VARCHAR},
+				</if>
+				<if test="rmk != null">
+					rmk = #{rmk,jdbcType=VARCHAR},
+				</if>
+				entr_tm = now()
+			</set>
+		where stats_dt = #{statsDt,jdbcType=DATE}
+  </update>
+  
+	<delete id="deleteData"  parameterType="java.util.Map">
+	    DELETE FROM 
+	    	cainiao_data 
+	    WHERE stats_dt IN
+	    <foreach collection="list" index="index" item="item" open="(" separator="," close=")"> 
+	        #{item} 
+	    </foreach>
+	</delete>
+</mapper>

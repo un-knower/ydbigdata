@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>大数据平台</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="top-content">
+        <div class="top-tab-area">
+            <ul class="tab-all">
+                <li class="tab-list  tab-list-active">首页</li>
+                <li class="tab-list">重要指标</li>
+                <li class="tab-list">目标值</li>
+                <li class="tab-list">业务量</li>
+                <li class="tab-list">运输</li>
+                <li class="tab-list">时效</li>
+                <li class="tab-list">质控</li>
+            </ul>
+        </div>
+        <div class="search-btn"></div>
+        <div class="tab-search-input">
+            <div class="search-area">
+                <div class="search-box">
+                    <div class="search-img"></div>
+                    <input class="search-info" id="search-info-area" placeholder="账户搜索">
+                    <div class="search-close"></div>
+                </div>
+                <div class="search-cancel">取消</div>
+            </div>
+        </div>
+    </div>
+    <div class="org-area">
+        <div class="org-select-area">
+            <div class="org-item-left">
+                <span class="org-name">机构</span>
+                <span class="org-name-detail">
+                    <label>
+                        <input class="org-name-input" id="picker-pos" data-value="" data-num="area_id" value="集团" readonly="readonly">
+                    </label>
+                </span>
+            </div>
+            <div class="org-item-right">
+                <span class="org-name">日期</span>
+                <span class="date-name-detail">
+                    <label>
+                        <input class="org-name-input" id="calender-select" readonly="readonly">
+                        <ins class="arrow-rili-img"></ins>
+                    </label>
+                </span>
+            </div>
+        </div>
+    </div>
+    <ul class="home-menu">
+        <li class="home-item">
+            <div class="home-title" data-arrow="down" style="border-top: none;">
+                <div class="home-title-left">
+                    <ins class="home-arrow"></ins>
+                    <span class="home-name">重要指标</span>
+                </div>
+                <div class="home-title-right" data-link="data-index.html">
+                    <span class="home-detail">详细数据</span>
+                    <ins class="home-right-arrow"></ins>
+                </div>
+            </div>
+            <ul class="home-list" id="important-area">
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">订单量<span class="home-hd-remark">(件)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">派件量<span class="home-hd-remark">(件)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">单日签收率量<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">开通车线<span class="home-hd-remark">(条)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">新增</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">撤销</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">发车数量<span class="home-hd-remark">(辆)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">装载率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </li>
+        <li class="home-item">
+            <div class="home-title" data-arrow="down">
+                <div class="home-title-left">
+                    <ins class="home-arrow"></ins>
+                    <span class="home-name">业务量</span>
+                </div>
+                <div class="home-title-right" data-link="traffic-index.html">
+                    <span class="home-detail">详细数据</span>
+                    <ins class="home-right-arrow"></ins>
+                </div>
+            </div>
+            <ul class="home-list" id="traffic-area">
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">揽件量<span class="home-hd-remark">(件)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">派件量<span class="home-hd-remark">(件)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">签收量<span class="home-hd-remark">(件)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">单日签收率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">3日签收率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">7日未签收率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </li>
+        <li class="home-item">
+            <div class="home-title" data-arrow="down">
+                <div class="home-title-left">
+                    <ins class="home-arrow"></ins>
+                    <span class="home-name">运输</span>
+                </div>
+                <div class="home-title-right" data-link="transport-index.html">
+                    <span class="home-detail">详细数据</span>
+                    <ins class="home-right-arrow"></ins>
+                </div>
+            </div>
+            <ul class="home-list" id="transport-area">
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">发车数量<span class="home-hd-remark">(辆)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">开通车线<span class="home-hd-remark">(条)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">新增</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">撤销</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">装载率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">迟发率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">延误率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </li>
+        <li class="home-item">
+            <div class="home-title" data-arrow="down">
+                <div class="home-title-left">
+                    <ins class="home-arrow"></ins>
+                    <span class="home-name">时效</span>
+                </div>
+                <div class="home-title-right" data-link="aging-index.html">
+                    <span class="home-detail">详细数据</span>
+                    <ins class="home-right-arrow"></ins>
+                </div>
+            </div>
+            <ul class="home-list" id="aging-area">
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">文件失效<span class="home-hd-remark">(时)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">中转操作失效<span class="home-hd-remark">(时)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">中转时效<span class="home-hd-remark">(时)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">派件时效<span class="home-hd-remark">(时)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">全程时效<span class="home-hd-remark">(时)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </li>
+        <li class="home-item">
+            <div class="home-title" data-arrow="down">
+                <div class="home-title-left">
+                    <ins class="home-arrow"></ins>
+                    <span class="home-name">质控</span>
+                </div>
+                <div class="home-title-right" data-link="QC-index.html">
+                    <span class="home-detail">详细数据</span>
+                    <ins class="home-right-arrow"></ins>
+                </div>
+            </div>
+            <ul class="home-list" id="QC-area">
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">延误率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">错发率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item">
+                    <div class="home-item-content">
+                        <p class="home-hd">错分率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">错集包率<span class="home-hd-remark">(%)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">遗失率<span class="home-hd-remark">(‱)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li class="home-list-item no-border-bottom">
+                    <div class="home-item-content">
+                        <p class="home-hd">疑似遗失率<span class="home-hd-remark">(‱)</span></p>
+                        <p class="home-bd">---</p>
+                        <div class="home-ft">
+                            <div class="home-ft-left">
+                                <p class="home-ft-title">日环比</p>
+                                <p class="home-ft-ratio ratio-up-num">---</p>
+                            </div>
+                            <div class="home-ft-right">
+                                <p class="home-ft-title">周同比</p>
+                                <p class="home-ft-ratio ratio-down-num">---</p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <!--<li class="home-list-item no-border-bottom">-->
+                    <!--<div class="home-item-content">-->
+                        <!--<p class="home-hd">人均件量<span class="home-hd-remark">(件/天)</span></p>-->
+                        <!--<p class="home-bd">-&#45;&#45;</p>-->
+                        <!--<div class="home-ft">-->
+                            <!--<div class="home-ft-left">-->
+                                <!--<p class="home-ft-title">日环比</p>-->
+                                <!--<p class="home-ft-ratio ratio-up-num">-&#45;&#45;</p>-->
+                            <!--</div>-->
+                            <!--<div class="home-ft-right">-->
+                                <!--<p class="home-ft-title">周同比</p>-->
+                                <!--<p class="home-ft-ratio ratio-down-num">-&#45;&#45;</p>-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                <!--</li>-->
+            </ul>
+        </li>
+    </ul>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getWaterMarkImgURL = appId + "/action/mark/watermarkController/watermark.do";
+    var homePageURL = appId + "/action/homepage/index.do";
+    var getTrafficBaskInfoURL = appId + "/action/bas_busi/getBusinessVolume.do";
+    var getTransportInfoURL = appId + "/action/summary/search.do";
+    var getAgingBaskInfoURL = appId + "/action/bas_s_bigdata/getSeffect.do";
+    var getQCBaskInfoURL = appId + "/action/ydbi_quality_control/searchData.do";
+    var sendClass;
+    var userInfo = {
+        userID : "",
+        userName : ""
+    };
+    $(function() {
+     init();
+    });
+    function init() {
+
+        getNum();    //用于显示网点
+        viewJs();
+        setView();
+        linkTab();  //导航栏设置
+        getBaskInfo(); //初始化获取数据
+        commonFun(); //公用方法
+        getUserWaterMark(); //获取水印
+    }
+
+    function getBaskInfo() {
+        getBaskInfoDetail();  //重要指标
+        getBTrafficDetail();   //获取业务量值
+        getTransportDetail();   //获取运输值
+        getAgingDetail();   //获取时效
+        getQCDetail();   //获取质控
+
+    }
+
+    function getUserWaterMark() {
+        var url = encodeURI(encodeURI(getWaterMarkImgURL + "?userid=" + userInfo.userID + "&username=" + userInfo.userName));
+        localStorage.setItem("waterRemark",url);
+        $("body").css("background","url('"+ url +"')");
+    }
+
+    function getBaskInfoDetail() {
+        $.showLoading("加载中");
+        var conditonStr;
+        sendClass = $("#picker-pos").attr("data-num");
+        if (sendClass == "area_id") {
+            conditonStr = "{'area_id':'" + $("#picker-pos").attr("data-value") + "'}"
+        } else if (sendClass == "prov_id") {
+            conditonStr = "{'prov_id':'" + $("#picker-pos").attr("data-value") + "'}"
+        } else if (sendClass == "com_id") {
+            conditonStr = "{'com_id':'" + $("#picker-pos").attr("data-value") + "'}"
+        }
+        var survParams = {
+            "date_time": $("#calender-select").val(),
+            "conditonStr": conditonStr
+        };
+        var str = encodeURI("search_condition=" + JSON.stringify(survParams));
+        $.ajax({
+            type: 'POST',
+            url: homePageURL,
+            dataType: 'json',
+            data: str,
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            success: function (oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addBashInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    $(".ratio-img-top-up,.ratio-img-top-down").hide();
+                    YDM.messageAlert(oData.msg + "(" + oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addBashInfo(data) {
+        var str = "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>订单量<span class='home-hd-remark'>(件)</span></p><p class='home-bd ratio-"+ changeData(data.on_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.order_num,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.on_dod,"symbol") +"-num'>"+ changeData(data.on_dod,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.on_dod,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.on_wow,"symbol") +"-num'>"+ changeData(data.on_wow,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.on_wow,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>派件量<span class='home-hd-remark'>(件)</span></p><p class='home-bd ratio-"+ changeData(data.sd_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.send_num,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.sd_dod,"symbol") +"-num'>"+ changeData(data.sd_dod,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sd_dod,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.sd_wow,"symbol") +"-num'>"+ changeData(data.sd_wow,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sd_wow,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>单日签收率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.sr_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.sign_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.sr_dod,"symbol") +"-num'>"+ changeData(data.sr_dod,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sr_dod,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.sr_wow,"symbol") +"-num'>"+ changeData(data.sr_wow,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sr_wow,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>开通车线<span class='home-hd-remark'>(条)</span></p><p class='home-bd ratio-"+ changeData(data.oi_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.open_line,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>新增</p><p class='home-ft-ratio ratio-"+ changeData(data.oi_dod,"symbol") +"-num'>"+ changeData(data.oi_dod,"abs") +"</p></div><div class='home-ft-right'><p class='home-ft-title'>撤销</p><p class='home-ft-ratio ratio-"+ changeData(data.oi_wow,"symbol") +"-num'>"+ changeData(data.oi_wow,"abs") +"</p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>发车数量<span class='home-hd-remark'>(辆)</span></p><p class='home-bd ratio-"+ changeData(data.sc_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.send_car,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.sc_dod,"symbol") +"-num'>"+ changeData(data.sc_dod,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sc_dod,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.sc_wow,"symbol") +"-num'>"+ changeData(data.sc_wow,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sc_wow,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>装载率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.fr_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.freight_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.fr_dod,"symbol") +"-num'>"+ changeData(data.fr_dod,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.fr_dod,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.fr_wow,"symbol") +"-num'>"+ changeData(data.fr_wow,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.fr_wow,"symbol") +"'></span></p></div></div></div></li>" ;
+        $("#important-area").empty().append(str);
+        $(".home-list-item").linkInfo();
+    }
+
+    function getBTrafficDetail() {
+        $.showLoading("加载中");
+        sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "curDate": $("#calender-select").val()
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTrafficBaskInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addTrafficListInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("***");
+                    $(".ratio-img-top-up,.ratio-img-top-down").hide();
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addTrafficListInfo(data) {
+        var str = "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>揽件量<span class='home-hd-remark'>(件)</span></p><p class='home-bd ratio-"+ changeData(data.basSBusiPick.daysFrom,"symbol") +"-num'>"+ formatNumberRgx(data.basSBusiPick.pickCnt) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiPick.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiPick.daysFrom,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiPick.daysFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiPick.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiPick.weeksFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiPick.weeksFrom,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>派件量<span class='home-hd-remark'>(件)</span></p><p class='home-bd  ratio-"+ changeData(data.sendAQuantity.daysFrom,"symbol") +"-num'>"+ formatNumberRgx(data.sendAQuantity.delvCnt) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.sendAQuantity.daysFrom,"symbol") +"-num'>"+ changeData(data.sendAQuantity.daysFrom,'abs','%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sendAQuantity.daysFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.sendAQuantity.weeksFrom,"symbol") +"-num'>"+ changeData(data.sendAQuantity.weeksFrom,"abs",'%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.sendAQuantity.weeksFrom,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>签收量<span class='home-hd-remark'>(件)</span></p><p class='home-bd ratio-"+ changeData(data.signAQuantity.daysFrom,"symbol") +"-num'>"+ formatNumberRgx(data.signAQuantity.cfm_rcvCnt) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.signAQuantity.daysFrom,"symbol") +"-num'>"+ changeData(data.signAQuantity.daysFrom,'abs','%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.signAQuantity.daysFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.signAQuantity.weeksFrom,"symbol") +"-num'>"+ changeData(data.signAQuantity.weeksFrom,"abs",'%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.signAQuantity.weeksFrom,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>单日签收率<span class='home-hd-remark'>(%)</span></p><p class='home-bd  ratio-"+ changeData(data.basSBusiDelvTmp0.daysFrom,"symbol") +"-num'>"+ data.basSBusiDelvTmp0.cfm_rcvrt +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiDelvTmp0.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelvTmp0.daysFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelvTmp0.daysFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiDelvTmp0.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelvTmp0.weeksFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelvTmp0.weeksFrom,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>3日签收率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.basSBusiDelv3.daysFrom,"symbol") +"-num'>"+ data.basSBusiDelv3.cfm_rcv_rt3 +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiDelv3.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelv3.daysFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelv3.daysFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiDelv3.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiDelv3.weeksFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiDelv3.weeksFrom,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>7日未签收率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.basSBusiNoDelv7.daysFrom,"symbol") +"-num'>"+ data.basSBusiNoDelv7.cfm_rcv_rt7 +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiNoDelv7.daysFrom,"symbol") +"-num'>"+ changeData(data.basSBusiNoDelv7.daysFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiNoDelv7.daysFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.basSBusiNoDelv7.weeksFrom,"symbol") +"-num'>"+ changeData(data.basSBusiNoDelv7.weeksFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.basSBusiNoDelv7.weeksFrom,"symbol") +"'></span></p></div></div></div></li>";
+        $("#traffic-area").empty().append(str);
+        $(".home-list-item").linkInfo();
+    }
+
+    function getTransportDetail() {
+        $.showLoading("加载中");
+        var conditonStr;
+        sendClass = $("#picker-pos").attr("data-num");
+        if(sendClass == "area_id") {
+            conditonStr = "{'area_id':'" + $("#picker-pos").attr("data-value") +"'}"
+        }else if(sendClass == "prov_id") {
+            conditonStr = "{'prov_id':'" + $("#picker-pos").attr("data-value") +"'}"
+        }else if(sendClass == "com_id") {
+            conditonStr = "{'com_id':'" + $("#picker-pos").attr("data-value") +"'}"
+        }
+        var survParams = {
+            "date_time": $("#calender-select").val(),
+            "conditonStr":conditonStr
+        };
+        console.log(JSON.stringify(conditonStr));
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTransportInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addTransportBashInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("***");
+                    $(".ratio-img-top-up,.ratio-img-top-down").hide();
+                    $(".business-menu-item").off("click");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addTransportBashInfo(data) {
+        var str = "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>发车数量<span class='home-hd-remark'>(辆)</span></p><p class='home-bd ratio-"+ changeData(data.scd,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.sc,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.scd,"symbol") +"-num'>"+ changeData(data.scd,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.scd,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.scw,"symbol") +"-num'>"+ changeData(data.scw,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.scw,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>开通车线<span class='home-hd-remark'>(条)</span></p><p class='home-bd ratio-"+ changeData(data.opd,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.op,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>新增</p><p class='home-ft-ratio ratio-"+ changeData(data.opd,"symbol") +"-num'>"+ changeData(data.opd,'abs') +"</p></div><div class='home-ft-right'><p class='home-ft-title'>撤销</p><p class='home-ft-ratio ratio-"+ changeData(data.opw,"symbol") +"-num'>"+ changeData(data.opw,"abs") +"</p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>装载率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.lrd,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.lr,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.lrd,"symbol") +"-num'>"+ changeData(data.lrd,'abs','%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.lrd,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.lrw,"symbol") +"-num'>"+ changeData(data.lrw,"abs",'%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.lrw,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>迟发率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.clrd,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.clr,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.clrd,"symbol") +"-num'>"+ changeData(data.clrd,'abs','%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.clrd,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.clrw,"symbol") +"-num'>"+ changeData(data.clrw,"abs",'%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.clrw,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>延误率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.drd,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.dr,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.drd,"symbol") +"-num'>"+ changeData(data.drd,'abs','%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.drd,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.drw,"symbol") +"-num'>"+ changeData(data.drw,"abs",'%') +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.drw,"symbol") +"'></span></p></div></div></div></li>";
+        $("#transport-area").empty().append(str);
+        $(".home-list-item").linkInfo();
+    }
+
+    function getAgingDetail() {
+        $.showLoading("加载中");
+        sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "curDate": $("#calender-select").val()
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getAgingBaskInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addAgingListInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addAgingListInfo(data) {
+        var str = "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>交件时效<span class='home-hd-remark'>(时)</span></p><p class='home-bd ratio-"+ changeData(data.seffectGive.dayFrom,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.seffectGive.effect,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectGive.dayFrom,"symbol") +"-num'>"+ changeData(data.seffectGive.dayFrom,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectGive.dayFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectGive.weekFrom,"symbol") +"-num'>"+ changeData(data.seffectGive.weekFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectGive.weekFrom,"symbol") +"'></span></p></div></div></div></li>" +
+            "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>中转操作时效<span class='home-hd-remark'>(时)</span></p><p class='home-bd ratio-"+ changeData(data.seffectTansOp.dayFrom,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.seffectTansOp.effect,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectTansOp.dayFrom,"symbol") +"-num'>"+ changeData(data.seffectTansOp.dayFrom,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectTansOp.dayFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectTansOp.weekFrom,"symbol") +"-num'>"+ changeData(data.seffectTansOp.weekFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectTansOp.weekFrom,"symbol") +"'></span></p></div></div></div></li>" +
+            "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>中转时效<span class='home-hd-remark'>(时)</span></p><p class='home-bd ratio-"+ changeData(data.seffectTrans.dayFrom,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.seffectTrans.effect,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectTrans.dayFrom,"symbol") +"-num'>"+ changeData(data.seffectTrans.dayFrom,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectTrans.dayFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectTrans.weekFrom,"symbol") +"-num'>"+ changeData(data.seffectTrans.weekFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectTrans.weekFrom,"symbol") +"'></span></p></div></div></div></li>" +
+            "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>派件时效<span class='home-hd-remark'>(时)</span></p><p class='home-bd ratio-"+ changeData(data.seffectSnd.dayFrom,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.seffectSnd.effect,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectSnd.dayFrom,"symbol") +"-num'>"+ changeData(data.seffectSnd.dayFrom,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectSnd.dayFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectSnd.weekFrom,"symbol") +"-num'>"+ changeData(data.seffectSnd.weekFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectSnd.weekFrom,"symbol") +"'></span></p></div></div></div></li>" +
+            "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>全程时效<span class='home-hd-remark'>(时)</span></p><p class='home-bd ratio-"+ changeData(data.seffectAll.dayFrom,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.seffectAll.effect,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectAll.dayFrom,"symbol") +"-num'>"+ changeData(data.seffectAll.dayFrom,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectAll.dayFrom,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.seffectAll.weekFrom,"symbol") +"-num'>"+ changeData(data.seffectAll.weekFrom,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.seffectAll.weekFrom,"symbol") +"'></span></p></div></div></div></li>";
+        $("#aging-area").empty().append(str);
+        $(".home-list-item").linkInfo();
+    }
+
+    function getQCDetail() {
+        $.showLoading("加载中");
+        sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "data_date": $("#calender-select").val()
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getQCBaskInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addQCListInfo(oData.data[0]);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("***");
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    function addQCListInfo(data) {
+        var str = "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>延误率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent1,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.delay_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent1,"symbol") +"-num'>"+ changeData(data.day_percent1,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent1,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent1,"symbol") +"-num'>"+ changeData(data.week_with_percent1,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent1,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>错发率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent2,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.wrong_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent2,"symbol") +"-num'>"+ changeData(data.day_percent2,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent2,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent2,"symbol") +"-num'>"+ changeData(data.week_with_percent2,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent2,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>错分率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent3,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.wrongpoints_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent3,"symbol") +"-num'>"+ changeData(data.day_percent3,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent3,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent3,"symbol") +"-num'>"+ changeData(data.week_with_percent3,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent3,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>错集包率<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent4,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.wrongpackage_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent4,"symbol") +"-num'>"+ changeData(data.day_percent4,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent4,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent4,"symbol") +"-num'>"+ changeData(data.week_with_percent4,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent4,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>遗失率<span class='home-hd-remark'>(‱)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent5,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.loss_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent5,"symbol") +"-num'>"+ changeData(data.day_percent5,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent5,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent5,"symbol") +"-num'>"+ changeData(data.week_with_percent5,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent5,"symbol") +"'></span></p></div></div></div></li>" +
+                "<li class='home-list-item'><div class='home-item-content'><p class='home-hd'>疑似遗失率<span class='home-hd-remark'>(‱)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent6,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.retention_rate,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent6,"symbol") +"-num'>"+ changeData(data.day_percent6,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent6,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent6,"symbol") +"-num'>"+ changeData(data.week_with_percent6,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent6,"symbol") +"'></span></p></div></div></div></li>" ;
+//                "<li class='home-list-item no-border-bottom'><div class='home-item-content'><p class='home-hd'>人均件量<span class='home-hd-remark'>(%)</span></p><p class='home-bd ratio-"+ changeData(data.day_percent7,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.day_per_amount,"abs")) +"</p><div class='home-ft'><div class='home-ft-left'><p class='home-ft-title'>日环比</p><p class='home-ft-ratio ratio-"+ changeData(data.day_percent7,"symbol") +"-num'>"+ changeData(data.day_percent7,'abs',"%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.day_percent7,"symbol") +"'></span></p></div><div class='home-ft-right'><p class='home-ft-title'>周同比</p><p class='home-ft-ratio ratio-"+ changeData(data.week_with_percent7,"symbol") +"-num'>"+ changeData(data.week_with_percent7,"abs","%") +"<span class='volume-ratio-img ratio-img-top-"+ changeData(data.week_with_percent7,"symbol") +"'></span></p></div></div></div></li>";
+        $("#QC-area").empty().append(str);
+        $(".home-list-item").linkInfo();
+    }
+
+    $.fn.extend({
+        linkInfo:function() {
+            $(this).off("click").on("click",function() {
+                $(this).parents(".home-item").find(".home-detail").trigger("click");
+            })
+        }
+    });
+
+
+
+
+    function viewJs() {
+        var orgShowName = "集团";    //为了获取集团名称
+        $.each(showOrgName,function(index,val) {
+            if(val != "无") {
+                orgShowName = val;
+            }
+        });
+        $("#picker-pos").val(orgShowName).attr({"data-value":showOrgCode,"data-num":showOrgType});
+
+        //下拉展现数据
+        $(".home-arrow").on("click",function() {
+            var arrow = $(this).parents(".home-title");
+            if(arrow.attr("data-arrow") == "down") {
+                arrow.attr("data-arrow","up");
+                $(this).addClass("home-arrow-up");
+                arrow.next().slideUp();
+            }else if(arrow.attr("data-arrow") == "up") {
+                arrow.attr("data-arrow","down");
+                $(this).removeClass("home-arrow-up");
+                arrow.next().slideDown();
+            }
+        });
+
+        //点击进入详情
+        $(".business-menu-item").on("click",function() {
+            var linkHref = $(this).attr("data-link");
+            if(linkHref != null) {
+                window.location.href = linkHref + "?sendType=" + sendClass + "&dataOrg=" + $("#picker-pos").attr("data-value") + "&pageInfo=" + $(this).attr("data-page");
+            }
+        });
+        $(".home-detail,.home-right-arrow").on("click",function() {
+            var linkStr = $(this).parents(".home-title-right").attr("data-link");
+            window.location.href = linkStr;
+        })
+    }
+</script>
+</body>
+</html>

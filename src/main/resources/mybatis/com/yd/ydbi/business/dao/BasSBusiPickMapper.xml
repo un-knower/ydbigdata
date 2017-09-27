@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.business.dao.BasSBusiPickMapper" >
+	<sql id="condition_filter">
+		<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+			AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "1" '>
+			AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "2" '>
+			AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "3" '>
+			AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+		</if>
+		<if test='sel_level!=null and sel_level == "5" '>
+			AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+		</if>
+			AND k.start_tm &lt;= a.stats_dt
+			AND k.end_tm > a.stats_dt
+	</sql>
+	
+  <select id="selectTookAQuantityForNull" parameterType="map" resultType="map">
+	SELECT 
+		0 pickCnt,
+		0 daysFrom,
+		0 weeksFrom
+	
+  </select>
+  
+  <select id="selectTookAQuantity" parameterType="map" resultType="map">
+	SELECT 
+		IFNULL(FORMAT(a.pick_cnt,0),0) pickCnt,
+		FORMAT(IFNULL(ROUND((a.pick_cnt - b.lastday_pick_cnt) / b.lastday_pick_cnt * 100,2),0),2) daysFrom,
+		FORMAT(IFNULL(ROUND((a.pick_cnt - c.lastWeekSd_pick_cnt) / c.lastWeekSd_pick_cnt * 100,2),0),2) weeksFrom
+	FROM
+	 (SELECT 0 as st,
+		sum(a.pick_cnt) lastday_pick_cnt
+	  FROM
+		`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+		a.stats_dt = date_sub(#{curDate},INTERVAL 1 DAY)
+		<include refid="condition_filter"/>
+     	</where>
+	  GROUP BY a.`stats_dt`
+	  UNION ALL SELECT 0,0
+		limit 1
+	  ) b LEFT JOIN
+		(SELECT 0 as st,
+			sum(a.pick_cnt) lastWeekSd_pick_cnt
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+		a.stats_dt = DATE_SUB(#{curDate},INTERVAL 1 WEEK)
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY a.`stats_dt`
+		UNION ALL SELECT 0,0
+		limit 1
+		) c on b.st = c.st  LEFT JOIN
+		(SELECT 0 as st,
+			sum(a.pick_cnt) pick_cnt
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt = #{curDate}
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY a.`stats_dt`
+		UNION ALL SELECT 0,0
+		limit 1
+		) a  on c.st = a.st
+  </select>
+  
+  <!-- 揽件量-日月周平均 -->
+  <select id="dwmAvgAmount" resultType="map" parameterType="map">
+	SELECT
+		round(a.lastDayTheAVG,0) lastDayTheAVG,
+		round(c.theMonthTheAVG,0) theMonthTheAVG,
+		round(b.lastWeekTheAVG,0) lastWeekTheAVG
+	FROM
+	(SELECT a.stats_dt, 0 as st,
+		SUM(a.pick_cnt) lastDayTheAVG
+		FROM
+			`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt = date_sub(#{curDate},INTERVAL 1 DAY)
+		<include refid="condition_filter"/>
+     	</where>
+		GROUP BY a.stats_dt
+		UNION ALL SELECT 0,0,0
+		limit 1
+	) a left join 
+	(SELECT 
+		DATE_FORMAT(a.stats_dt,'%Y') ymw, 0 as st,
+		SUM(a.pick_cnt)/7 lastWeekTheAVG
+	FROM
+		`bas_s_bigdata_busi` a INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+	<where>
+		a.stats_dt >= DATE_SUB(subdate(#{curDate},if(date_format(#{curDate},'%w')=0,7,date_format(#{curDate},'%w'))-1),INTERVAL 1 WEEK)
+		and a.stats_dt &lt;= DATE_SUB(subdate(#{curDate},if(date_format(#{curDate},'%w')=0,7,date_format(#{curDate},'%w'))-7),INTERVAL 1 WEEK)
+	<include refid="condition_filter"/>
+    	</where>
+	GROUP BY ymw
+	UNION ALL SELECT 0,0,0
+	limit 1
+	) b on a.st = b.st left join
+	( SELECT
+		date_format(a.stats_dt, '%Y-%m'),
+		0 as st,
+		SUM(a.pick_cnt) / 
+		CASE when date_format(#{curDate}, '%Y-%m') = date_format(NOW(), '%Y-%m') THEN 
+		( datediff( NOW(), date_format(#{curDate}, '%Y-%m-%01') )+ 1 ) 
+		ELSE
+		( datediff( LAST_DAY(#{curDate}), date_format(#{curDate}, '%Y-%m-%01') )+ 1 ) 
+		end theMonthTheAVG
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+		CASE when date_format(#{curDate}, '%Y-%m') = date_format(NOW(), '%Y-%m') THEN 
+		 a.stats_dt >= date_format(#{curDate}, '%Y-%m-%01')
+		 AND a.stats_dt &lt;= NOW()
+	     ELSE
+	     a.stats_dt >= date_format(#{curDate}, '%Y-%m-%01')
+		 AND a.stats_dt &lt;= LAST_DAY(#{curDate})
+		end
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY 1
+		UNION ALL SELECT 0,0,0
+	limit 1
+	) c on b.st = c.st
+  </select>
+  
+  <!-- 揽件量(季度趋势) -->
+  <select id="pickQTrend" parameterType="map" resultType="map">
+		select 
+			a.yq yq,a.pick_cnt actiVal,a.theDate,ifnull(c.pick_cnt,0) qauterSameTime
+		from
+		(SELECT
+			CONCAT(
+				DATE_FORMAT(stats_dt, '%Y'),
+				'-',
+				QUARTER (stats_dt)
+			) yq,
+			sum(a.pick_cnt) pick_cnt,
+			DATE_ADD(
+				date(
+					concat(
+						YEAR (stats_dt),
+						'-',
+						elt(QUARTER(stats_dt), 1, 4, 7, 10),
+						'-',
+						1
+					)
+				),
+				INTERVAL - 1 QUARTER
+			) theDate
+		FROM
+			ydbi.bas_s_bigdata_busi a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt >= DATE_SUB(concat(date_format(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  #{curDate}),1) + interval QUARTER(#{curDate})*3-3 month),'%Y-%m-'),'01'),INTERVAL 1 YEAR)
+		AND a.stats_dt &lt;= LAST_DAY(MAKEDATE(EXTRACT(YEAR  FROM #{curDate}),1) + interval QUARTER(#{curDate})*3-1 month)
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY yq )a LEFT JOIN
+		(select 
+			CONCAT(SUBSTR(b.yq,1,4)+1,SUBSTR(b.yq,-2)) yq,b.pick_cnt
+		from 
+		(SELECT 
+			CONCAT(
+				DATE_FORMAT(stats_dt, '%Y'),
+				'-',
+				QUARTER (stats_dt)
+			) yq,
+			sum(a.pick_cnt) pick_cnt
+		FROM
+			ydbi.bas_s_bigdata_busi a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			a.stats_dt >= DATE_SUB(concat(date_format(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  #{curDate}),1) + interval QUARTER(#{curDate})*3-3 month),'%Y-%m-'),'01'),INTERVAL 2 YEAR)
+		AND a.stats_dt &lt;= DATE_SUB(LAST_DAY(MAKEDATE(EXTRACT(YEAR  FROM #{curDate}),1) + interval QUARTER(#{curDate})*3-1 month),INTERVAL 1 YEAR)
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY yq )b)c
+		on a.yq = c.yq
+  </select>
+  
+  <!-- 揽件量(月度趋势) -->
+  <select id="pickMTrend" parameterType="map" resultType="map">
+	SELECT a.ym,a.pick_cnt monthSameTime,b.pick_cnt avtiveValue,b.theDate
+	from
+		(select 
+			DATE_FORMAT(SUBDATE(ymd,INTERVAL -1 MONTH),'%Y-%m')ym,
+			pick_cnt
+		from(SELECT 
+				DATE_FORMAT(stats_dt, '%Y-%m-%d') ymd,
+				sum(a.pick_cnt) pick_cnt
+	
+			FROM 
+				ydbi.bas_s_bigdata_busi a
+			INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+			<where> 
+				a.stats_dt >= DATE_ADD(
+					DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+					INTERVAL - 6 MONTH
+				)
+			AND a.stats_dt &lt; DATE_ADD(
+				DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+				INTERVAL 0 MONTH
+			)
+			<include refid="condition_filter"/>
+	    	</where>
+			GROUP BY ymd 
+			) a
+			where SUBSTR(a.ymd,-2) = SUBSTR(#{curDate},-2)) a ,
+			(SELECT 
+				DATE_FORMAT(stats_dt, '%Y-%m') ym,
+				sum(a.pick_cnt) pick_cnt,
+				DATE_ADD(
+					DATE_FORMAT(stats_dt, '%Y-%m-%01'),
+					INTERVAL - 1 MONTH
+				) theDate
+			FROM 
+				ydbi.bas_s_bigdata_busi a
+			INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+			<where>
+				a.stats_dt >= DATE_ADD(
+					DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+					INTERVAL - 5 MONTH
+				)
+			AND a.stats_dt &lt; DATE_ADD(
+				DATE_FORMAT(#{curDate}, '%Y-%m-%01'),
+				INTERVAL 1 MONTH
+			)
+			<include refid="condition_filter"/>
+	    	</where>
+			GROUP BY
+				ym )b 
+			where a.ym = b.ym
+    </select>
+  
+  <!-- 揽件量(月同期值) -->
+  <select id="pickMTrendSameTime" parameterType="map" resultType="map">
+  
+  </select>
+  
+  
+  <!-- 揽件量(周度趋势) -->
+  <select id="pickWTrend" parameterType="map" resultType="map">
+		SELECT
+			DATE_FORMAT(DATE_SUB(stats_dt,INTERVAL 1 DAY),'%X-%V') yweek,
+			sum(a.pick_cnt) pick_cnt,
+			DATE_SUB(stats_dt,INTERVAL 1 WEEK) theDate
+		FROM
+			ydbi.bas_s_bigdata_busi a
+		INNER JOIN org_inf k ON a.dbct_cd = k.Org_Cd
+		<where>
+			DATE_FORMAT(DATE_SUB(stats_dt,INTERVAL 1 DAY),'%X-%V') BETWEEN DATE_FORMAT(DATE_SUB(DATE_SUB(#{curDate},INTERVAL 1 DAY),INTERVAL 7 WEEK),'%X-%V')
+		AND  DATE_FORMAT(DATE_SUB(#{curDate},INTERVAL 1 DAY),'%X-%V')
+		<include refid="condition_filter"/>
+    	</where>
+		GROUP BY
+			1
+		ORDER BY
+		yweek 
+  </select>
+  
+  
+  <!-- 揽件量(日度趋势) -->
+  <select id="pickDTrend" parameterType="map" resultType="map">
+		SELECT 
+		tb.ymd ymd
+		,SUM(tb.pick_cnt) avtiVal
+		,SUM(tb.pick_cnt1)	sameTiVal
+		FROM (
+		select 
+		 DATE_FORMAT(stats_dt,'%Y-%m-%d') as ymd,sum(a.pick_cnt) as pick_cnt,0  as pick_cnt1
+		 from ydbi.bas_s_bigdata_busi a
+		 INNER JOIN org_inf k
+   			ON a.dbct_cd = k.Org_Cd
+	<where> a.stats_dt > DATE_ADD(#{curDate},INTERVAL -15 DAY)
+		 and a.stats_dt &lt;= #{curDate}
+		 <include refid="condition_filter"/>
+    </where>
+		GROUP BY ymd
+		union 
+		select 
+		 DATE_FORMAT(date_add(stats_dt,INTERVAL 7 DAY),'%Y-%m-%d') as ymd, 0  as pick_cnt ,sum(a.pick_cnt) as pick_cnt1
+		 
+		 from ydbi.bas_s_bigdata_busi a
+		 INNER JOIN org_inf k
+   			ON a.dbct_cd = k.Org_Cd
+	<where> a.stats_dt > date_add(DATE_ADD(#{curDate},INTERVAL -15 DAY),INTERVAL -7 DAY)
+		 and a.stats_dt &lt;= date_add(#{curDate},INTERVAL -7 DAY)
+		  <include refid="condition_filter"/>
+    </where>
+		GROUP BY ymd
+		) tb
+		GROUP BY 1
+		ORDER BY 1
+  </select>
+  <select id="monthGrowthRate" resultType="com.yd.ydbi.business.model.MonthGrowthRate" parameterType="map">
+		select 
+		a.orgName,
+		a.orgCode,
+		ROUND(a.theMonthPickAmount/10000,2) theMonthPickAmount,
+		ROUND(b.theLastMonthPickAmount/10000,2) theLastMonthPickAmount,
+		ROUND((a.theMonthPickAmount-b.theLastMonthPickAmount)/b.theLastMonthPickAmount*100,2) monthGrowthRate
+		from (
+		SELECT
+			(case when #{sel_level} = 0 then grtr_dist_nm
+           	when #{sel_level} = 1 then k.prov_nm
+			when #{sel_level} = 2 then k.org_nm
+			when #{sel_level} = 3 THEN k.org_nm
+			when #{sel_level} = 5 THEN k.org_nm
+			else ''
+			end) orgName,
+			(case when #{sel_level} = 0 then grtr_dist_cd
+	          	when #{sel_level} = 1 then k.prov_cd
+			when #{sel_level} = 2 then k.org_cd
+			when #{sel_level} = 3 THEN k.org_cd
+			when #{sel_level} = 5 THEN k.org_cd
+			else ''
+			end) orgCode,
+			IFNULL(sum(pick_cnt), 0) theMonthPickAmount
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k
+		ON a.dbct_cd = k.Org_Cd
+		<where>
+			DATE_FORMAT(a.stats_dt,'%Y-%m') =  DATE_FORMAT(date_sub(DATE_FORMAT(#{curDate},'%Y-%m-%d'),interval 1 month),'%Y-%m')
+		<include refid="condition_filter"/>
+		</where>
+		GROUP BY 1
+		)a left join
+		
+		(SELECT
+			(case when #{sel_level} = 0 then grtr_dist_nm
+           	when #{sel_level} = 1 then k.prov_nm
+			else k.org_nm
+			end) orgName,
+			(case when #{sel_level} = 0 then grtr_dist_cd
+	          	when #{sel_level} = 1 then k.prov_cd
+			else k.org_cd
+			end) orgCode,
+			IFNULL(sum(pick_cnt), 0) theLastMonthPickAmount
+		FROM
+			`bas_s_bigdata_busi` a
+		INNER JOIN org_inf k
+		ON a.dbct_cd = k.Org_Cd
+		<where>
+			DATE_FORMAT(a.stats_dt,'%Y-%m') =  DATE_FORMAT(date_sub(DATE_FORMAT(#{curDate},'%Y-%m-%d'),interval 2 month),'%Y-%m')
+		<include refid="condition_filter"/>
+		</where>
+		GROUP BY 1
+		)b
+		on a.orgCode=b.orgCode
+		order by monthGrowthRate desc
+		
+ </select>
+ 
+ 
+ <select id="monthVolatility" resultType="com.yd.ydbi.business.model.MonthVolatility" parameterType="map">
+	select 
+		a.orgName,
+		a.orgCode, 
+		round(a.monthTheGrowthRate,2) monthTheGrowthRate,
+		round(a.monthLastGrowthRate,2) monthLastGrowthRate,
+		round((a.monthTheGrowthRate-a.monthLastGrowthRate),2) monthvolatility
+	from(select 
+		a.orgName, 
+		a.orgCode, 
+		(a.theMonthPickAmount-b.theLastMonthPickAmount)/b.theLastMonthPickAmount*100 monthTheGrowthRate,
+		(b.theLastMonthPickAmount-c.theLastLastMonthPickAmount)/c.theLastLastMonthPickAmount*100 monthLastGrowthRate
+		
+	from (
+	SELECT
+		(case when #{sel_level} = 0 then grtr_dist_nm
+           	when #{sel_level} = 1 then k.prov_nm
+			else k.org_nm
+			end) orgName,
+			(case when #{sel_level} = 0 then grtr_dist_cd
+	          	when #{sel_level} = 1 then k.prov_cd
+			else k.org_cd
+			end) orgCode,
+		IFNULL(sum(pick_cnt), 0) theMonthPickAmount
+	FROM
+		`bas_s_bigdata_busi` a
+	INNER JOIN org_inf k
+   	ON a.dbct_cd = k.Org_Cd
+	<where>
+		DATE_FORMAT(a.stats_dt,'%Y-%m') =  DATE_FORMAT(date_sub(DATE_FORMAT(#{curDate},'%Y-%m-%d'),interval 1 month),'%Y-%m')
+	<include refid="condition_filter"/>
+    </where>
+    group by 1,2
+	)a left join
+	
+	(SELECT
+		(case when #{sel_level} = 0 then grtr_dist_nm
+           	when #{sel_level} = 1 then k.prov_nm
+			else k.org_nm
+			end) orgName,
+			(case when #{sel_level} = 0 then grtr_dist_cd
+	          	when #{sel_level} = 1 then k.prov_cd
+			else k.org_cd
+			end) orgCode,
+		IFNULL(sum(pick_cnt), 0) theLastMonthPickAmount
+	FROM
+		`bas_s_bigdata_busi` a
+	INNER JOIN org_inf k
+   	ON a.dbct_cd = k.Org_Cd
+	<where>
+		DATE_FORMAT(a.stats_dt,'%Y-%m') =  DATE_FORMAT(date_sub(DATE_FORMAT(#{curDate},'%Y-%m-%d'),interval 2 month),'%Y-%m')
+	<include refid="condition_filter"/>
+    </where>
+    group by 1,2
+	)b on a.orgCode = b.orgCode
+		left join 
+	(SELECT
+		(case when #{sel_level} = 0 then grtr_dist_nm
+           	when #{sel_level} = 1 then k.prov_nm
+			else k.org_nm
+			end) orgName,
+			(case when #{sel_level} = 0 then grtr_dist_cd
+	          	when #{sel_level} = 1 then k.prov_cd
+			else k.org_cd
+			end) orgCode,
+		IFNULL(sum(pick_cnt), 0) theLastLastMonthPickAmount
+	FROM
+		`bas_s_bigdata_busi` a
+	INNER JOIN org_inf k
+   	ON a.dbct_cd = k.Org_Cd
+	<where>
+		DATE_FORMAT(a.stats_dt,'%Y-%m') =  DATE_FORMAT(date_sub(DATE_FORMAT(#{curDate},'%Y-%m-%d'),interval 3 month),'%Y-%m')
+	 <include refid="condition_filter"/>
+    </where>
+    group by 1,2
+	)c on b.orgCode = c.orgCode )a
+	order by monthvolatility desc
+ </select>
+ 
+</mapper>

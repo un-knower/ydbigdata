@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/gray/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	<script type="text/javascript" src="../../js/echarts-all.js"></script>
+	<script type="text/javascript" src="../../js/combobox-company.js"></script>
+	<script type="text/javascript" src="../../js/tool.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-index-1.0.js"></script>
+	<script type="text/javascript">
+		var objectName = '交叉带式分拣操作件量统计';
+		var listTemplate = '#matrix_cross_ship_tot';
+		var listId = "matrix_cross_ship_tot";
+		var formSearchTemplate = '#matrix_cross_ship_tot_searchForm';
+		var searchFormId = "matrix_cross_ship_tot_searchForm";
+		var gridMenuId = '#matrix_cross_ship_tot_menu';
+		
+		//var urlSearch = appId + '/actions/matrixShipment/detail/stafic.do?actionId=matrix_shipment_detail_searchData';
+		var urlSearch1 = appId + '/actions/matrixCross/shipTot/searchData.do?actionId=matrix_cross_ship_tot_searchData';
+		var urlExport= appId + '/actions/matrixCross/shipTot/exportEntities.do?actionId=matrix_cross_ship_tot_exportEntities';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'matrix_cross_ship_tot';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		//当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		var thisUrl = document.URL;
+		
+		$(function(){
+			$('#start_dt,#end_dt').datetimebox({'editable':false});
+			authControl();
+			loadDatagrid();
+		});
+		function authControl(){
+			var userData = null;
+			$.ajax({
+				type : "POST",
+				url : c_url_get_user_profile,
+				cache : false,
+				async: false,
+				dataType : "json",
+				success : function(data) {
+					if (null != data && data.errorCode==0) {
+						userData = data.data;
+					} else {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning'); 
+					}
+				}
+			});
+			
+			$.each( userData.user_roles, function(i, n){
+		             var roleVales = n.split("_");  
+		             //分拨中心账号
+		             if(roleVales[0] == "dbct"){
+		            	 var dbctName = '';
+		            	 $.ajax({
+		     				type : "POST",
+		     				url :  appId+"/actions/tool/getOrgInf.do?actionId=tool_getOrgInf&sel_cd="+roleVales[1],
+		     				cache : false,
+		     				async: false,
+		     				dataType : "json",
+		     				success : function(data) {
+		     					if (null != data && data.errorCode==0) {
+		     						dbctName = data.data.orgName+'('+data.data.orgCd+')';
+		     					} else {
+		     						$$.showJcdfMessager('提示消息', data.msg, 'warning'); 
+		     					}
+		     				}
+		     			});
+		            	 $('#sel_dbct').val(dbctName);
+			         		$('#dbctE').attr("disabled",false);
+			         		 $('#dbctE').val(roleVales[1]);
+			         		$('#sel_dbct').attr("disabled",true);
+		         		 return false;
+		             }
+		           	 //省总账号
+		             else if(roleVales[0] == "prov"){
+		            	 $('#sel_dbct').combobox({
+			     			    url:appId+"/actions/tool/getRegion.do?actionId=tool_getRegion&sel_level=14&sel_cd="+roleVales[1],    
+			     			    valueField:'id',    
+			     			    textField:'name',
+			     				filter: function(q, row){
+									var opts = $(this).combobox('options');
+									return row[opts.textField].indexOf(q) > -1;
+								},
+				                onHidePanel : function() {  
+				                	    var _options = $(this).combobox('options');  
+				                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+				                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+				                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+				                	    for (var i = 0; i < _data.length; i++) {  
+				                	        if (_data[i][_options.valueField] == _value) {  
+				                	            _b=true;  
+				                	            break;  
+				                	        }  
+				                	    }  
+				                	    if(!_b){  
+				                	        $(this).combobox('setValue', '');  
+				                	    }  
+				                	}, 
+			     			    loadFilter:function(oData){
+			     			    	var data = oData.data;
+			     			    	for(var i in data){
+			     			    		data[i].name = data[i].name + "(" + data[i].id + ")";
+			     			    	}
+			     			    	data.unshift({"id":"","name":"请选择"});
+			     			    	return data;
+			     			    }
+			     			});
+			         		$('#sel_level').attr("disabled",false);
+			         		$('#sel_level').val('14');
+			         		//省总账号
+			         		$('#sel_cd').attr("disabled",false);
+			         		$('#sel_cd').val(roleVales[1]);
+			            	return false;
+			         }
+		             //总部账号
+		             else if(roleVales[0] == "hq" || roleVales[0] == "superAdmin"){
+		            	 $('#sel_dbct').combobox({
+		     			    url:appId+"/actions/tool/getRegion.do?actionId=tool_getRegion&sel_level=444&sel_cd=",    
+		     			    valueField:'id',    
+		     			    textField:'name',
+		     				filter: function(q, row){
+								var opts = $(this).combobox('options');
+								return row[opts.textField].indexOf(q) > -1;
+							},
+			                onHidePanel : function() {  
+			                	    var _options = $(this).combobox('options');  
+			                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+			                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+			                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+			                	    for (var i = 0; i < _data.length; i++) {  
+			                	        if (_data[i][_options.valueField] == _value) {  
+			                	            _b=true;  
+			                	            break;  
+			                	        }  
+			                	    }  
+			                	    if(!_b){  
+			                	        $(this).combobox('setValue', '');  
+			                	    }  
+			                	}, 
+		     			    loadFilter:function(oData){
+		     			    	var data = oData.data;
+		     			    	for(var i in data){
+		     			    		data[i].name = data[i].name + "(" + data[i].id + ")";
+		     			    	}
+		     			    	data.unshift({"id":"","name":"请选择"});
+		     			    	return data;
+		     			    }
+		     			});
+		            	return false;
+		             }
+				});
+		}
+
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			
+			var start=$("#start_dt").datetimebox("getValue"); 
+			var end=$("#end_dt").datetimebox("getValue");
+			if(start == "" || end == ""){
+				$$.showJcdfMessager('提示信息','日期不得为空','warning');
+				return false;
+			}
+	   
+			
+			start = start.replace(/-/g,'/'); 
+			end = end.replace(/-/g,'/'); 
+			var timestampStart = new Date(start).getTime();
+			
+			var timestampEnd = new Date(end).getTime();
+			var result=timestampEnd-timestampStart;
+			if(result<0){
+				$$.showJcdfMessager('提示消息', '起始日期不能大于结束日期', 'warning');
+				return false;
+			}
+			
+			var params = $$.serializeToJson(formSearchTemplate);
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(isDatagridLoaded){
+				$(listTemplate).datagrid('load', json );
+			}else{
+				$(listTemplate).datagrid({
+					queryParams: json,
+					url:urlSearch1			
+				});
+				isDatagridLoaded = true;
+			}	
+			var search_dbctcd = params.sel_dbct_id;
+			$("#su_dbctCd_total").val(search_dbctcd);
+		};
+		
+		function exportExcel(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			$('#'+searchFormId).form('submit',{    
+			    url:actionUrl,    
+			    onSubmit: function(param){
+			    	param.search_condition = JSON.stringify(params)
+			    },
+			    success: function(data){  
+			    	if (data==null || data==""){
+				        $$.showJcdfMessager('提示消息', "上次请求未完成，请稍候！", 'warning');
+			    	}else{
+				    	var oData = JSON.parse(data);
+				        if (oData&&oData.errorCode){   
+				        	$$.showJcdfMessager('提示消息', oData.msg, 'warning');   
+				        } 
+			      }
+			    } 
+			}); 		
+		};
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+			$("#sel_dbct").val($("#dbctE").val());
+			//$('#start_dt,#end_dt').datetimebox('setValue', getNowDate(0,-1));
+		};
+		
+		//分拨中心跳转明细表
+		function redirctDetail(dbctName, eqptId,itmId,has_addCd){
+			 var dbctcd="";
+			 if(dbctName.split('(')[1]){
+				 dbctcd = dbctName.split('(')[1].split(')')[0];
+			 }else if(dbctName!=""){
+				 dbctcd = dbctName;
+			 }
+			 
+			  var start_date=$("#start_dt").datetimebox("getValue");
+			  var end_date=$("#end_dt").datetimebox("getValue");
+			  var detailUrl = "../../ui/view/matrixShipment/matrix_cross_ship_dtl.html?actionId=matrix_cross_ship_dtl";
+			//  var href = detailUrl+"&sel_dbct_id="+dbctcd+"&start_dt="+start_date+"&start_dt="+end_date+"&eqpt_id="+eqptId+"&itm_id="+itmId+"&add_cd="+has_addCd
+			  var href = detailUrl+"&sel_dbct_id="+dbctcd+"&start_dt="+start_date+"&start_dt="+end_date+"&eqpt_id="+eqptId+"&itm_id="+itmId+"&add_cd="+has_addCd+"&oper_typ="
+
+			  href = href.replace(/ /g, "%20");
+			 //----------------------------------------------------------
+			//这里要用Windows.open()方法进行跳转  否则测试那边无法跳转。		
+			  window.parent.openNewTab2("交叉带操作票件明细表",href);
+			 //----------------------------------------------------------
+			  
+		}
+		
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			$(listTemplate).datagrid({
+				title:objectName+'表',
+				height:$$.getDatagridHeight(),
+				width:$$.getDatagridWidth(),
+				idField:'',
+				columns:[
+				         	[
+					         	{field:'dbctName',title:'分拨中心',width:240,align:'center',rowspan:1,
+					         		styler: function(value,row,index){
+								          if(row.dbctName != '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else{
+									           return value;
+								          }
+								        }, 
+							         formatter:function(value, row, index){
+								          if(row.dbctName != '合计'){
+								          	return "<a onclick=\"redirctDetail('"+row.dbctName+"','"+row.eqptId+"','"+row.itmId+"','"+""+"')\">"+value+"</a>";
+								          }else{
+								          	return value;
+								          }
+							         }
+					         	},
+								{field:'eqptId',title:'设备编号',width:240,align:'center',rowspan:1},
+								{field:'itmId',title:'供件台号',width:240,align:'center',rowspan:1},
+								{field:'operCnt',title:'操作总件数',width:180,align:'center',rowspan:1,
+									styler: function(value,row,index){
+								          if(row.dbctName != '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else if(row.dbctName == '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else{
+									           return value;
+								          }
+								        }, 
+							         formatter:function(value, row, index){
+								          if(row.dbctName != '合计'){
+								          	return "<a onclick=\"redirctDetail('"+row.dbctName+"','"+row.eqptId+"','"+row.itmId+"','"+""+"')\">"+value+"</a>";
+								          }else if(row.dbctName == '合计'){
+									          	return "<a onclick=\"redirctDetail('"+$('#su_dbctCd_total').val()+"','"+""+"','"+""+"','"+""+"')\">"+value+"</a>";
+								          }else{
+								          	return value;
+								          }
+							         }},
+								{field:'operWgt',title:'操作总重量',width:180,align:'center',rowspan:1,
+							        styler: function(value,row,index){
+								          if(row.dbctName != '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else if(row.dbctName == '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else{
+									           return value;
+								          }
+								        }, 
+							         formatter:function(value, row, index){
+								          if(row.dbctName != '合计'){
+								          	return "<a onclick=\"redirctDetail('"+row.dbctName+"','"+row.eqptId+"','"+row.itmId+"','"+""+"')\">"+value+"</a>";
+								          }else if(row.dbctName == '合计'){
+									          	return "<a onclick=\"redirctDetail('"+$('#su_dbctCd_total').val()+"','"+""+"','"+""+"','"+""+"')\">"+value+"</a>";
+								          }else{
+								          	return value;
+								          }
+							         }},
+								{field:'persAddCdCnt',title:'人工补码总数',width:180,align:'center',rowspan:1, 
+						        	 styler: function(value,row,index){
+								          if(row.dbctName != '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else if(row.dbctName == '合计'){
+									          return 'text-decoration:underline;color:blue;';
+								          }else{
+									           return value;
+								          }
+								        }, 
+							         formatter:function(value, row, index){
+								          if(row.dbctName != '合计'){
+								          	return "<a onclick=\"redirctDetail('"+row.dbctName+"','"+row.eqptId+"','"+row.itmId+"','"+"1"+"')\">"+value+"</a>";
+								          }else if(row.dbctName == '合计'){
+									          	return "<a onclick=\"redirctDetail('"+$('#su_dbctCd_total').val()+"','"+row.eqptId+"','"+row.itmId+"','"+"1"+"')\">"+value+"</a>";
+								          }else{
+								          	return value;
+								          }
+						         }}
+							]
+				         ],
+				onBeforeLoad:function(){$$.clearSelect(listId);},
+				queryParams:$$.serializeToJson(searchFormId),
+				border: true,
+				nowrap: true,
+				striped: true,
+				pagination:true,
+				rownumbers:true,
+				showFooter:false, 
+				singleSelect:true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar: gridMenuId,
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data; 
+				},
+				onLoadSuccess:function(data){
+					 if (data.rows.length > 0) {
+	                     //调用mergeCellsByField()合并单元格
+	                     mergeCellsByField(listId, "dbctName,eqptId,itmId");
+				      }
+			    }
+			});
+		};
+		
+		//合并
+		function mergeCellsByField(tableID, colList) {
+			var colArray = colList.split(",");
+			var tTable = $("#" + tableID);
+			var tableRows = tTable.datagrid("getRows");
+			var tableRowCnts = tableRows.length;
+			var rowspan;
+			var preTxt = "";
+			var curTxt = "";
+			
+			//合计字段的合并列
+			for (i = 0; i <= tableRowCnts - 1; i++) {
+				var txt = tableRows[i].dbctName;
+				if (("" + txt).indexOf("合计") >= 0) {
+					tTable.datagrid("mergeCells", {
+						index : i,
+						field : 'dbctName',//合并字段
+						rowspan : null,
+						colspan : 3
+					});
+				}
+			}
+		}
+	
+	</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false" style="padding: 4px 0;">
+		<fieldset style="padding: 5px; border: 1px solid #d4a375;">
+			<legend>信息查询</legend>
+			<form id="matrix_cross_ship_tot_searchForm" class="search-form" method="post">
+<!-- 				<input type="hidden" id="area" name="area_id" value="" />
+ 				<input type="hidden" id="dbct" name="dbct_id" value="" />-->
+ 				<input type="hidden" id="su_dbctCd_total" name="su_dbctCd_total" disabled="disabled">
+ 				<input type="hidden" id="sel_cd" name="sel_cd" disabled="disabled">
+				<input type="hidden" id="sel_level" name="sel_level" disabled="disabled"> 
+				<input type="hidden" id="dbctE" name="sel_dbct_id" disabled="disabled">
+				<table cellpadding="2" style="width: 100%">
+				<tr>
+						<td align="right">起始时间：</td>
+						<td>
+							<input type="text" id="start_dt" name="start_dt" class="easyui-datetimebox"
+							data-options="" 
+							 /> 
+						</td>
+						<td align="right">终止时间：</td>
+						<td>
+							<input type="text" id="end_dt" name="end_dt" class="easyui-datetimebox"
+							data-options="" 
+							 /> 
+						</td>
+						<td align="right">分拨中心：</td>
+						<td>
+							<input type="text" id="sel_dbct" name="sel_dbct_id" style="width: 150px;" />
+						</td>
+						<td>
+							<a class="easyui-linkbutton" iconCls="icon-search" style="margin-right: 20px;" onclick="searchData('matrix_cross_ship_tot_searchData',urlSearch1)">查询</a>
+						</td>
+						<td >
+							<a class="easyui-linkbutton" iconCls="icon-reload" style="margin-right: 20px;" onclick="searchReset()">重置</a>
+						</td>
+					</tr>
+					<tr>
+						<td align="right">设备编号：</td>
+						<td>
+							<input type="text" id="eqptCd" name="eqpt_id" 
+								onkeyup="this.value=this.value.replace(/[\W]/g,'')" onblur="this.value=this.value.replace(/[\W]/g,'')"/>
+						</td>
+						<td align="right">供应台号：</td>
+						<td colspan="3">
+							<input type="text" id="itmId" name="itm_id" 
+								onkeyup="this.value=this.value.replace(/[\W]/g,'')" onblur="this.value=this.value.replace(/[\W]/g,'')"/>
+						</td>
+						<td>
+							<a class="easyui-linkbutton" iconCls="icon-download" style="margin-right: 20px;" onclick="exportExcel('matrix_cross_ship_tot_exportEntities',urlExport)">导出</a>
+						</td>
+					</tr>
+				</table>
+			</form>
+		</fieldset>
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 0px;">
+		<table id="matrix_cross_ship_tot" fit="true"></table>
+	</div>
+</body>
+</html>

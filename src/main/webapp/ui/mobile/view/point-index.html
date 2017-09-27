@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>大数据平台</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="top-content">
+        <div class="top-tab-area">
+            <ul class="tab-all">
+                <li class="tab-list">首页</li>
+                <li class="tab-list">重要指标</li>
+                <li class="tab-list  tab-list-active">目标值</li>
+                <li class="tab-list">业务量</li>
+                <li class="tab-list">运输</li>
+                <li class="tab-list">时效</li>
+                <li class="tab-list">质控</li>
+            </ul>
+        </div>
+        <div class="search-btn"></div>
+        <div class="tab-search-input">
+            <div class="search-area">
+                <div class="search-box">
+                    <div class="search-img"></div>
+                    <input class="search-info" id="search-info-area" placeholder="账户搜索">
+                    <div class="search-close"></div>
+                </div>
+                <div class="search-cancel">取消</div>
+            </div>
+        </div>
+    </div>
+    <div class="org-area">
+        <div class="org-select-area">
+            <div class="org-item-left">
+                <span class="org-name">机构</span>
+                <span class="org-name-detail">
+                    <label>
+                        <input class="org-name-input" id="picker-pos" data-value="" data-num="area_id" value="集团" readonly="readonly">
+                        <!--<ins class="arrow-bottom-img"></ins>-->
+                    </label>
+                </span>
+            </div>
+            <div class="org-item-right">
+                <span class="org-name">日期</span>
+                <span class="date-name-detail">
+                    <label>
+                        <input class="org-name-input" id="calender-select" readonly="readonly">
+                        <ins class="arrow-rili-img"></ins>
+                    </label>
+                </span>
+            </div>
+        </div>
+        <div class="data-detail-show point-bg">
+            <span class="data-detail-name">业务量目标</span>
+            <div class="cross-canvas"  id="point-total-info">
+                <div id="add-cancas-area">
+                    <canvas width="400%" height="400%" class="point-data" id="cross-canvas-out"></canvas>
+                    <canvas width="400%" height="400%" class="point-data" id="cross-canvas-in"></canvas>
+                </div>
+                <div class="point-all-num">
+                    <p class="point-num-fact-info point-fact-name">实际</p>
+                    <p class="point-num-fact-info point-fact-num"><span class="point-num" id="actual-values"></span><span class="point-num-price">万</span></p>
+                    <p class="point-num-hope-info point-fact-name">目标</p>
+                    <p class="point-num-hope-info point-fact-num"><span class="point-num" id="goal-values"></span><span class="point-num-price">万</span></p>
+
+                </div>
+            </div>
+            <div class="canvas-info" id="ratio-info">
+                <!--<div class="canvas-info-left">-->
+                    <!--<span class="canvas-num ratio-down-num">15.73</span>-->
+                    <!--<span class="canvas-arrow ratio-img-top-down"></span>-->
+                    <!--<span class="canvas-price">差量</span>-->
+                <!--</div>-->
+                <!--<div class="canvas-info-right">-->
+                    <!--<span class="canvas-num ratio-up-num">1.97%</span>-->
+                    <!--<span class="canvas-arrow ratio-img-top-up"></span>-->
+                    <!--<span class="canvas-price">差量比</span>-->
+                <!--</div>-->
+            </div>
+        </div>
+    </div>
+    <div class="point-menu water-remark-area" id="area-list">
+        <div class="point-item">
+            <div class="point-item-hd">广东大区</div>
+            <div class="point-item-bd">
+                <div class="point-ratio"><span class="point-tab-num ratio-down-num">261.78</span>/264.00</div>
+                <div class="point-ratio-bar">
+                    <div class="point-ratio-bar-show ratio-down-num-bg" style="width: 89%;"></div>
+                </div>
+            </div>
+            <div class="point-item-ft">
+                <p class="point-num-top">
+                    <span class="point-num-top-info ratio-down-num">2.22</span>
+                    <span class="point-num-arrow ratio-img-top-down"></span>
+                </p>
+                <p class="point-num-bottom">
+                    <span class="point-num-top-info ratio-down-num">1.19%</span>
+                    <span class="point-num-arrow ratio-img-top-down"></span>
+                </p>
+            </div>
+            <div class="point-next"></div>
+        </div>
+        <!--<div class="point-item">-->
+            <!--<div class="point-item-hd">上海大区</div>-->
+            <!--<div class="point-item-bd">-->
+                <!--<div class="point-ratio"><span class="point-tab-num ratio-up-num">256.15</span>/249.46</div>-->
+                <!--<div class="point-ratio-bar">-->
+                    <!--<div class="point-ratio-bar-show ratio-up-num-bg" style="width: 8%;"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="point-item-ft">-->
+                <!--<p class="point-num-top">-->
+                    <!--<span class="point-num-top-info ratio-up-num">6.69</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-up"></span>-->
+                <!--</p>-->
+                <!--<p class="point-num-bottom">-->
+                    <!--<span class="point-num-top-info ratio-up-num">1.78%</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-up"></span>-->
+                <!--</p>-->
+            <!--</div>-->
+            <!--<div class="point-next"></div>-->
+        <!--</div>-->
+        <!--<div class="point-item">-->
+            <!--<div class="point-item-hd">浙江大区</div>-->
+            <!--<div class="point-item-bd">-->
+                <!--<div class="point-ratio"><span class="point-tab-num ratio-up-num">200.78</span>/231.69</div>-->
+                <!--<div class="point-ratio-bar">-->
+                    <!--<div class="point-ratio-bar-show ratio-up-num-bg" style="width: 30%;"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="point-item-ft">-->
+                <!--<p class="point-num-top">-->
+                    <!--<span class="point-num-top-info ratio-up-num">31.4</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-up"></span>-->
+                <!--</p>-->
+                <!--<p class="point-num-bottom">-->
+                    <!--<span class="point-num-top-info ratio-up-num">2.68%</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-up"></span>-->
+                <!--</p>-->
+            <!--</div>-->
+            <!--<div class="point-next"></div>-->
+        <!--</div>-->
+        <!--<div class="point-item">-->
+            <!--<div class="point-item-hd">北京大区</div>-->
+            <!--<div class="point-item-bd">-->
+                <!--<div class="point-ratio"><span class="point-tab-num ratio-down-num">261.78</span>/364.00</div>-->
+                <!--<div class="point-ratio-bar">-->
+                    <!--<div class="point-ratio-bar-show ratio-down-num-bg" style="width: 80%;"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="point-item-ft">-->
+                <!--<p class="point-num-top">-->
+                    <!--<span class="point-num-top-info ratio-down-num">2.22</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-down"></span>-->
+                <!--</p>-->
+                <!--<p class="point-num-bottom">-->
+                    <!--<span class="point-num-top-info ratio-down-num">1.19%</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-down"></span>-->
+                <!--</p>-->
+            <!--</div>-->
+            <!--<div class="point-next"></div>-->
+        <!--</div>-->
+        <!--<div class="point-item">-->
+            <!--<div class="point-item-hd">江苏大区</div>-->
+            <!--<div class="point-item-bd">-->
+                <!--<div class="point-ratio"><span class="point-tab-num ratio-up-num">208.79</span>/214.00</div>-->
+                <!--<div class="point-ratio-bar">-->
+                    <!--<div class="point-ratio-bar-show ratio-up-num-bg" style="width: 30%;"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="point-item-ft">-->
+                <!--<p class="point-num-top">-->
+                    <!--<span class="point-num-top-info ratio-up-num">6.69</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-up"></span>-->
+                <!--</p>-->
+                <!--<p class="point-num-bottom">-->
+                    <!--<span class="point-num-top-info ratio-up-num">1.78%</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-up"></span>-->
+                <!--</p>-->
+            <!--</div>-->
+            <!--<div class="point-next"></div>-->
+        <!--</div>-->
+        <!--<div class="point-item">-->
+            <!--<div class="point-item-hd">华中西南大区</div>-->
+            <!--<div class="point-item-bd">-->
+                <!--<div class="point-ratio"><span class="point-tab-num ratio-down-num">127.00</span>/133.00</div>-->
+                <!--<div class="point-ratio-bar">-->
+                    <!--<div class="point-ratio-bar-show ratio-down-num-bg" style="width: 84%;"></div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="point-item-ft">-->
+                <!--<p class="point-num-top">-->
+                    <!--<span class="point-num-top-info ratio-down-num">8.72</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-down"></span>-->
+                <!--</p>-->
+                <!--<p class="point-num-bottom">-->
+                    <!--<span class="point-num-top-info ratio-down-num">1.19%</span>-->
+                    <!--<span class="point-num-arrow ratio-img-top-down"></span>-->
+                <!--</p>-->
+            <!--</div>-->
+            <!--<div class="point-next"></div>-->
+        <!--</div>-->
+    </div>
+    <div class="next-area-info hide-view">
+        <div class="point-item-menu">
+            <div class="point-item-title">订单量</div>
+            <div class="point-next"></div>
+        </div>
+        <div class="point-item-menu">
+            <div class="point-item-title">运输数据</div>
+            <div class="point-next"></div>
+        </div>
+        <div class="point-item-menu">
+            <div class="point-item-title">时效数据</div>
+            <div class="point-next"></div>
+        </div>
+    </div>
+</div>
+<div class="menu-area">
+    <div class="menu-item">
+        <div class="menu-img menu-tab-data menu-tab-active"></div>
+        <p class="menu-name menu-name-active">数据</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-scan"></div>
+        <p class="menu-name">订阅</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-infor"></div>
+        <p class="menu-name">资讯</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-my"></div>
+        <p class="menu-name">我的</p>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/ratio-canvas.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+	var getTargetURL = appId + "/action/ydbi_business_target/searchData.do";
+    var sendClass,barWidth;
+	$(function() {
+        init();
+    });
+    function init() {
+
+        getNum();    //用于显示网点
+        viewJs();
+        setView();
+        linkTab();  //导航栏设置
+        getBaskInfo() //初始化获取数据
+        commonFun(); //公用方法
+    }
+    
+    function getBaskInfo() {
+    	getBaskInfoDetail();   //获取目标值
+    	getNextListDetail();	//获取下级列表值
+    }
+    
+    function getNextListDetail() {
+        $.showLoading("加载中");
+        sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "data_date": $("#calender-select").val(),
+            "sel_type":"2",
+            "page":"1",
+            "rows":"15"
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTargetURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addListInfo(oData.data);
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addListInfo(data) {
+        var sendType;
+        $("#area-list").empty();
+        if(sendClass == "area_id") {
+            if($("#picker-pos").attr("data-value") == "") {
+                sendType = "area_id"
+            }else {
+                sendType = "prov_id"
+            }
+        }else  {
+            sendType = "com_id"
+        }
+        $.each(data,function(index,val) {
+            var actualVal = parseFloat(val.actual_values);
+            var goalVal = parseFloat(val.goal_values);
+            var backClass = actualVal > goalVal ? "up" : "down";
+            var ratioVal;
+            if(actualVal > 2*goalVal || actualVal == 2*goalVal) {
+                ratioVal = barWidth;
+            }else if(actualVal > goalVal && actualVal < 2*goalVal) {
+                ratioVal = (actualVal - goalVal)/goalVal*barWidth;
+            }else {
+                ratioVal = actualVal/goalVal*barWidth;
+            }
+            var str = "<div class='point-item' data-orgname='"+ val.org_name +"' data-orgtype='"+ sendType +"' data-orgid = "+ val.org_id +"><div class='point-item-hd'>"+ val.org_name +"</div><div class='point-item-bd'><div class='point-ratio'><span class='point-tab-num ratio-"+ backClass +"-num'>"+ val.actual_values +"</span>/"+ val.goal_values +"</div> <div class='point-ratio-bar'><div class='point-ratio-bar-show ratio-"+backClass +"-num-bg' style='width: "+ ratioVal +"px;'></div></div></div><div class='point-item-ft'><p class='point-num-top'><span class='point-num-top-info ratio-"+ changeData(val.residual_quantity,"symbol") +"-num'>"+ changeData(val.residual_quantity,"abs") +"</span><span class='margin-left-3 point-num-arrow ratio-img-top-"+ changeData(val.residual_quantity,"symbol") +"'></span></p><p class='point-num-bottom'><span class='point-num-top-info ratio-"+ changeData(val.residual_quantity_percent,"symbol") +"-num'>"+ changeData(val.residual_quantity_percent,"abs","%") +"</span><span class='margin-left-3 point-num-arrow ratio-img-top-"+ changeData(val.residual_quantity_percent,"symbol") +"'></span></p></div><div class='point-next'></div></div>"
+            $("#area-list").append(str);
+        });
+        $(".point-item").on("click",function() {
+            window.location.href="area-detail.html?sendType=" + $(this).attr("data-orgtype") + "&dataOrg=" +  $(this).attr("data-orgid") + "&orgName=" + encodeURI($(this).attr("data-orgname"));
+        });
+    }
+    
+    function getBaskInfoDetail() {
+        $.showLoading("加载中");
+        var sendClass = $("#picker-pos").attr("data-num");
+        var survParams = {
+            "data_date": $("#calender-select").val(),
+            "sel_type":"1"
+        };
+        survParams[sendClass] = $("#picker-pos").attr("data-value");
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTargetURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addBashInfo(oData.data[0]);
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    
+    function addBashInfo(data) {
+        var canvasStr = "<canvas width='400%' height='400%' class='point-data' id='cross-canvas-out'></canvas><canvas width='400%' height='400%' class='point-data' id='cross-canvas-in'></canvas>"
+        $("#add-cancas-area").empty().append(canvasStr);    //为了清除以前加载canvas数据
+    	$("#goal-values").text(formatNumberRgx(data.goal_values));
+        $("#actual-values").text(formatNumberRgx(data.actual_values));
+        var actualVal = parseFloat(data.actual_values);
+        var valueVal = parseFloat(data.goal_values);
+        var canVal = actualVal > valueVal ? 1 :  actualVal/valueVal; //防止实际值大于预期值
+        console.log(canVal);
+        roundCanvas("cross-canvas-out",0,2,canVal*220);
+        roundCanvas("cross-canvas-in",10,7,canVal*220);
+        var strRotio = "<div class='canvas-info-left'><span class='canvas-num ratio-white-num'>"+ changeData(data.residual_quantity,"abs") +"</span><span class='ratio-img-all ratio-img-all-"+ changeData(data.residual_quantity,"symbol") +"'></span><span class='canvas-price margin-left-3'>差量</span></div><div class='canvas-info-right'><span class='canvas-num ratio-white-num'>"+ changeData(data.residual_quantity_percent,"abs","%") +"</span><span class='ratio-img-all ratio-img-all-"+ changeData(data.residual_quantity_percent,"symbol") +"'></span><span class='canvas-price margin-left-3'>差量比</span></div>"
+        $("#ratio-info").empty().append(strRotio);
+    }
+    
+    function viewJs() {
+        var orgShowName = "集团";    //为了获取集团名称
+        $.each(showOrgName,function(index,val) {
+            if(val != "无") {
+                orgShowName = val;
+            }
+        });
+        $("#picker-pos").val(orgShowName).attr({"data-value":showOrgCode,"data-num":showOrgType});
+        barWidth = $(".point-ratio-bar").width();
+        $("#area-list").empty();
+        $("#point-total-info").on("click",function() {
+            window.location.href="area-detail.html?sendType=" + $("#picker-pos").attr("data-num") + "&dataOrg=" +   $("#picker-pos").attr("data-value") + "&orgName=" + encodeURI($("#picker-pos").val());
+        })
+    }
+</script>
+</body>
+</html>

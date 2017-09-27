@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var id_resource_id = "";
+	var id_sys_id = "";
+	var pageId = 'cip_admin_access_rel_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_access_rel/getData.do?actionId=cip_admin_access_rel_getData";
+	var formTemplate = "#form_cip_admin_access_rel";
+	var listId = "cip_admin_access_rel_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var resUrl = appId
+			+ '/actions/admin_access_res/searchData.do?actionId=cip_admin_access_res_searchData';
+	var coreUrl = appId
+			+ '/actions/admin_access_ctrl/searchData.do?actionId=cip_admin_access_ctrl_searchData';
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+
+	$(function() {
+		init();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			submitData();
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+	});
+
+	function init() {
+		id_resource_id = $$.QueryString("resource_id");
+		id_sys_id = $$.QueryString("sys_id");
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		if (mode == "edit") {
+			loadEditData();
+			$('#resource_id').attr({
+				editable : false
+			});
+			$('#sys_id').attr({
+				editable : false
+			});
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+		} else if (mode == "add") {
+			loadcoreCombogrid('sys_id');
+			loadresCombogrid('resource_id');
+			$('#resource_id').val('');
+			$('#sys_id').val('');
+
+			$('#create_time').val('');
+			$('#operator').val('');
+		}
+
+	};
+
+	/**
+	 *加载系统信息
+	 */
+	function loadcoreCombogrid(fieldId) {
+
+		$('#' + fieldId).combogrid({
+			panelWidth : 350,
+			idField : 'sys_id',
+			textField : 'sys_id',
+			url : coreUrl,
+			columns : [ [ {
+				field : 'sys_id',
+				title : '系统id',
+				width : 80
+			}, {
+				field : 'access_flag',
+				title : '访问标识',
+				width : 100
+			}, {
+				field : 'access_type',
+				title : '访问类型',
+				width : 100
+			}, {
+				field : 'operator',
+				title : '操作人员',
+				width : 60
+			} ] ],
+			pagination : true,
+			rownumbers : true,
+			singleSelect : true,
+			pageSize : $$.pageSize,
+			pageList : $$.pageList
+
+		});
+	}
+	/**
+	 *加载资源信息
+	 */
+	function loadresCombogrid(fieldId) {
+
+		$('#' + fieldId).combogrid({
+			panelWidth : 400,
+			idField : 'resource_id',
+			textField : 'resource_name',
+			url : resUrl,
+			columns : [ [ {
+				field : 'resource_id',
+				title : '资源id',
+				width : 80
+			}, {
+				field : 'resource_name',
+				title : '资源名称',
+				width : 100
+			}, {
+				field : 'resource_desc',
+				title : '资源描述',
+				width : 80
+			}, {
+				field : 'access_flag',
+				title : '访问标识',
+				width : 80
+			} ] ],
+			pagination : true,
+			rownumbers : true,
+			singleSelect : true,
+			pageSize : $$.pageSize,
+			pageList : $$.pageList
+		});
+	}
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"resource_id" : id_resource_id,
+			"sys_id" : id_sys_id
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_access_rel" class="form">
+			<table>
+				<tr>
+					<td class="right"><label for="resource_id">资源id:</label></td>
+					<td class="left"><input type="text" id="resource_id"
+						name="resource_id" style="width:220px;height:26px" data-options="required:true" />
+
+					</td>
+				</tr>
+				<tr>
+					<td class="right"><label for="sys_id">系统id:</label></td>
+					<td class="left"><input type="text" id="sys_id" name="sys_id"
+						style="width:220px;height:26px" data-options="required:true" /></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<div class="button-section">
+		<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+		<a id="btn_cancel" href="#" class="easyui-linkbutton"
+			iconCls="icon-cancel">取消</a>
+	</div>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/gray/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/MD5BASE64Encoder.js" ></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript">
+	var id_user_id="";
+	var objectName = '需要操作的角色';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var listoldroleTemplate ='#cip_admin_user_oldrole_list';
+	var listoldroleId="cip_admin_user_oldrole_list";
+	var listnewroleTemplate ='#cip_admin_user_newrole_list';
+	var listnewroleId="cip_admin_user_newrole_list";
+	var cutUrl = appId + '/actions/admin_user/cutroleData.do?actionId=cip_admin_user_cutroleData';
+	var setUrl = appId + '/actions/admin_user/setroleData.do?actionId=cip_admin_user_setroleData';
+	var newroleUrl = appId + '/actions/admin_user/searchroleData.do?actionId=cip_admin_user_searchroleData';
+	var oldroleUrl = appId + '/actions/admin_user/getoldroleData.do?actionId=cip_admin_user_getoldroleData';
+	var newlistId = 'cip_admin_user_newrole_list';
+	var oldlistId = 'cip_admin_user_oldrole_list';
+	var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+	$(function(){
+		init();	
+		getAuthButtons(newlistId, oldlistId, authActions);
+		loadnewrole();
+		loadoldrole();
+	});
+
+	function init(){
+		id_user_id=$$.QueryString("user_id");
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		actionId = $$.QueryString("refActionId");	
+	};
+	
+	 function doAction(newlistId,oldlistId,buttonId,actionUrl){
+		if(authActions.hasOwnProperty(buttonId)){
+			if(buttonId.indexOf('setroleData')>0){
+				setroleData(buttonId,appId+actionUrl);
+			}else if(buttonId.indexOf('cutroleData')>0){
+				cutroleData(buttonId,appId+actionUrl);
+			}
+			else {
+				//默认操作
+				var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"+objectName);
+
+		    	if(selectRow){
+					var tempUrl = '';
+						tempUrl = tempUrl+'&user_id='+selectRow.user_id;
+	   				tempUrl += "&actionUrl="+appId+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+		    		$$.openJcdfDialog(urlActionForm+tempUrl, '操作'+objectName, 500, 600);
+		    	}					
+			}
+		}
+		else {
+			alert('当前用户没有该操作授权!');
+		}
+	}; 
+	//添加未分配角色
+	function loadnewrole(){
+		var params = {"user_id":id_user_id};
+		var json = { "search_condition" : JSON.stringify(params) };
+	     $(listnewroleTemplate).datagrid({
+	     		url : newroleUrl,
+				height : $$.getDatagridHeight(),
+				width : $$.getDatagridWidth(),
+				border: false,
+				nowrap: true,
+				striped: true,
+				fitColumns: true,
+				idField:'',
+				columns:[[
+					{field:'ck',checkbox:true,width:$$.fillsize(0.1),align:'center'},
+					{field:'role_id',title:'角色Id',width:$$.fillsize(0.1),align:'center'},
+					{field:'role_name',title:'角色名称',width:$$.fillsize(0.1),align:'center'},
+				]],
+				queryParams :json,
+				pagination:true,
+				rownumbers:true,
+				singleSelect:false,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data; 
+				}
+			});
+	};
+	function setroleData(buttonId,actionUrl){
+		var checkeds = $(listnewroleTemplate).datagrid('getChecked');
+		var length = checkeds.length;
+		var addRoleAry=[];	
+		for ( var i = 0; i < length; i++) {
+			var role_id = checkeds[i].role_id;
+			addRoleAry.push(role_id);
+		}
+		if (length == 0) {
+			$$.showJcdfMessager('提示消息', '请选择要移入的角色');
+			return;
+		}
+	parent.$.messager.confirm('询问', '您是否要执行该操作？', function(b) {
+			if (b) {
+				var urlAddRole = setUrl+"&id=";
+				 $.ajax({
+						type : "POST",
+						url : urlAddRole += id_user_id,				
+						dataType : "json",
+						data : JSON.stringify(addRoleAry), 
+						contentType : "application/json",
+						success : function(data) {
+						$$.closeProcessingDialog();
+							if (data&& data.errorCode == 0) {
+									$$.showJcdfMessager('提示消息', '操作成功', 'info');
+									$$.refreshJcdfDatagrid(listnewroleId);
+									$$.refreshJcdfDatagrid(listoldroleId);
+								} else {
+									$$.showJcdfMessager('提示消息', data.msg,'warning');
+								}
+						  }
+					});
+			}
+		});
+
+	} 
+	//显示已分配角色及其移除
+	function loadoldrole(){
+		var params = {"user_id":id_user_id};
+		var json = { "search_condition" : JSON.stringify(params) };
+	     $(listoldroleTemplate).datagrid({
+	     		url : oldroleUrl,
+				height : $$.getDatagridHeight(),
+				width : $$.getDatagridWidth(),
+				border: false,
+				nowrap: true,
+				striped: true,
+				fitColumns: true,
+				idField:'',
+				columns:[[
+					{field:'ck',checkbox:true, width:$$.fillsize(0.1),align:'center'},
+					{field:'role_id',title:'角色Id', width:$$.fillsize(0.1),align:'center'},
+					{field:'role_name',title:'角色名称',width:$$.fillsize(0.1),align:'center'},
+				]],
+				queryParams : json,
+				pagination:true,
+				rownumbers:true,
+				singleSelect:false,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data; 
+				}
+			});
+	}; 	
+	function cutroleData(buttonId,actionUrl){
+		var checkeds = $(listoldroleTemplate).datagrid('getChecked');
+		var length = checkeds.length;
+		var cutRoleAry=[];	
+		for ( var i = 0; i < length; i++) {
+			var role_id = checkeds[i].role_id;
+			cutRoleAry.push(role_id);
+		}
+		if (length == 0) {
+			$$.showJcdfMessager('提示消息', '请选择要移出的角色');
+			return;
+		}
+	parent.$.messager.confirm('询问', '您是否要执行该操作？', function(b) {
+			if (b) {
+				var urlCutRole = cutUrl+"&id=";
+				 $.ajax({
+						type : "POST",
+						url : urlCutRole += id_user_id,				
+						dataType : "json",
+						data : JSON.stringify(cutRoleAry), 
+						contentType : "application/json",
+						success : function(data) {
+						$$.closeProcessingDialog();
+							if (data&& data.errorCode == 0) {
+									$$.showJcdfMessager('提示消息', '操作成功', 'info');
+									$$.refreshJcdfDatagrid(listnewroleId);
+									$$.refreshJcdfDatagrid(listoldroleId);
+								} else {
+									$$.showJcdfMessager('提示消息', data.msg,'warning');
+								}
+						  }
+					});
+			}
+		});
+
+	}		
+	</script>
+</head>
+<body class="easyui-layout">
+	<div class="easyui-layout" data-options="fit:true,border:false" >
+		<div data-options="region:'east',split:true,title:'未分配角色用户',collapsible:false" style="width:40%;">
+			<table id="cip_admin_user_newrole_list" data-options="fit:true,border:false">	
+			</table>
+		</div>
+		 <div data-options="region:'center'" style="padding-top:100%; padding-left:30%;width:20%;">
+    		<a href="javascript:void(0)" class="easyui-linkbutton c1" style="width:60px; margin-bottom:20px;" onclick="setroleData()">《  移入</a>
+    		<a href="javascript:void(0)" class="easyui-linkbutton c5" style="width:60px" onclick="cutroleData()">移出  》</a>
+  		</div>
+		<div data-options="region:'west',split:true,title:'已分配角色用户',collapsible:false" style="width:40%;">
+			<table id="cip_admin_user_oldrole_list" data-options="fit:true,border:false">	
+			</table>
+		</div>
+	</div>
+</body>
+</html>

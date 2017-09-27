@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<style>
+.tool-icon {
+	width: 50px;
+	height: 52px;
+	border-style: none;
+	float: left;
+	margin: 6px 6px 6px 6px;
+	padding: 0px auto;
+}
+
+.tool-icon:hover {
+	cursor: pointer;
+}
+</style>
+<script type="text/javascript">
+	var id_resource_id = "";
+	var id_user_id = "";
+	var pageId = 'cip_admin_user2res_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_user2res/getData.do?actionId=cip_admin_user2res_getData";
+	var formTemplate = "#form_cip_admin_user2res";
+	var listId = "cip_admin_user2res_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+
+	$(function() {
+		init();
+		//对用户id一栏 进行隐藏。
+		$('#user_id').hide();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			submitData();
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+		$("#btn_select").bind("click", function() {
+			selectIcon();
+		});
+		getResMenu();
+	});
+
+	function init() {
+		id_resource_id = $$.QueryString("resource_id");
+		id_user_id = $$.QueryString("user_id");
+
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		if (mode == "edit") {
+			loadEditData();
+			$('#resource_id').attr({
+				editable : false
+			});
+			$('#user_id').attr({
+				editable : false
+			});
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+		} else if (mode == "add") {
+			$('#resource_id').val('');
+			$('#user_id').val('');
+
+			$('#resource_id').val('');
+			$('#user_id').val('');
+			$('#resource_name').val('');
+			$('#resource_image').val('');
+		}
+
+	};
+
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"resource_id" : id_resource_id,
+			"user_id" : id_user_id
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					parent.location.href=parent.location.href;//刷新页面
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+
+	function selectIcon() {
+		var img = "";
+		var x;
+		for (var i = 1; i < 28; i++) {
+			var id = i;
+			if (i >= 1 && i < 8) {
+				x = -46 * (i - 1) - (i - 1) * 13;
+				img += '<div class="tool-icon"  onclick="onIconSelected(\''
+						+ id
+						+ '\')" style="background: url(\'../../img/toolicon.png\') no-repeat '
+						+ x + 'px 0px;"></div>' + ' ';
+			}
+			if (i >= 8 && i < 15) {
+				x = -46 * (i - 8) - (i - 8) * 13;
+				img += '<div class="tool-icon" onclick="onIconSelected(\''
+						+ id
+						+ '\')" style="background: url(\'../../img/toolicon.png\') no-repeat '
+						+ x + 'px -57px;"></div>' + ' ';
+			}
+			if (i >= 15 && i < 22) {
+				x = -46 * (i - 15) - (i - 15) * 13;
+				img += '<div class="tool-icon" onclick="onIconSelected(\''
+						+ id
+						+ '\')" style="background: url(\'../../img/toolicon.png\') no-repeat '
+						+ x + 'px -115px;"></div>' + ' ';
+			}
+			if (i >= 22 && i <= 28) {
+				x = -46 * (i - 22) - (i - 22) * 13;
+				img += '<div class="tool-icon" onclick="onIconSelected(\''
+						+ id
+						+ '\')" style="background: url(\'../../img/toolicon.png\') no-repeat '
+						+ x + 'px -176px;"></div>' + ' ';
+			}
+		}
+		/*拼接上添加资源工具图标*/
+		$('#icon').html(img);
+		$('#icon').dialog({
+			title : '选择图标',
+			width : 460,
+			height : 320,
+			closed : false,
+			cache : false,
+			modal : true
+		});
+	};
+	//点击选择添加图标
+	function onIconSelected(id) {
+		//将图标id即图表名称添加到文本框中
+		$('#resource_image').val(id);
+		//关闭窗口
+		$('#icon').dialog('close');
+	}
+	/*加载当前角色下的资源菜单*/
+	function getResMenu() {
+		$("#resource_id")
+				.combotree(
+						{
+							url : appId
+									+ '/actions/admin_user2res/getResMenu.do?actionId=cip_admin_user2res_getResMenu',
+							required : true,
+							onClick : function(node) {
+								if (node.attributes.type == "F"
+										|| node.attributes.type == "R") {
+									$$.showJcdfMessager('提示消息',
+											'非 "菜单项" 类型资源不可添加，请选择正确资源类型!',
+											'warning');
+									$("#resource_id").combotree('setValue', "");
+									$('#resource_name').val('');
+								} else {
+									$("#resource_id").combotree('setText',
+											node.id);
+									var resource_name = node.text;
+									$('#resource_name').val(resource_name);
+								}
+							}
+						});
+	}
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_user2res" class="form">
+			<table>
+				<tr>
+					<td><label for="resource_id">资源id:</label></td>
+					<!-- <td class="left">
+					 <input type="text" id="resource_id" name="resource_id"  class="easyui-validatebox" 
+						data-options="required:true,validType:'length[0,50]'" />  
+				</td> -->
+					<td><input id="resource_id" name="resource_id"
+						class="easyui-combotree" style="height:28px;width:232px" /></td>
+				</tr>
+
+				<tr>
+					<td><label for="resource_name">资源名称:</label></td>
+					<td><input type="text" id="resource_name" name="resource_name"
+						class="easyui-validatebox"
+						data-options="required:false,validType:'length[0,50]'" style="height:26px;width:220px"/></td>
+				</tr>
+				<tr>
+					<td><label for="resource_image">资源背景图:</label></td>
+					<td><input type="text" id="resource_image"
+						name="resource_image" class="easyui-validatebox"
+						data-options="required:false" style="height:26px;width:220px"/> <a id="btn_select" href="#"
+						class="easyui-linkbutton" style="width:60px;">选择</a></td>
+				</tr>
+				<tr id="user_id">
+					<td><label for="user_id">用户id:</label></td>
+					<td><input type="text" id="user_id" name="user_id"
+						class="easyui-validatebox"
+						data-options="required:false,validType:'length[0,50]'" style="height:26px;width:220px"/></td>
+				</tr>
+			</table>
+		</form>
+		<div id="icon"></div>
+	</div>
+		<div class="button-section">
+			<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+			<a id="btn_cancel" href="#" class="easyui-linkbutton"
+				iconCls="icon-cancel">取消</a>
+		</div>
+</body>
+</html>

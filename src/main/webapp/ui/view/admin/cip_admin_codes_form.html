@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var id_code_type = "";
+	var id_domain_id = "";
+	var pageId = 'cip_admin_codes_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_codes/getData.do?actionId=cip_admin_codes_getData";
+	var formTemplate = "#form_cip_admin_codes";
+	var listId = "cip_admin_codes_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var domainUrl = appId
+			+ '/actions/admin_domain/searchData.do?actionId=cip_admin_domain_searchData';
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+	var aa = '#cip_admin_codes_list';
+	$(function() {
+		init();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			submitData();
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+
+	});
+
+	function init() {
+		id_code_type = $$.QueryString("code_type");
+		id_domain_id = $$.QueryString("domain_id");
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+		//	loadCombobox('code_type','code_type');
+		var domainId = $$.QueryString("domain_id");
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		if (mode == "edit") {
+			loadEditData();
+			$('#code_type').attr({
+				editable : false
+			});
+			$('#domain_id').attr({
+				editable : false
+			});
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+		} else if (mode == "add") {
+			//	 $('#code_type').combobox('setValue', '');
+			//	 loaddomain('domain_id');
+			$('#domain_id').val(domainId);
+		}
+
+		//$('#domain_id').val(domainId);
+		//alert(domain_id);
+
+		//var searchflag=$$.QueryString("addflag");
+	};
+
+	/**
+	 *加载数据域信息
+	 */
+	function loaddomain(fieldId) {
+		$('#' + fieldId).combogrid({
+			panelWidth : 350,
+			idField : 'domain_id',
+			textField : 'domain_name',
+			url : domainUrl,
+			columns : [ [ {
+				field : 'domain_id',
+				title : '数据域id',
+				width : 80
+			},
+
+			{
+				field : 'domain_name',
+				title : '数据域名称',
+				width : 80
+			}, {
+				field : 'domain_type',
+				title : '数据域类型',
+				width : 100
+			}, {
+				field : 'data_type',
+				title : '数据类型',
+				width : 60
+			} ] ],
+			pagination : true,
+			rownumbers : true,
+			singleSelect : true,
+			pageSize : $$.pageSize,
+			pageList : $$.pageList
+		});
+	}
+
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"code_type" : id_code_type,
+			"domain_id" : id_domain_id
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+	/* function refresh(datagridId){	  
+	  window.parent.$('#'+datagridId).datagrid('reload');
+	}
+	 function refresh(){
+		var params={"domain_id":domain_id};
+		var jsondata={ "search_condition" :JSON.stringify(params) };
+			$.ajax({
+				   type: "POST",
+				   url: appId + '/actions/admin_codes/ssearchData.do?actionId=cip_admin_codes_searchData',
+				   dataType:"json",
+				   data:JSON.stringify(jsondata),
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		}; */
+
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(tableId);
+				//	parent.frames[0].frames['cip_admin_new'].$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_codes" class="form">
+			<table>
+				<tr>
+					<td class="right"><label for="">数据域id:</label></td>
+					<td class="left"><input type="text" id="domain_id" class="easyui-validatebox"
+						name="domain_id" style="width:220px;height:26px" data-options="required:true" />
+
+					</td>
+				</tr>
+				<tr>
+					<td class="right"><label for="">编码类型:</label></td>
+					<td class="left"><input type="text" id="code_type"
+						name="code_type" style="width:220px;height:26px" class="easyui-validatebox"
+						data-options="required:true" /></td>
+				</tr>
+
+				<tr>
+					<td class="right"><label for="code_name">编码名称:</label></td>
+					<td class="left"><input type="text" id="code_name"
+						name="code_name" style="width:220px;height:26px" class="easyui-validatebox"
+						data-options="required:false" /></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<div class="button-section">
+		<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+		<a id="btn_cancel" href="#" class="easyui-linkbutton"
+			iconCls="icon-cancel">取消</a>
+	</div>
+
+</body>
+</html>

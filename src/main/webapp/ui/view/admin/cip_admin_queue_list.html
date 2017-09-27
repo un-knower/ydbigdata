@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var objectName = '系统队列信息';
+	var listTemplate = '#cip_admin_queue_list';
+	var listId = "cip_admin_queue_list";
+	var formSearchTemplate = '#cip_admin_queue_searchForm';
+	var searchFormId = "cip_admin_queue_searchForm";
+	var gridMenuId = '#cip_admin_queue_list_menu';
+	var addFormUrl = 'cip_admin_queue_form.html?actionId=cip_admin_queue_form&mode=add';
+	var updateFormUrl = 'cip_admin_queue_form.html?actionId=cip_admin_queue_form&mode=edit';
+	var getFormUrl = 'cip_admin_queue_form.html?actionId=cip_admin_queue_form&mode=display';
+	var urlSearch = appId
+			+ '/actions/admin_queue/searchData.do?actionId=cip_admin_queue_searchData';
+	var urlExport = appId
+			+ '/actions/admin_queue/exportEntities.do?actionId=cip_admin_queue_exportEntities';
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var pageId = 'cip_admin_queue_list';
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {
+		"cip_admin_queue_searchData" : urlSearch,
+		"cip_admin_queue_exportEntities" : urlExport
+	}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+	var isDatagridLoaded = false;
+	var today = getToday();
+	$(function() {
+		//loadCompanyCombobox();
+		//loadCombobox();
+		getAuthButtons(pageId, gridMenuId, authActions, expellActions);
+		loadDatagrid();
+	});
+
+	function doAction(pageId, buttonId, actionUrl) {
+		if (authActions.hasOwnProperty(buttonId)) {
+			if (buttonId.indexOf('addData') > 0) {
+				addData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('updateData') > 0) {
+				updateData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('deleteData') > 0) {
+				deleteData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('getData') > 0) {
+				getData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('searchData') > 0) {
+				searchData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('refresh') > 0) {
+				refresh(buttonId, appId + actionUrl);
+			} else {
+				//默认操作
+				var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"
+						+ objectName);
+
+				if (selectRow) {
+					var tempUrl = '';
+					tempUrl = tempUrl + '&queue_id=' + selectRow.queue_id;
+					tempUrl = tempUrl + '&queue_type=' + selectRow.queue_type;
+					tempUrl += "&actionUrl=" + appId + actionUrl + "&tableId="
+							+ listId + "&refActionId=" + buttonId;
+					$$.openJcdfDialog(urlActionForm + tempUrl, '操作'
+							+ objectName, 500, 600);
+				}
+			}
+		} else {
+			alert('当前用户没有该操作授权!');
+		}
+	};
+
+	function refresh(buttonId, actionUrl) {
+		$.ajax({
+			type : "POST",
+			url : actionUrl + "?actionId=" + buttonId,
+			dataType : "json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	function searchData(buttonId, actionUrl) {
+		var params = $$.serializeToJson(formSearchTemplate);
+		var json = {
+			"search_condition" : JSON.stringify(params)
+		};
+		if (isDatagridLoaded) {
+			$(listTemplate).datagrid('load', json);
+		} else {
+			$(listTemplate).datagrid({
+				queryParams : json,
+				url : urlSearch
+			});
+			isDatagridLoaded = true;
+		}
+	};
+
+	function exportExcel(buttonId, actionUrl) {
+		var params = $$.serializeToJson(formSearchTemplate);
+		$('#' + searchFormId).form('submit', {
+			url : actionUrl,
+			onSubmit : function(param) {
+				param.search_condition = JSON.stringify(params)
+			},
+			success : function(data) {
+				var oData = JSON.parse(data);
+				if (oData && oData.errorCode) {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	function searchReset() {
+		$(formSearchTemplate).form('reset');
+	};
+
+	function addData(buttonId, actionUrl) {
+		$$.openJcdfDialog(addFormUrl + "&actionUrl=" + actionUrl + "&tableId="
+				+ listId + "&refActionId=" + buttonId, '新增' + objectName, 500,
+				600);
+	};
+
+	function getData(buttonId, actionUrl) {
+		var selectRow = $$.getSingleSelectRow(listId, "请选择你要查看的" + objectName);
+
+		if (selectRow) {
+			var tempUrl = '';
+			tempUrl = tempUrl + '&queue_id=' + selectRow.queue_id;
+			tempUrl = tempUrl + '&queue_type=' + selectRow.queue_type;
+			tempUrl += "&actionUrl=" + actionUrl + "&tableId=" + listId
+					+ "&refActionId=" + buttonId;
+			$$
+					.openJcdfDialog(getFormUrl + tempUrl, '查看' + objectName,
+							500, 600);
+		}
+	};
+
+	function deleteData(buttonId, actionUrl) {
+		var selectRow = $$.getSingleSelectRow(listId, "请选择你要删除的" + objectName);
+		if (selectRow) {
+			$$.showJcdfConfirm("确认", "确定删除所选的" + objectName + "?",
+					"deleteNodeById('" + buttonId + "','" + actionUrl + "','"
+							+ selectRow.queue_id + "','" + selectRow.queue_type
+							+ "')");
+		}
+	};
+
+	function deleteNodeById(buttonId, actionUrl, queue_id, queue_type) {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"queue_id" : queue_id,
+			"queue_type" : queue_type
+		};
+		$.ajax({
+			type : "POST",
+			url : actionUrl + "?actionId=" + buttonId,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.refreshJcdfDatagrid(listId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	function updateData(buttonId, actionUrl) {
+		var selectRow = $$.getSingleSelectRow(listId, "请选择你要编辑的" + objectName);
+
+		if (selectRow) {
+			var tempUrl = '';
+			tempUrl = tempUrl + '&queue_id=' + selectRow.queue_id;
+			tempUrl = tempUrl + '&queue_type=' + selectRow.queue_type;
+			tempUrl += "&actionUrl=" + actionUrl + "&tableId=" + listId
+					+ "&refActionId=" + buttonId;
+			$$.openJcdfDialog(updateFormUrl + tempUrl, '编辑' + objectName, 500,
+					600);
+		}
+	};
+
+	/**
+	 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+	 */
+	function loadDatagrid() {
+		$(listTemplate).datagrid({
+			//title:objectName+'列表',
+			height : $$.getDatagridHeight(),
+			width : $$.getDatagridWidth(),
+			border : true,
+			nowrap : true,
+			striped : true,
+			fitColumns : true,
+			idField : '',
+			columns : [ [ {
+				field : 'queue_id',
+				title : '队列流水号',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'queue_type',
+				title : '队列类型',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'queue_data',
+				title : '队列数据',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'queue_flag',
+				title : '数据提取标识',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'create_time',
+				title : '系统时间',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'update_time',
+				title : '修改时间',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'operator',
+				title : '操作人员',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'queue_type_name',
+				title : '队列类型名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			}, {
+				field : 'queue_flag_name',
+				title : '数据提取标识名称',
+				width : $$.fillsize(0.1),
+				align : 'center'
+			} ] ],
+			onBeforeLoad : function() {
+				$$.clearSelect(listId);
+			},
+			queryParams : $$.serializeToJson(searchFormId),
+			pagination : true,
+			rownumbers : true,
+			singleSelect : true,
+			pageSize : $$.pageSize,
+			pageList : $$.pageList,
+			toolbar : gridMenuId,
+			loadFilter : function(data) {
+				if (data != null && data.errorCode > 0) {
+					if (data.msg != null && data.msg != "") {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+				}
+				return data;
+			}
+		});
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false">
+		<div class="area">
+			<div class="area-title">信息查询</div>
+			<div class="area-body">
+				<form id="cip_admin_queue_searchForm" class="search-form"
+					method="post">
+					<table cellpadding="2" style="width: 100%">
+						<tr>
+							<td align="right">队列流水号：</td>
+							<td><input id="queue_id" name="queue_id" style="height:28px;width:232px"
+								class="easyui-numberbox" data-options="" /></td>
+							<td align="right">队列类型：</td>
+							<td><input id="queue_type" name="queue_type"
+								class="easyui-combobox" style="height:28px;width:232px"
+								data-options="onShowPanel:function (){loadCombobox('queue_type','queue_type')}" />
+
+							</td>
+					</table>
+				</form>
+
+				<div class="button-section">
+					<a class="easyui-linkbutton" iconCls="icon-search"
+						style="margin-right: 20px;"
+						onclick="searchData('cip_admin_queue_searchData',urlSearch)">查询</a>
+					<a class="easyui-linkbutton" iconCls="icon-reload"
+						style="margin-right: 20px;" onclick="searchReset()">重置</a> <a
+						class="easyui-linkbutton" iconCls="icon-download"
+						style="margin-right: 20px;"
+						onclick="exportExcel('cip_admin_queue_exportEntities',urlExport)">导出</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div data-options="region:'center', split:false, border:false">
+		<div class="area">
+			<div class="area-title">系统队列信息列表</div>
+			<div class="area-body autoAdapt">
+				<div id="cip_admin_queue_list_menu"></div>
+				<table id="cip_admin_queue_list" fit="true"></table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

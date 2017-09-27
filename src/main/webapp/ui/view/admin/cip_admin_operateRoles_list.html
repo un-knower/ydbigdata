@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var objectName = '角色资源信息操作';
+	var listTemplate = '#cip_admin_roles_list';
+	var listId = "cip_admin_roles_list";
+	var formSearchTemplate = '#cip_admin_roles_searchForm';
+	var searchFormId = "cip_admin_roles_searchForm";
+	var gridMenuId = '#cip_admin_roles_list_menu';
+	var addFormUrl = 'cip_admin_roles_form.html?actionId=cip_admin_roles_form&mode=add';
+	var updateFormUrl = 'cip_admin_roles_form.html?actionId=cip_admin_roles_form&mode=edit';
+	var getFormUrl = 'cip_admin_roles_form.html?actionId=cip_admin_roles_form&mode=display';
+	var urlSearch = appId
+			+ '/actions/admin_roles/searchData.do?actionId=cip_admin_roles_searchData';
+	var urlExport = appId
+			+ '/actions/admin_roles/exportEntities.do?actionId=cip_admin_roles_exportEntities';
+	var urlGetMaxLevel = appId
+			+ '/actions/admin_roles/getMaxLevel.do?actionId=cip_admin_role_getMaxLevel&root=default';
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var pageId = 'cip_admin_roles_list';
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {
+		"cip_admin_roles_searchData" : urlSearch,
+		"cip_admin_roles_exportEntities" : urlExport
+	}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+	var isDatagridLoaded = false;
+	var isRoleTreeInit = false;
+	var nowRoleId = "";
+	var rootId = "";
+	var _rootId= "";
+	var copyData = null;
+	//var res_level= "[";
+	var selectNode = null;
+	var peo = "";
+	var today = getToday();
+
+	var getRole2UserUrl = 'cip_admin_roles_users_form.html?actionId=cip_admin_roles_users_form';
+
+	$(function() {
+		//loadCompanyCombobox();
+		//loadCombobox();
+		getAuthButtons(pageId, gridMenuId, authActions, expellActions);
+		loadDatagrid();
+		loadTree();
+	});
+
+	function check() {
+		if (rootId == "default") {
+			$("#saveRoleTreeBtn").hide();
+		} else {
+			$("#saveRoleTreeBtn").show();
+		}
+	}
+
+	function doAction(pageId, buttonId, actionUrl) {
+		if (authActions.hasOwnProperty(buttonId)) {
+			if (buttonId.indexOf('addData') > 0) {
+				addData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('updateData') > 0) {
+				updateData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('deleteData') > 0) {
+				deleteData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('getData') > 0) {
+				getData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('searchData') > 0) {
+				searchData(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('refresh') > 0) {
+				refresh(buttonId, appId + actionUrl);
+			} else if (buttonId.indexOf('addUser') > 0) {
+				addUser(buttonId, appId + actionUrl);
+			} else {
+				//默认操作
+				var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"
+						+ objectName);
+
+				if (selectRow) {
+					var tempUrl = '';
+					tempUrl = tempUrl + '&role_id=' + selectRow.role_id;
+					tempUrl += "&actionUrl=" + appId + actionUrl + "&tableId="
+							+ listId + "&refActionId=" + buttonId;
+					$$.openJcdfDialog(urlActionForm + tempUrl, '操作'
+							+ objectName, 500, 600);
+				}
+			}
+		} else {
+			alert('当前用户没有该操作授权!');
+		}
+	};
+	//给角色分配用户
+	function addUser(buttonId, actionUrl) {
+		var selectRow = $$
+				.getSingleSelectRow(listId, "请选择你要添加用户的" + objectName);
+		if (selectRow) {
+			var id = selectRow.role_id;
+			$$.openJcdfDialog(getRole2UserUrl + "&role_id=" + id
+					+ "&actionUrl=" + actionUrl + "&tableId=" + listId
+					+ "&refActionId=" + buttonId, '给角色[' + id + ']分配用户', 500,
+					1000);
+		}
+	};
+	function refresh(buttonId, actionUrl) {
+		$.ajax({
+			type : "POST",
+			url : actionUrl + "?actionId=" + buttonId,
+			dataType : "json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	function searchData(buttonId, actionUrl) {
+		var params = $$.serializeToJson(formSearchTemplate);
+		var json = {
+			"search_condition" : JSON.stringify(params)
+		};
+		if (isDatagridLoaded) {
+			$(listTemplate).datagrid('load', json);
+		} else {
+			$(listTemplate).datagrid({
+				queryParams : json,
+				url : urlSearch,
+			});
+			isDatagridLoaded = true;
+		}
+	};
+
+	function exportExcel(buttonId, actionUrl) {
+		var params = $$.serializeToJson(formSearchTemplate);
+		$('#' + searchFormId).form('submit', {
+			url : actionUrl,
+			onSubmit : function(param) {
+				param.search_condition = JSON.stringify(params)
+			},
+			success : function(data) {
+				var oData = JSON.parse(data);
+				if (oData && oData.errorCode) {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	function searchReset() {
+		$(formSearchTemplate).form('reset');
+	};
+
+	function addData(buttonId, actionUrl) {
+		$$.openJcdfDialog(addFormUrl + "&actionUrl=" + actionUrl + "&tableId="
+				+ listId + "&refActionId=" + buttonId, '新增' + objectName, 500,
+				600);
+	};
+
+	function getData(buttonId, actionUrl) {
+		var selectRow = $$.getSingleSelectRow(listId, "请选择你要查看的" + objectName);
+
+		if (selectRow) {
+			var tempUrl = '';
+			tempUrl = tempUrl + '&role_id=' + selectRow.role_id;
+			tempUrl += "&actionUrl=" + actionUrl + "&tableId=" + listId
+					+ "&refActionId=" + buttonId;
+			$$
+					.openJcdfDialog(getFormUrl + tempUrl, '查看' + objectName,
+							700, 700);
+		}
+	};
+
+	function deleteData(buttonId, actionUrl) {
+		var selectRow = $$.getSingleSelectRow(listId, "请选择你要删除的" + objectName);
+		if (selectRow) {
+			$$.showJcdfConfirm("确认", "确定删除所选的" + objectName + "?",
+					"deleteNodeById('" + buttonId + "','" + actionUrl + "','"
+							+ selectRow.role_id + "')");
+		}
+	};
+
+	function deleteNodeById(buttonId, actionUrl, role_id) {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"role_id" : role_id
+		};
+		$.ajax({
+			type : "POST",
+			url : actionUrl + "?actionId=" + buttonId,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.refreshJcdfDatagrid(listId);
+					nowRoleId = "";
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+	};
+
+	function updateData(buttonId, actionUrl) {
+		var selectRow = $$.getSingleSelectRow(listId, "请选择你要编辑的" + objectName);
+
+		if (selectRow) {
+			var tempUrl = '';
+			tempUrl = tempUrl + '&role_id=' + selectRow.role_id;
+			tempUrl += "&actionUrl=" + actionUrl + "&tableId=" + listId
+					+ "&refActionId=" + buttonId;
+			$$.openJcdfDialog(updateFormUrl + tempUrl, '编辑' + objectName, 500,
+					600);
+		}
+	};
+
+	function getMaxLevel() {
+		$
+				.ajax({
+					type : "POST",
+					url : appId
+							+ '/actions/admin_roles/getMaxLevel.do?actionId=cip_admin_role_getMaxLevel&root=default',
+					dataType : "json",
+					data : '',
+					contentType : "application/json",
+					success : function(data) {
+						if (data && data.errorCode == 0) {
+							//alert(data.data);
+							$('#res_level')
+									.combobox(
+											{
+												valueField : 'id',
+												textField : 'text',
+												mode : 'remote',
+												data : data.data,
+												onSelect : function(record) {
+													peo = $('#res_level')
+															.combobox(
+																	'getValue');
+													if (peo != ""
+															|| peo != null) {
+														if (peo != "1") {
+															var rootNode = $(
+																	'#role_res_tree')
+																	.tree(
+																			'getRoot');
+															$('#role_res_tree')
+																	.tree(
+																			'expandAll',
+																			rootNode.target);
+															var childrenNode = $(
+																	'#role_res_tree')
+																	.tree(
+																			'getChildren',
+																			rootNode.target);
+															var length = childrenNode.length;
+															for (var i = 0; i < length; i++) {
+																var level = childrenNode[i].attributes.level;
+																if ((level + 2) == peo) {
+																	$(
+																			'#role_res_tree')
+																			.tree(
+																					'collapseAll',
+																					childrenNode[i].target);
+																}
+															}
+														} else {
+															var rootNode = $(
+																	'#role_res_tree')
+																	.tree(
+																			'getRoot');
+															$('#role_res_tree')
+																	.tree(
+																			'collapseAll',
+																			rootNode.target);
+														}
+													}
+												}
+											});
+
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+				});
+	}
+
+	function getRoleResourses(roleId) {
+		nowRoleId = roleId;
+		if ($('#roletree').layout('panel', 'east').panel('options').collapsed) {
+			$('#roletree').layout('expand', 'east');
+		}
+		$('#roletree').layout('panel', 'east').panel({
+			title : "角色[" + roleId + "]:当前资源"
+		});
+		if (isRoleTreeInit) {
+			$("#role_res_tree").tree("reload");
+		} else {
+			$("#role_res_tree").tree("options").url = appId
+					+ "/actions/admin_roles/getModelTree.do?actionId=cip_admin_roles_getModelTreet&root=default";
+			$("#role_res_tree").tree("reload");
+			isRoleTreeInit = true;
+		}
+	}
+
+	function loadTree() {
+		$("#role_res_tree")
+				.tree(
+						{
+							url : '',
+							animate : false,
+							lines : true,
+							//dnd: true,
+							checkbox : true,
+							onBeforeLoad : function(node, param) {
+								param.roleId = nowRoleId;
+							},
+							loadFilter : function(data) {
+								if (data.length == 0) {
+									$$.showJcdfMessager('提示消息', '当前角色不存在或已删除',
+											'warning');
+								}
+								return data;
+							},
+							formatter : function(node) {
+								var type = node.attributes.type;
+								if (type == "R") {
+									return node.text
+											+ "<span style=\"color:green;\">&nbsp&nbsp&nbsp<根节点></span>";
+								} else if (type == "F") {
+									return node.text
+											+ "<span style=\"color:green;\">&nbsp&nbsp&nbsp<菜单组></span>";
+								} else if (type == "A") {
+									return node.text
+											+ "<span style=\"color:green;\">&nbsp&nbsp&nbsp<菜单项></span>";
+								} else if (type == "P") {
+									return node.text
+											+ "<span style=\"color:green;\">&nbsp&nbsp&nbsp<页面></span>";
+								} else {
+									return node.text
+											+ "<span style=\"color:green;\">&nbsp&nbsp&nbsp<动作></span>";
+								}
+							},
+
+							onDragEnter : function(target, source) {
+								if ($(this).tree('isLeaf', target)
+										&& $(this).tree('getNode', target).attributes.type == "B")
+									return false;
+							},
+							onLoadSuccess : function(node, data) {
+								searchNodeId();
+								$('#res_level').combobox('select', '');
+								var rootNode = $('#role_res_tree').tree(
+										'getRoot');
+								$('#role_res_tree').tree('collapseAll',
+										rootNode.target);
+								$('#role_res_tree').tree('expand',
+										rootNode.target);
+								//展开系统管理下的子菜单组(系统管理节点的id为固定的'cip_admin' 如数据库中id发生变化，该处也需要手动改变 )
+								var adminNode = $('#role_res_tree').tree(
+										'find', 'cip_admin');
+								$('#role_res_tree').tree('expand',
+										adminNode.target);
+							},
+							onSelect : function(node) {
+								selectNode = node.target;
+							}
+						});
+	};
+
+	function expandNode(selectNode) {
+		if (selectNode == "" || selectNode == null) {
+			$$.showJcdfMessager('提示消息', '请选择要展开的节点!');
+		} else {
+			$('#role_res_tree').tree('expandAll', selectNode);
+		}
+	}
+
+	function collapseNode(selectNode) {
+		if (selectNode == "" || selectNode == null) {
+			$$.showJcdfMessager('提示消息', '请选择要折叠的节点!');
+		} else {
+			$('#role_res_tree').tree('collapseAll', selectNode);
+		}
+	}
+
+	function searchNodeId() {
+		$$.openProcessingDialog();
+		$
+				.ajax({
+					type : "POST",
+					url : appId
+							+ '/actions/admin_roles/searchNodeId.do?actionId=cip_admin_role_searchNodeId&root='
+							+ rootId,
+					dataType : "json",
+					data : '',
+					contentType : "application/json",
+					success : function(data) {
+						if (data && data.errorCode == 0) {
+							var length = data.data.length;
+							for (var i = 0; i < length; i++) {
+								var id = data.data[i].res_node_id;
+								var parentId = data.data[i].res_node_sup;
+								if (parentId == _rootId) {
+									continue;
+								}
+								var node = $('#role_res_tree').tree('find', id);
+								if (node==null||node=="null"||node=="") {
+									$("#saveRoleTreeBtn").hide();
+									$$.closeProcessingDialog();
+									$$.showJcdfMessager('提示消息', "&nbsp;该角色存在非法资源,不允许此操作!");
+									return false;
+								}
+								var num = $('#role_res_tree').tree('getParent',
+										node.target);
+								if ($('#role_res_tree').tree('isLeaf',
+										node.target)) {
+									if (parentId == num.id) {
+										$('#role_res_tree').tree('check',
+												node.target);
+									}
+								}
+							}
+							$$.closeProcessingDialog();
+						} else {
+							$$.closeProcessingDialog();
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+				});
+	}
+
+	function t_rolefun_add() {
+		//获取选中节点父节点
+		$$.openProcessingDialog();
+		var temp = "";
+		var pm = "";
+		var parentnodes = $('#role_res_tree').tree('getChecked',
+				'indeterminate');
+		if (parentnodes.length > 0) {
+			for (var i = 0; i < parentnodes.length; i++) {
+				var id = parentnodes[i].id;
+				var Fhightnodes = "";
+				var pnode = "";
+				if (id == rootId) {
+					//当选中的节点为根节点时，根节点的父节点为_rootId
+					Fhightnodes = _rootId;
+					pnode = "{\"res_node_id\":\"" + parentnodes[i].id
+							+ "\",\"res_node_sup\":\""+ Fhightnodes
+							+ "\",\"root_node_id\":\"" + id + "\"}";
+				} else {
+					//当选中的根节点不为根节点时，获取其上级节点。
+					Fhightnodes = $("#role_res_tree").tree("getParent",
+							parentnodes[i].target);
+					pnode = "{\"res_node_id\":\"" + parentnodes[i].id
+							+ "\",\"res_node_sup\":\"" + Fhightnodes.id
+							+ "\",\"root_node_id\":\"default\"}";
+				}
+				pnode += ",";
+				if (pnode != "" && pnode != null) {
+					temp += pnode;
+				}
+			}
+
+		}
+		//获取选中节点
+		var nodes = $('#role_res_tree').tree('getChecked');
+		var length = nodes.length;
+		for (var i = 0; i < nodes.length; i++) {
+			var id = nodes[i].id;
+			var Zhightnodes = "";
+			var znode = "";
+			if (id == rootId) {
+				//当选中的节点为根节点时，根节点的父节点为空
+				Zhightnodes = _rootId;
+				znode = "{\"res_node_id\":\"" + nodes[i].id
+						+ "\",\"res_node_sup\":\"" + Zhightnodes
+						+ "\",\"root_node_id\":\"" + id + "\"}";
+			} else {
+				//当选中的根节点不为根节点时，获取其上级节点。
+				Zhightnodes = $("#role_res_tree").tree("getParent",
+						nodes[i].target);
+				//当父节点为根节点时，将父节点强制转换成default 
+				if (Zhightnodes.id == rootId) {
+					Zhightnodes.id = "default";
+				}
+				znode = "{\"res_node_id\":\"" + nodes[i].id
+						+ "\",\"res_node_sup\":\"" + Zhightnodes.id
+						+ "\",\"root_node_id\":\"default\"}";
+			}
+
+			if (i != nodes.length - 1)
+				znode += ",";
+			if (znode != "" && znode != null) {
+				pm += znode;
+			}
+
+		}
+		pm = pm + "]";
+		var dataNode = "";
+		if (temp == "") {
+			if (length > 0) {
+				//全选的时候 temp为空  data 为pm
+				dataNode = "[" + pm;
+			} else {
+				//当全不选的时候 temp 为空  nodes length 为 0  data为根节点 
+				dataNode = "[{\"res_node_id\":\"" + rootId
+						+ "\",\"res_node_sup\":\"" + _rootId
+						+ "\",\"root_node_id\":\"" + rootId + "\"}]";
+			}
+		} else {
+			dataNode = "[" + temp + pm;
+		}
+		$
+				.ajax({
+					type : "POST",
+					url : appId
+							+ "/actions/admin_roles/getCheckData.do?actionId=cip_admin_roles_getCheckData&root="
+							+ rootId + "&roleId=" + nowRoleId,
+					dataType : "json",
+					contentType : "application/json",
+					data : dataNode,
+					success : function(data) {
+						$$.closeProcessingDialog();
+						if (null != data && data.errorCode == 0) {
+							reloadRoleTree();
+						} else {
+							if (data.msg != undefined) {
+								$$
+										.showJcdfMessager('提示消息', data.msg,
+												'warning');
+							}
+						}
+					}
+				});
+	}
+	/**************************保存选中的角色资源******************************/
+	function confirmSaveRoleTree() {
+		if (nowRoleId == '') {
+			$$.showJcdfMessager('提示消息', '请选择资源树角色!', 'warning');
+			return;
+		}
+		$$.showJcdfConfirm("确认", "确定保存当前菜单结构?", 't_rolefun_add()');
+		selectNode = null;
+	}
+
+	function confirmReloadRoleTree() {
+		if (nowRoleId == '') {
+			$$.showJcdfMessager('提示消息', '请选择资源树角色!', 'warning');
+			return;
+		}
+		reloadRoleTree();
+	}
+
+	function reloadRoleTree() {
+		$("#role_res_tree").tree("reload");
+		selectNode = null;
+		//$('#res_level').combobox('setValue',"");
+		$('#res_level').combobox('select', '');
+
+	}
+
+	/**
+	 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+	 */
+	function loadDatagrid() {
+		$(listTemplate).datagrid(
+				{
+					//title:objectName+'列表',
+					height : $$.getDatagridHeight(),
+					width : $$.getDatagridWidth(),
+					border : true,
+					nowrap : true,
+					striped : true,
+					fitColumns : true,
+					idField : '',
+					columns : [ [
+							{
+								field : 'role_id',
+								title : '角色id',
+								width : $$.fillsize(0.1),
+								align : 'center'
+							},
+							{
+								field : 'role_name',
+								title : '角色名称',
+								width : $$.fillsize(0.1),
+								align : 'center'
+							},
+							{
+								field : 'root_resource_id',
+								title : '资源根节点id',
+								width : $$.fillsize(0.1),
+								align : 'center'
+							},
+							/* {field:'create_time',title:'系统生成时间',width:$$.fillsize(0.1),align:'center'},
+							{field:'update_time',title:'修改时间',width:$$.fillsize(0.1),align:'center'},
+							{field:'operator',title:'操作人',width:$$.fillsize(0.1),align:'center'}, */
+							{
+								field : 'opt',
+								title : '操作',
+								width : $$.fillsize(0.1),
+								align : 'center',
+								formatter : function(value, row, index) {
+									return '<a onclick=\'getRoleResourses("'
+											+ row.role_id
+											+ '")\' class=\'link\'>角色资源</a>';
+								}
+							} ] ],
+					onBeforeLoad : function() {
+						$$.clearSelect(listId);
+					},
+					queryParams : $$.serializeToJson(searchFormId),
+					pagination : true,
+					rownumbers : true,
+					singleSelect : true,
+					pageSize : $$.pageSize,
+					pageList : $$.pageList,
+					toolbar : gridMenuId,
+					loadFilter : function(data) {
+						if (data != null && data.errorCode > 0) {
+							if (data.msg != null && data.msg != "") {
+								$$
+										.showJcdfMessager('提示消息', data.msg,
+												'warning');
+							}
+						}
+						return data;
+					},
+					onClickRow : function(rowIndex, rowData) {
+						rootId = rowData.root_resource_id;
+						_rootId="_"+rootId;
+						check();
+					}
+				});
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false">
+		<div class="area">
+			<div class="area-title">信息查询</div>
+			<div class="area-body">
+				<form id="cip_admin_roles_searchForm" class="search-form"
+					method="post">
+					<table cellpadding="2" style="width: 100%">
+						<tr>
+							<td align="right">角色id：</td>
+							<td><input id="role_id" name="role_id"
+								class="easyui-validatebox" data-options="" style="height:26px;width:220px"/></td>
+
+							<td align="right">角色名称：</td>
+							<td><input id="role_name" name="role_name"
+								class="easyui-validatebox" data-options="" style="height:26px;width:220px"/></td>
+						</tr>
+					</table>
+				</form>
+				<div class="button-section">
+					<a class="easyui-linkbutton" iconCls="icon-search"
+						style="margin-right: 20px;"
+						onclick="searchData('cip_admin_roles_searchData',urlSearch)">查询</a>
+					<a class="easyui-linkbutton" iconCls="icon-reload"
+						style="margin-right: 20px;" onclick="searchReset()">重置</a> <a
+						class="easyui-linkbutton" iconCls="icon-download"
+						style="margin-right: 20px;"
+						onclick="exportExcel('cip_admin_roles_exportEntities',urlExport)">导出</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div data-options="region:'center', split:false, border:false">
+		<div class="area">
+			<div class="area-title">角色信息列表</div>
+			<div class="area-body autoAdapt">
+				<div id="roletree" class="easyui-layout" fit=true>
+					<div data-options="region:'center', split:false, border:false">
+						<div id="cip_admin_roles_list_menu"></div>
+						<table id="cip_admin_roles_list" fit="true"></table>
+					</div>
+					<div
+						data-options="region:'east', split:true, border:true, collapsible:true, collapsed:true, title:'角色资源树'"
+						style="width: 450px;">
+						<div id="treeMenu"
+							style="position: absolute; top: 28px; width: 100%; background-color: white;">
+							<!-- <a id="addNodesBtn" href="#" onclick="addNodeDialog()" class="easyui-linkbutton" iconCls="icon-add" plain="true">添加资源</a> 
+							<a id="removeNodeBtn" href="#" onclick="removeMenuNode()" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+							<a id="copyBtn" href="#" onclick="copy()" class="easyui-linkbutton" iconCls="icon-copy" plain="true">复制</a> 
+							<a id="pasteBtn" href="#" onclick="paste()" class="easyui-linkbutton" iconCls="icon-paste" plain="true">粘贴</a>  -->
+							<a id="saveRoleTreeBtn" href="#" onclick="confirmSaveRoleTree()"
+								class="easyui-linkbutton" iconCls="icon-save" plain="true">保存</a>
+							<a id="expandRoleTreeBtn" 
+								href="#" onclick="expandNode(selectNode)"
+								class="easyui-linkbutton" iconCls="icon-folder-open"
+								plain="true">展开</a> <a id="collapseNodeBtn" href="#"
+								onclick="collapseNode(selectNode)" class="easyui-linkbutton"
+								iconCls="icon-folder" plain="true">折叠</a> <a
+								class="easyui-linkbutton" iconCls="" plain="true">树层级操作:</a> <input
+								id="res_level" name="res_level" style="width:55px;height:26px" class="easyui-combobox"
+								data-options="panelHeight:'auto',onShowPanel:function (){getMaxLevel()}" />
+						</div>
+						<ul id="role_res_tree" fit="true" style="margin-top: 28px;"></ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

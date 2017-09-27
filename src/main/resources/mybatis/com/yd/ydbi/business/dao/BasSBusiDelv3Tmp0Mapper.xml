@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yd.ydbi.business.dao.BasSBusiDelv3Tmp0Mapper">
+  <resultMap id="BasSBusiDelv3Tmp0Map" type="com.yd.ydbi.business.model.BasSBusiDelv3Tmp0">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="delv_dt_3" jdbcType="DATE" property="delvDt3" />
+    <result column="pick_site_14" jdbcType="INTEGER" property="pickSite14" />
+    <result column="pick_dbct_14" jdbcType="INTEGER" property="pickDbct14" />
+    <result column="pick_cnt" jdbcType="BIGINT" property="pickCnt" />
+    <result column="delv_cnt" jdbcType="BIGINT" property="delvCnt" />
+    <result column="delv_3_week" jdbcType="TIMESTAMP" property="delv3Week" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, delv_dt_3, pick_site_14, pick_dbct_14, pick_cnt, delv_cnt, delv_3_week
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BasSBusiDelv3Tmp0Map">
+    select 
+    <include refid="Base_Column_List" />
+    from bas_s_busi_delv_3_tmp0
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  
+</mapper>

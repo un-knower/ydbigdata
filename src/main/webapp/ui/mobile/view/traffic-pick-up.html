@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>揽件量</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="area-detail-top">
+        <div class="aging-top-area">
+            <div class="aging-top-time" id="info-time"></div>
+        </div>
+        <div class="pickup-top-info">
+            <div class="pickup-top-detail">
+                <span class="pickup-top-num" id="all-num">---</span>
+                <div class="pickup-item-right" id="all-detail">
+                    <p class="pickup-item-ratio">日环比
+                        <span>
+                            <span class="volume-ratio-info ratio-down-num">---</span>
+                            <span class="volume-ratio-img ratio-img-top-down"></span>
+                        </span>
+                    </p>
+                    <p class="pickup-item-ratio">周同比
+                        <span>
+                            <span class="volume-ratio-info ratio-up-num">---</span>
+                            <span class="volume-ratio-img ratio-img-top-up"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="stage-info">
+                <div class="stage-info-4">
+                    <p class="stage-name">上一日</p>
+                    <p class="stage-num" id="prev-day-num">---</p>
+                </div>
+                <div class="stage-info-4">
+                    <p class="stage-name">周平均</p>
+                    <p class="stage-num" id="average-week-num">---</p>
+                </div>
+                <div class="stage-info-4">
+                    <p class="stage-name">月平均</p>
+                    <p class="stage-num" id="average-month-num">---</p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <div class="chart-top">
+                <div class="chart-left-tab">
+                    <div class="echart-tab-item" id="tq-remark">
+                        <span class="echart-name echart-tab-yel">周同期</span>
+                        <span class="echart-show-line echart-tab-yel-bg"></span>
+                    </div>
+                    <div class="echart-tab-item margin-top-5">
+                        <span class="echart-name ratio-up-num">实际值</span>
+                        <span class="echart-show-line ratio-up-num-bg"></span>
+                    </div>
+                </div>
+                <div class="chart-right-tab">
+                    <ul class="echart-tab-list">
+                        <li data-value="day"  class="echart-tab-list-active">日趋势</li>
+                        <li data-value="week">周趋势</li>
+                        <li data-value="month">月趋势</li>
+                        <li data-value="quarter">季度趋势</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="echart-map">
+                <div id="chartDv" style="width:100%;height:100%"></div>
+                <div class="echart-active-info"></div>
+            </div>
+        </div>
+    </div>
+    <div class="area-detail-menu water-remark-area">
+        <div class="area-detail-tab-list">
+            <ul class="area-detail-ul">
+                <li class="area-tab-li-active">月增长率排名</li>
+                <li>波动率排名</li>
+            </ul>
+            <div class="area-detail-active-show"></div>
+        </div>
+        <table class="area-detail-table" cellspacing="0" cellpadding="0">
+            <thead class="area-detail-thead"  id="remark-title">
+            <tr>
+                <td width="25%">下级机构</td>
+                <td width="25%">上上月(万)</td>
+                <td width="25%">上月(万)</td>
+                <td width="25%">增长率</td>
+            </tr>
+            </thead>
+            <tbody class="area-detail-tbody" id="trend-info">
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">江苏大区</P>-->
+                    <!--<P class="area-code">320000</P>-->
+                <!--</td>-->
+                <!--<td>200.00</td>-->
+                <!--<td>300.00</td>-->
+                <!--<td>-->
+                    <!--<span class="pick-ratio-num ratio-up-num">188.88%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">南京大区</P>-->
+                    <!--<P class="area-code">320000</P>-->
+                <!--</td>-->
+                <!--<td>700.00</td>-->
+                <!--<td>550.00</td>-->
+                <!--<td>-->
+                    <!--<span class="pick-ratio-num ratio-down-num">90.88%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-down"></span>-->
+                <!--</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">上海大区</P>-->
+                    <!--<P class="area-code">320000</P>-->
+                <!--</td>-->
+                <!--<td>700.00</td>-->
+                <!--<td>550.00</td>-->
+                <!--<td>-->
+                    <!--<span class="pick-ratio-num ratio-up-num">110.88%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-up"></span>-->
+                <!--</td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+                <!--<td>-->
+                    <!--<P class="area-name">西北大区</P>-->
+                    <!--<P class="area-code">320000</P>-->
+                <!--</td>-->
+                <!--<td>700.00</td>-->
+                <!--<td>550.00</td>-->
+                <!--<td>-->
+                    <!--<span class="pick-ratio-num ratio-down-num">10.08%</span>-->
+                    <!--<span class="pick-ratio-img ratio-img-top-down"></span>-->
+                <!--</td>-->
+            <!--</tr>-->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/echarts.common.min.js"></script>
+<script src="../js/echarts-data.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+    var getPickAndDayAndWeekURL = appId + "/action/bas_busi/getPickAndDayAndWeek.do";
+    var getSndAndDayAndWeekURL = appId + "/action/bas_busi/getSndAndDayAndWeek.do";
+    var getSignAndDayAndWeek = appId + "/action/bas_busi/getSignAndDayAndWeek.do";
+    var getDwmAvgAmountURL = appId + "/action/bas_busi/getDwmAvgAmount.do";
+    var getDwmAvgAmountForSndURL = appId + "/action/bas_busi/getDwmAvgAmountForSnd.do";
+    var getDwmAvgAmountForSignURL = appId + "/action/bas_busi/getDwmAvgAmountForSign.do";
+    var getQuarterlyTrendURL = appId + "/action/bas_busi/getQuarterlyTrend.do";
+    var getQuarterlyTrendForSndURL = appId + "/action/bas_busi/getQuarterlyTrendForSnd.do";
+    var getQuarterlyTrendForSignURL = appId + "/action/bas_busi/getQuarterlyTrendForSign.do";
+    var getMonthTrendURL = appId + "/action/bas_busi/getMonthTrend.do";
+    var getMonthTrendForSndURL = appId + "/action/bas_busi/getMonthTrendForSnd.do";
+    var getMonthTrendForSignURL = appId + "/action/bas_busi/getMonthTrendForSign.do";
+    var getWeekTrendURL = appId + "/action/bas_busi/getWeekTrend.do";
+    var getWeekTrendForSndURL = appId + "/action/bas_busi/getWeekTrendForSnd.do";
+    var getWeekTrendForSignURL = appId + "/action/bas_busi/getWeekTrendForSign.do";
+    var getDayTrendURL = appId + "/action/bas_busi/getDayTrend.do";
+    var getDayTrendForSndURL = appId + "/action/bas_busi/getDayTrendForSnd.do";
+    var getDayTrendForSignURL = appId + "/action/bas_busi/getDayTrendForSign.do";
+    var getMonthGrowthRateURL = appId + "/action/bas_busi/getMonthGrowthRate.do";
+    var getMonthGrowthRateForSndURL = appId + "/action/bas_busi/getMonthGrowthRateForSnd.do";
+    var getMonthGrowthRateForSignURL = appId + "/action/bas_busi/getMonthGrowthRateForSign.do";
+    var getMonthVolatilityURL = appId + "/action/bas_busi/getMonthVolatility.do";
+    var getMonthVolatilityForSndURL = appId + "/action/bas_busi/getMonthVolatilityForSnd.do";
+    var getMonthVolatilityForSignURL = appId + "/action/bas_busi/getMonthVolatilityForSign.do";
+    var showInfo = "day";
+    var trendInfo = "growth";
+    var orgType = YDM.QueryString("sendType");
+    var orgId = YDM.QueryString("dataOrg");
+    var prevPage = YDM.QueryString("pageInfo");
+    var getTopInfo,getDayWeekMonthURL,getDayTrendInfoURL,getWeekTrendInfoURL,getMonthTrendInfoURL,getQuarterlyTrendInfoURL,getMonthGrowthInfoURL,getMonthVolatilityInfoURL;
+    
+    $(function() {
+        init();
+    });
+    function init() {
+        judgePrevPage();   //判断上一页面及变量设置
+        viewJs();
+        refreshInfo();  //刷新页面内容
+        refreshCtrl();
+        getData();  //获取echart值
+        commonFun(); //公用方法
+    }
+
+    function refreshInfo() {
+        getDwmAvgAmountInfo();  //获取日周月平均值
+        getAllInfo();  //头部缓存信息
+        getTrendInfo(dataTime);
+        getMonthGrowthRate(trendInfo);   //趋势列表
+    }
+
+    function judgePrevPage() {
+        if(prevPage == "lj") {
+            document.title = "揽件量";
+            getTopInfo = getPickAndDayAndWeekURL;
+            getDayWeekMonthURL = getDwmAvgAmountURL;
+            getDayTrendInfoURL = getDayTrendURL;
+            getWeekTrendInfoURL = getWeekTrendURL ;
+            getMonthTrendInfoURL = getMonthTrendURL;
+            getQuarterlyTrendInfoURL = getQuarterlyTrendURL;
+            getMonthGrowthInfoURL = getMonthGrowthRateURL;
+            getMonthVolatilityInfoURL = getMonthVolatilityURL;
+        }else if(prevPage == "pj") {
+            document.title = "派件量";
+            getTopInfo = getSndAndDayAndWeekURL;
+            getDayWeekMonthURL = getDwmAvgAmountForSndURL;
+            getDayTrendInfoURL = getDayTrendForSndURL;
+            getWeekTrendInfoURL = getWeekTrendForSndURL ;
+            getMonthTrendInfoURL = getMonthTrendForSndURL;
+            getQuarterlyTrendInfoURL = getQuarterlyTrendForSndURL;
+            getMonthGrowthInfoURL = getMonthGrowthRateForSndURL;
+            getMonthVolatilityInfoURL = getMonthVolatilityForSndURL;
+        }else if(prevPage == "qs") {
+            document.title = "签收量";
+            getTopInfo = getSignAndDayAndWeek;
+            getDayWeekMonthURL = getDwmAvgAmountForSignURL;
+            getDayTrendInfoURL = getDayTrendForSignURL;
+            getWeekTrendInfoURL = getWeekTrendForSignURL ;
+            getMonthTrendInfoURL = getMonthTrendForSignURL;
+            getQuarterlyTrendInfoURL = getQuarterlyTrendForSignURL;
+            getMonthGrowthInfoURL = getMonthGrowthRateForSignURL;
+            getMonthVolatilityInfoURL = getMonthVolatilityForSignURL;
+        }
+    }
+
+    function getMonthGrowthRate(growthOrVolati) {
+        $.showLoading("加载中");
+        var height = $(".water-remark-area").outerHeight(true);
+        $(".water-remark-area").css("min-height",height);
+        $("#trend-info").empty();
+        var survParams = {
+            "curDate": dataTime
+        };
+        survParams[orgType] = orgId;
+        var getGrowthOrVolatiURL;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        if(growthOrVolati == "growth") {
+            getGrowthOrVolatiURL = getMonthGrowthInfoURL;
+        }else {
+            getGrowthOrVolatiURL = getMonthVolatilityInfoURL;
+        }
+        $.ajax({
+            type : 'POST',
+            url : getGrowthOrVolatiURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    if(growthOrVolati == "growth") {
+                        getMonthGrowthInfo(oData.data);
+                    }else {
+                        getMonthVolatilityInfo(oData.data);
+                    }
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    function getMonthGrowthInfo(data) {
+        var str = "<tr><td width='27%'>下级机构</td><td width='24%'>上上月(万)</td><td width='24%'>上月(万)</td><td width='25%'>增长率</td></tr>";
+        $("#remark-title").empty().append(str);
+        $.each(data,function(index,val) {
+            var str = "<tr><td><P class='area-name'>"+ val.orgName +"</P><P class='area-code'>"+ val.orgCode +"</P></td><td>"+ formatNumberRgx(val.theLastMonthPickAmount) +"</td><td>"+ formatNumberRgx(val.theMonthPickAmount) +"</td><td><span class='pick-ratio-num ratio-"+ changeData(val.monthGrowthRate,"symbol") +"-num'>"+ changeData(val.monthGrowthRate,"abs","%") +"</span><span class='pick-ratio-img ratio-img-top-"+ changeData(val.monthGrowthRate,"symbol") +"'></span></td></tr>"
+            $("#trend-info").append(str);
+        })
+    }
+    function getMonthVolatilityInfo(data) {
+        strTitle = "<tr><td width='27%'>下级机构</td><td width='27%'>上上月增长率</td><td width='27%'>上月增长率</td><td width='19%'>波动率</td></tr>"
+        $("#remark-title").empty().append(strTitle);
+        $.each(data,function(index,val) {
+            var str = "<tr><td><P class='area-name'>"+ val.orgName +"</P><P class='area-code'>"+ val.orgCode +"</P></td><td>"+ val.monthLastGrowthRate +"</td><td>"+ val.monthTheGrowthRate +"</td><td><span class='pick-ratio-num ratio-"+ changeData(val.monthvolatility,"symbol") +"-num'>"+ changeData(val.monthvolatility,"abs","%") +"</span><span class='pick-ratio-img ratio-img-top-"+ changeData(val.monthvolatility,"symbol") +"'></span></td></tr>"
+            $("#trend-info").append(str);
+        })
+    }
+
+    function getAllInfo() {
+        $.showLoading("加载中");
+        var survParams = {
+            "curDate": dataTime
+        };
+        survParams[orgType] = orgId;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getTopInfo,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    getAllInfodetail(oData.data);
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function getAllInfodetail(data) {
+        //TODO 获取头部信息
+        if(prevPage == "lj") {
+            $("#all-num").text(formatNumberRgx(data.pickCnt));
+        }else if(prevPage == "pj") {
+            $("#all-num").text(formatNumberRgx(data.delvCnt));
+        }else if(prevPage == "qs") {
+            $("#all-num").text(formatNumberRgx(data.cfm_rcvCnt));
+        }
+
+        var str = "<p class='pickup-item-ratio'>日环比<span><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.daysFrom,"symbol") +"-num'>"+ changeData(data.daysFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.daysFrom,"symbol") +"'></span></span></p><p class='pickup-item-ratio'>周同比<span><span class='margin-left-2 volume-ratio-info ratio-"+ changeData(data.weeksFrom,"symbol") +"-num'>"+ changeData(data.weeksFrom,"abs","%") +"</span><span class='volume-ratio-img ratio-img-top-"+ changeData(data.weeksFrom,"symbol") +"'></span></span></p>";
+        $("#all-detail").empty().append(str);
+    }
+
+    function getTrendInfo(dateRequest, ajaxName) {
+        var getInfoURL;
+        $.showLoading("加载中");
+        var survParams = {
+            "curDate": dateRequest
+        };
+        survParams[orgType] = orgId;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        if(showInfo == "day") {
+            getInfoURL = getDayTrendInfoURL;
+        }else if(showInfo == "week") {
+            getInfoURL = getWeekTrendInfoURL;
+        }else if(showInfo == "month") {
+            getInfoURL = getMonthTrendInfoURL;
+        }else if(showInfo == "quarter") {
+            getInfoURL = getQuarterlyTrendInfoURL;
+        }
+        $.ajax({
+            type : 'POST',
+            url : getInfoURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addTrendListInfo(oData.data, ajaxName);
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    function addTrendListInfo(data, ajaxName) {
+        // 报表数据
+        if(prevPage == "lj") {
+        	prepareLjEchartData(data, ajaxName);//澜件
+        }else if(prevPage == "pj") {
+            // 派件
+        	preparePjEchartData(data, ajaxName);
+        }else if(prevPage == "qs") {
+        	// 签收
+        	prepareQsEchartData(data, ajaxName);
+        }
+    	
+    }
+
+    function getDwmAvgAmountInfo() {
+        $.showLoading("加载中");
+        var survParams = {
+            "curDate": dataTime
+        };
+        survParams[orgType] = orgId;
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : getDayWeekMonthURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addListInfo(oData.data);
+                } else {
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+
+    function addListInfo(data) {
+        $("#average-month-num").text(formatNumberRgx(data.theMonthTheAVG));
+        $("#average-week-num").text(formatNumberRgx(data.lastWeekTheAVG));
+        $("#prev-day-num").text(formatNumberRgx(data.lastDayTheAVG));
+    }
+
+    function viewJs() {
+        $("#info-time").text(dataTime);
+        $(".area-detail-ul li").on("click",function() {
+            var index = $(this).index();
+            $(".area-detail-active-show").animate({"left":(50*index+10) + "%"},100);
+            if(index == 0) {
+                trendInfo = "growth";
+            }else if(index == 1) {
+                trendInfo = "volati";
+            }
+            getMonthGrowthRate(trendInfo)
+        });
+        $(".echart-tab-list li").on("click",function() {
+           $(this).addClass("echart-tab-list-active").siblings().removeClass("echart-tab-list-active");
+            showInfo = $(this).attr("data-value");
+            var index = $(this).index();
+            var showView = $("#tq-remark").show().next().removeClass("margin-top-8").end().children(".echart-name:first-child");
+            switch (index) {
+                case 0 : showView.text("周同期").parents(".echart-tab-item").next().children(".echart-name:first-child").text("实际值");break;
+                case 1 : $("#tq-remark").hide().next().addClass("margin-top-8");break;
+                case 2 : showView.text("月同期").parents(".echart-tab-item").next().children(".echart-name:first-child").text("实际值");break;
+                case 3 : showView.text("季度同期").parents(".echart-tab-item").next().children(".echart-name:first-child").html("实际值<span style='opacity:0'>填</span>");break;
+            }
+            getTrendInfo(dataTime);
+            getData();
+        })
+    }
+    
+    /** 初始化chart数据*/
+    function getData() {
+    	var xDataNum;
+    	var getXFormatter = prepareXFormatter();
+    	var getYFormatter = prepareYFormatter();
+    	var seriesName = ['实际值'];
+    	if(showInfo == "day") {
+    		xDataNum = 15;
+    		seriesName.push('周同期');
+        }else if(showInfo == "week") {
+        	xDataNum = 8;
+        }else if(showInfo == "month") {
+        	xDataNum = 6;
+        	seriesName.push('月同期');
+        }else if(showInfo == "quarter") {
+        	xDataNum = 4;
+        	seriesName.push('季度同期');
+        }
+    	
+    	var initoptions = {
+    		//getNextData: getNextSendCarInfo,
+    		getPreviousData: getPreviousData,
+    		xDataNum: xDataNum,
+    		chartFieldId: "chartDv",
+    		getXFormatter:getXFormatter,
+    		trendType:showInfo == "day"? 'day':'tarffic-pick',
+    		getYFormatter:getYFormatter,
+    		seriesName:seriesName
+    	} 
+        BDC.doChart(initoptions);
+    }
+    /**准备X轴的坐标格式*/
+    function prepareXFormatter() {
+    	var getXFormatter;
+    	if(showInfo == "day") {
+    		xDataNum = 15;
+    		getXFormatter = function (value) {
+    			if (value) {
+    				return value.split('-')[2];
+    			}
+    		}
+        }else if(showInfo == "week") {
+        	xDataNum = 8;
+        	getXFormatter = function (value) {
+    			if (value) {
+    				return value.split('-')[1] + '周';
+    			}
+    		}
+        }else if(showInfo == "month") {
+        	xDataNum = 6;
+        	getXFormatter = function (value) {
+    			if (value) {
+    				return value.split('-')[1] + '月';
+    			}
+    		}
+        }else if(showInfo == "quarter") {
+        	xDataNum = 4;
+        	getXFormatter = function (value) {
+    			if (value) {
+    				var month = value.split('-')[1];
+    				if (month == '1'){
+    					return '一季度';
+    				} else if (month == '2') {
+    					return '二季度';
+    				} else if (month == '3') {
+    					return '三季度';
+    				} else {
+    					return '四季度';
+    				}
+    			}
+    		}
+        }
+    	return getXFormatter;
+    }
+    /***/
+     function prepareYFormatter() {
+    	return function (value){
+    		return  (value/10000).toFixed(0) + 'w';
+    	}
+    }
+    /** 处理揽件chart数据*/ 
+    function prepareLjEchartData (datas, ajaxName) {
+    	if (!datas) {
+    		return;
+    	}
+    	var weekRequestDate = '';
+    	var xData = [];
+    	var yData = [];
+    	var realnumArr = [];
+    	var onsamenumArr = []
+    	yData.push(realnumArr);
+    
+    	yData.push(onsamenumArr);
+    	
+    	//周趋势
+    	$.each(datas, function (index, altrendData) {	
+    		if(showInfo == "day") {
+    			xData.push(altrendData.ymd);
+        		yData[0].push(altrendData.avtiVal);
+        		yData[1].push (altrendData.sameTiVal);
+        		//weekRequestDate = altrendData.ymd;	
+            }else if(showInfo == "week") {
+            	xData.push(altrendData.yweek);
+        		yData[0].push(altrendData.pick_cnt);
+       	        //weekRequestDate = altrendData.theDate;	
+            }else if(showInfo == "month") {
+            	xData.push(altrendData.ym);
+        		yData[0].push(altrendData.avtiveValue);
+        		yData[1].push (altrendData.monthSameTime);
+    		    //weekRequestDate = altrendData.theDate;	
+            }else if(showInfo == "quarter") {
+            	xData.push(altrendData.yq);
+        		yData[0].push(altrendData.actiVal);
+        		yData[1].push (altrendData.qauterSameTime);
+       			//weekRequestDate = altrendData.theDate;	
+            }
+    		if (index == 0) {
+    		    if (showInfo != "day") {
+       			    weekRequestDate = altrendData.theDate;	
+    		    } else {
+    			    weekRequestDate = altrendData.ymd;
+    		    }
+    	    }
+    	});
+    	if (ajaxName === 'previous') {	
+    		BDC.preparePreviousData(xData, yData, weekRequestDate);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+    	} 
+    	/* if (ajaxName === 'next') {
+    		BDC.prepareNextData(xData, yData);
+    	} else if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData)
+    	} */
+    }
+    /** 拿到next的chart数据*/
+    /* var getNextSendCarInfo = function (date) {
+    	var ajaxName = 'next';
+    	getSendCarInfoAjax(date, ajaxName);
+    }  */
+    /** 拿到previous的chart数据*/
+    var getPreviousData = function (date) {
+    	var ajaxName = 'previous';
+        getTrendInfo(date, ajaxName);
+        
+    }
+    /** 处理派件chart数据*/ 
+    function preparePjEchartData (datas, ajaxName) {
+    	if (!datas) {
+    		return;
+    	}
+    	var weekRequestDate = '';
+    	var xData = [];
+    	var yData = [];
+    	var realnumArr = [];
+    	var onsamenumArr = []
+    	yData.push(realnumArr);
+    
+    	yData.push(onsamenumArr);
+    	
+    	//周趋势
+    	$.each(datas, function (index, altrendData) {	
+    		if(showInfo == "day") {
+    			xData.push(altrendData.ymd);
+        		yData[0].push(altrendData.avtiVal);
+        		yData[1].push (altrendData.sameTiVal);
+       		   // weekRequestDate = altrendData.ymd;	
+            }else if(showInfo == "week") {
+            	xData.push(altrendData.yweek);
+        		yData[0].push(altrendData.delv_cnt);
+        		
+            }else if(showInfo == "month") {
+            	xData.push(altrendData.ym);
+        		yData[0].push(altrendData.avtiveValue);
+        		yData[1].push (altrendData.monthSameTime);
+        	    //weekRequestDate = altrendData.theDate;
+            }else if(showInfo == "quarter") {
+            	xData.push(altrendData.yq);
+        		yData[0].push(altrendData.actiVal);
+        		yData[1].push (altrendData.qauterSameTime);
+        	    //weekRequestDate = altrendData.theDate;
+            } 
+    		if (index == 0) {
+    		    if (showInfo != "day") {
+       			    weekRequestDate = altrendData.theDate;	
+    		    } else {
+    			    weekRequestDate = altrendData.ymd;
+    		    }
+    	    }
+    	});
+    	if (ajaxName === 'previous') {
+    		
+    		BDC.preparePreviousData(xData, yData, weekRequestDate);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+    	} 
+    	/* if (ajaxName === 'next') {
+    		BDC.prepareNextData(xData, yData);
+    	} else if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData)
+    	} */
+    }
+    /**/
+    /** 处理签收chart数据*/ 
+    function prepareQsEchartData (datas, ajaxName) {
+    	if (!datas) {
+    		return;
+    	}
+    	var weekRequestDate = '';
+    	var xData = [];
+    	var yData = [];
+    	var realnumArr = [];
+    	var onsamenumArr = []
+    	yData.push(realnumArr);
+    
+    	yData.push(onsamenumArr);
+    	
+    	//周趋势
+    	$.each(datas, function (index, altrendData) {	
+    		if(showInfo == "day") {
+    			xData.push(altrendData.ymd);
+        		yData[0].push(altrendData.avtiVal);
+        		yData[1].push (altrendData.sameTiVal);
+        	    //weekRequestDate = altrendData.ymd;	
+            }else if(showInfo == "week") {
+            	xData.push(altrendData.yweek);
+        		yData[0].push(altrendData.cfm_rcv_cnt);
+        	   // weekRequestDate = altrendData.theDate;
+            }else if(showInfo == "month") {
+            	xData.push(altrendData.ym);
+        		yData[0].push(altrendData.avtiveValue);
+        		yData[1].push (altrendData.monthSameTime);
+        	    //weekRequestDate = altrendData.theDate;
+            }else if(showInfo == "quarter") {
+            	xData.push(altrendData.yq);
+        		yData[0].push(altrendData.actiVal);
+        		yData[1].push (altrendData.qauterSameTime);
+        	   // weekRequestDate = altrendData.theDate;
+            }	
+    		if (index == 0) {
+    		    if (showInfo != "day") {
+       			    weekRequestDate = altrendData.theDate;	
+    		    } else {
+    			    weekRequestDate = altrendData.ymd;
+    		    }
+    	    }
+    	});
+    	if (ajaxName === 'previous') {
+    		
+    		BDC.preparePreviousData(xData, yData, weekRequestDate);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData, weekRequestDate);
+    	} 
+    	/* if (ajaxName === 'next') {
+    		BDC.prepareNextData(xData, yData);
+    	} else if (ajaxName === 'previous') {
+    		BDC.preparePreviousData(xData, yData);
+    	} else {
+    		BDC.prepareCurrentData(xData, yData)
+    	} */
+    }
+</script>
+</body>
+</html>

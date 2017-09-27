@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript" src="../../js/combobox-company.js"></script>
+<script type="text/javascript" src="../../js/tool.js"></script>
+<script type="text/javascript">
+		// var appId = localStorage.getItem("appId");
+		var objectName = '菜鸟指数维护';
+		var listTemplate = '#c9_cainiao_mark_list';
+		var listId = "c9_cainiao_mark_list";
+		var formSearchTemplate = '#c9_cainiao_mark_searchForm';
+		var searchFormId = "c9_cainiao_mark_searchForm";
+		var gridMenuId = '#c9_cainiao_mark_list_menu';
+		var addFormUrl = 'c9_cainiao_mark_form.html?actionId=c9_cainiao_mark_form&mode=add';
+		var updateFormUrl = 'c9_cainiao_mark_update.html?actionId=c9_cainiao_mark_update&mode=edit';
+		var getFormUrl = 'c9_cainiao_mark_form.html?actionId=c9_cainiao_mark_form&mode=display';
+		var urlSearch = appId + '/actions/cainiao/cn_compst_scor/searchData.do?actionId=c9_cainiao_mark_searchData';
+		var urlExport= appId + '/actions/cainiao/cn_compst_scor/exportEntities.do?actionId=c9_cainiao_mark_exportEntities';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'c9_cainiao_mark_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		var expellActions = {
+			"c9_cainiao_mark_searchData":urlSearch,
+			"c9_cainiao_mark_exportEntities":urlExport
+		}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		var today = getToday();
+		$(function(){
+			loadCompanyCombobox();
+			$('#start_date,#end_date').datebox({'editable':false});
+			$('#start_date').datebox('setValue', getNowDate(0,0));
+			$('#end_date').datebox('setValue', getNowDate(0,0));
+			getAuthButtons(pageId,gridMenuId,authActions,expellActions);
+			loadDatagrid();
+		});
+		
+		function doAction(pageId,buttonId,actionUrl){
+			if(authActions.hasOwnProperty(buttonId)){
+				if(buttonId.indexOf('addData')>0){
+					addData(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('updateData')>0){
+					updateData(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('auditPass')>0){
+					auditPass(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('auditRebut')>0){
+					auditRebut(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('deleteData')>0){
+					deleteData(buttonId,appId+actionUrl);
+				}
+				else if( buttonId.indexOf('getData')>0){
+					getData(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('searchData')>0){
+					searchData(buttonId,appId+actionUrl);
+				}
+				else if(buttonId.indexOf('refresh')>0){
+					refresh(buttonId,appId+actionUrl);
+				}
+				else {
+					//默认操作
+					var selectRow = $$.getSingleSelectRow(listId, "请选择你要操作的"+objectName);
+
+			    	if(selectRow){
+						var tempUrl = '';
+   						tempUrl = tempUrl+'&org_cd='+selectRow.org_cd;
+   						tempUrl = tempUrl+'&start_dt='+selectRow.start_dt;
+		   				tempUrl += "&actionUrl="+appId+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+			    		$$.openJcdfDialog(urlActionForm+tempUrl, '操作'+objectName, 500, 600);
+			    	}					
+				}
+			}
+			else {
+				alert('当前用户没有该操作授权!');
+			}
+		};
+		
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(isDatagridLoaded){
+				$(listTemplate).datagrid('load', json );
+			}else{
+				$(listTemplate).datagrid({
+					queryParams: json,
+					url : urlSearch
+				});
+				isDatagridLoaded = true;
+			}	
+		};
+		
+		function exportExcel(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			$('#'+searchFormId).form('submit',{    
+			    url:actionUrl,    
+			    onSubmit: function(param){
+			    	param.search_condition = JSON.stringify(params)
+			    },
+			    success: function(data){   
+			    	if (data==null || data==""){
+				        $$.showJcdfMessager('提示消息', "上次请求未完成，请稍候！", 'warning');
+			    	}else{
+				    	var oData = JSON.parse(data);
+				        if (data!=""&&oData&&oData.errorCode){   
+				        	$$.showJcdfMessager('提示消息', oData.msg, 'warning');   
+				        }
+			        }    
+			    } 
+			}); 		
+		};
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+			$('#start_date').datebox('setValue', getNowDate(0,0));
+			$('#end_date').datebox('setValue', getNowDate(0,0));
+		};
+		
+		function addData(buttonId,actionUrl){
+	   		$$.openJcdfDialog(addFormUrl+"&actionUrl="+actionUrl+"&tableId="+listId+"&refActionId="+buttonId, '新增'+objectName, 300, 650);
+		};
+		
+		function getData(buttonId,actionUrl){
+			var selectRow = $$.getSingleSelectRow(listId, "请选择你要查看的"+objectName);
+
+	    	if(selectRow){
+				var tempUrl = '';
+   				tempUrl = tempUrl+'&org_cd='+selectRow.org_cd;
+   				tempUrl = tempUrl+'&start_dt='+selectRow.start_dt;
+   				tempUrl += "&actionUrl="+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+	    		$$.openJcdfDialog(getFormUrl+tempUrl, '查看'+objectName, 500, 600);
+	    	}
+		};
+		
+		function deleteData(buttonId,actionUrl){
+			var selectRows = $$.getSelectRows(listId, "请选择你要删除的"+objectName);
+	    	if(selectRows && selectRows.length > 0){
+	    		for(var i=0;i<selectRows.length;i++){
+	    			if(selectRows[i].state == "1"){
+	    				$$.showJcdfMessager('提示消息', '已审核的不能删除', 'warning');
+	    				return;
+	    			} 
+	    			if(selectRows[i].state == "2"){
+	    				$$.showJcdfMessager('提示消息', '已驳回的不能删除', 'warning');
+	    				return;
+	    			}
+	    		}
+	    		$$.showJcdfConfirm("确认", "确定删除所选的"+objectName+"?", "deleteNodeById('"+buttonId+"','"+actionUrl+"')");
+	    	}
+		};
+		
+		function deleteNodeById(buttonId,actionUrl,id){
+			var selectRows = $$.getSelectRows(listId, "请选择你要操作的"+objectName);
+			$$.openProcessingDialog();
+			$.ajax({
+			   type: "POST",
+			   url: actionUrl+"?actionId="+buttonId,
+			   dataType:"json",
+			   data : JSON.stringify(selectRows),
+			   contentType: "application/json",
+			   success: function(data){
+			   	 	$$.closeProcessingDialog();
+					if (data && data.errorCode == 0) {
+						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						$$.refreshJcdfDatagrid(listId);
+					} else {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+			   }
+			});
+		};
+		
+		function auditPass(buttonId,actionUrl){
+			var selectRows = $$.getSelectRows(listId, "请选择你要审核的"+objectName);
+	    	if(selectRows && selectRows.length > 0){
+	    		for(var i=0;i<selectRows.length;i++){
+	    			if(selectRows[i].state == "1"){
+	    				$$.showJcdfMessager('提示消息', '已审核的不能再审', 'warning');
+	    				return;
+	    			} 
+	    			if(selectRows[i].state == "2"){
+	    				$$.showJcdfMessager('提示消息', '已驳回的不能再审', 'warning');
+	    				return;
+	    			}
+	    		}
+	    		$$.showJcdfConfirm("确认", "确定将所选的数据审核通过?", "auditById('"+buttonId+"','"+actionUrl+"')");
+	    	}else{
+	    		$$.showJcdfMessager('提示消息', "请选择你要审核的数据", 'warning');
+	    	}
+		} 
+ 		
+ 		function auditRebut(buttonId,actionUrl){
+ 			var selectRows = $$.getSelectRows(listId, "请选择你要驳回的"+objectName);
+	    	if(selectRows && selectRows.length > 0){
+	    		for(var i=0;i<selectRows.length;i++){
+	    			if(selectRows[i].state == "1"){
+	    				$$.showJcdfMessager('提示消息', '已审核的不能驳回', 'warning');
+	    				return;
+	    			} 
+	    			if(selectRows[i].state == "2"){
+	    				$$.showJcdfMessager('提示消息', '已驳回的不能再驳回', 'warning');
+	    				return;
+	    			}
+	    		}
+	    		$$.showJcdfConfirm("确认", "确定将所选的数据驳回?", "auditById('"+buttonId+"','"+actionUrl+"')");
+	    	}else{
+	    		$$.showJcdfMessager('提示消息', "请选择你要驳回的数据", 'warning');
+	    	}
+		} 
+
+		function auditById(buttonId,actionUrl){
+			$$.openProcessingDialog();
+			var selectRows = $$.getSelectRows(listId, "请选择你要操作的"+objectName);
+			$.ajax({
+			   type: "POST",
+			   url: actionUrl+"?actionId="+buttonId,
+			   contentType: "application/json",
+			   dataType:"json",
+			   data: JSON.stringify(selectRows),
+			   success: function(data){
+			   	 	$$.closeProcessingDialog();
+					if (data && data.errorCode==0) {
+						$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						$$.refreshJcdfDatagrid(listId);
+					} else {
+						$$.showJcdfMessager('提示消息', data.msg, 'warning');
+					}
+			   }
+			});
+		}
+		
+		function updateData(buttonId,actionUrl){
+	    	var selectRow = $$.getSingleSelectRow(listId, "请选择你要编辑的"+objectName);
+
+	    	if(selectRow){
+	    		/* if(selectRow.state != "1"){
+    				$$.showJcdfMessager('提示消息', '审核人员只能修改已审核的数据', 'warning');
+    				return;
+    			} */
+				var tempUrl = '';
+   				tempUrl = tempUrl+'&statsDt='+selectRow.statsDt;
+   				tempUrl = tempUrl+'&scor='+selectRow.scor;
+   				tempUrl = tempUrl+'&industAvgScor='+selectRow.industAvgScor;
+   				tempUrl = tempUrl+'&industNm='+selectRow.industNm;
+   				tempUrl = tempUrl+'&nmCnt='+selectRow.nmCnt;
+   				tempUrl += "&actionUrl="+actionUrl+"&tableId="+listId+"&refActionId="+buttonId;
+	    		$$.openJcdfDialog(updateFormUrl+tempUrl, '编辑'+objectName, 300, 650);
+	    	}
+		};
+	
+				
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			$(listTemplate).datagrid({
+				title:objectName+'列表',
+				height:$$.getDatagridHeight(),
+				width:$$.getDatagridWidth(),
+				border: true,
+				nowrap: true,
+				striped: true,
+				fitColumns: true,
+				idField:'',
+				frozenColumns:[[
+								  {field:'ck',checkbox:true}
+							  ]],
+				columns:[[
+						{field:'statsDt',title:'统计日期',width:$$.fillsize(0.1),align:'left'},
+						{field:'scor',title:'评分分数',width:$$.fillsize(0.1),align:'left'},
+						{field:'industAvgScor',title:'行业平均分',width:$$.fillsize(0.1),align:'right'},
+						{field:'industNm',title:'行业排名',width:$$.fillsize(0.1),align:'center'},
+						{field:'nmCnt',title:'名次升降数',width:$$.fillsize(0.1),align:'center'},
+						{field:'entrPersCd',title:'更新人',width:$$.fillsize(0.1),align:'center'},
+						{field:'entrTm',title:'更新时间',width:$$.fillsize(0.1),align:'center'}						
+				]],
+				onBeforeLoad:function(){$$.clearSelect(listId);},
+				queryParams:$$.serializeToJson(searchFormId),
+				pagination:true,
+				rownumbers:true,
+				singleSelect:true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar: gridMenuId,
+				loadFilter: function(data){
+					if (data!=null && data.errorCode>0){
+						if(data.msg!=null && data.msg!=""){
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data; 
+				}
+			});
+		}
+	</script>
+</head> 
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false" style="padding: 4px 0;">
+		<fieldset style="padding: 5px; border: 1px solid #dcdcdc;">
+			<legend>信息查询</legend>
+			<form id="c9_cainiao_mark_searchForm" class="search-form" method="post">
+				<table cellpadding="2" style="width: 100%">
+					<tr>
+						<td align="right">开始日期：</td>
+						<td>
+							<input type="text" id="start_date" name="start_date" class="easyui-datebox"
+							data-options="" 
+							 /> 
+						
+						</td>
+						<td align="center">结束日期：</td>
+						<td >
+							<input type="text" id="end_date" name="end_date" class="easyui-datebox"
+							data-options="" 
+							 /> 
+						
+						</td>
+						<td colspan="4" align="center" >
+							<a class="easyui-linkbutton" iconCls="icon-search" style="margin-right: 20px;" onclick="searchData('c9_cainiao_mark_searchData',urlSearch)">查询</a>
+							<a class="easyui-linkbutton" iconCls="icon-reload" style="margin-right: 20px;" onclick="searchReset()">重置</a>
+							<!-- <a class="easyui-linkbutton" iconCls="icon-download" style="margin-right: 20px;" onclick="exportExcel('c9_cainiao_mark_exportEntities',urlExport)">导出</a> -->
+						</td>
+				</table>
+			</form>
+		</fieldset>
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 2px;">
+		<div id="c9_cainiao_mark_list_menu">
+			<div style="padding: 5px;">
+		<!--		<a id="button_add" href="#" onclick="addData()" class="easyui-linkbutton" iconCls="icon-add" plain="true">新增</a>
+				<a id="button_edit" href="#" onclick="editData()" class="easyui-linkbutton" iconCls="icon-edit" plain="true">编辑</a>
+				<a id="button_delete" href="#" onclick="delateData()" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a> -->
+			</div>
+		</div>
+		<table id="c9_cainiao_mark_list" fit="true"></table>
+	</div>
+</body>
+</html>

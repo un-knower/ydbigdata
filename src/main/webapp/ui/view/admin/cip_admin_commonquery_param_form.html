@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/gray/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<link rel="stylesheet" href="../../js/codemirror/lib/codemirror.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	<script type="text/javascript" src="../../js/codemirror/lib/codemirror.js"></script>
+	<script type="text/javascript" src="../../js/codemirror/mode/sql/sql.js"></script>
+	<script type="text/javascript">	
+    var queryId="";
+	var pageId = 'cip_admin_commonquery_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var getUrl = appId + "/actions/admin_commonquery/getData.do?actionId=cip_admin_commonquery_getData";
+	var formTemplate = "#form_cip_admin_commonquery_param";
+	var listId = "cip_admin_commonquery_list";
+	var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+	var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+	var codeMirrorEditor;
+	var paramAry = [];
+	var id=[];
+	var name=[];
+	var length;//初始化数组的长度
+	$(function(){
+		init();
+		makeHtml(paramAry);	
+	});
+	/**-------------取消按钮功能-----------------**/
+    function closeParamJcdfDialog(){
+		parent.$('#jcdfDiglogParam').dialog('close');
+	}
+	function init(){
+		queryId=$$.QueryString("queryId");
+		paramlist = $$.QueryString("paramlist");
+		paramAry = paramlist.split(",");
+		pagination = $$.QueryString("pagination");//1是分页 0 是不分页
+	//	alert(pagination);
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+		
+		callUrl = actionUrl+"?actionId="+actionId;
+		loadCombobox('pagination','pagination');
+        loadCombobox('singleRec','singleRec');
+		if(mode=="edit"){
+			loadEditData();
+			$('#queryId').attr({editable:false});
+		}else if(mode=="display"){
+			loadEditData();
+			$('#btn_save').hide();
+		}
+		else if( mode == "add" ){
+		        $('#queryId').val(queryId);
+			}
+  
+		};
+/**-------------动态拼接表单---------------**/
+function makeHtml(paramAry){
+         var template = '<table>';
+	     template += '<tr>'
+				+ '<td class="right"><label>查询id:</label></td>'
+				+ '<td class="left" style="width:85%">'
+				+ '<input type="text" id="queryId" name="queryId" style="height:26px;width:220px" class="easyui-validatebox" data-options="required:true,validType:\'length[0,50]\'" />'
+				+ '</td></tr>';
+		
+		for(var i = 0;i<paramAry.length;i++){
+		  if(paramAry[i] != ""){
+		  template += '<tr>'
+				+ '<td class="right"><label>参数'+paramAry[i]+':</label></td>'
+				+ '<td class="left" style="width:85%">'
+				+ '<input type="text" id="'+paramAry[i]+'" name="'+paramAry[i]+'" style="height:26px;width:220px" class="easyui-validatebox" data-options="required:false,validType:\'length[0,50]\'" />'
+				+ '</td></tr>';	
+		  } 
+		}
+		if(pagination == 1 ){
+		template += '<tr>'
+				+ '<td class="right"><label>分页:</label></td>'
+				+ '<td class="left" style="width:85%">'
+				+ '<input type="text" id="page" name="page" value="1" style="height:26px;width:220px" class="easyui-validatebox" data-options="required:false,validType:\'length[0,50]\'" />'
+				+ '</td></tr>';
+		template += '<tr>'
+				+ '<td class="right"><label>行数:</label></td>'
+				+ '<td class="left" style="width:85%">'
+				+ '<input type="text" id="rows" name="rows" value="20" style="height:26px;width:220px" class="easyui-validatebox" data-options="required:false,validType:\'length[0,50]\'" />'
+				+ '</td></tr>';
+		}	
+		template += '<tr>'
+				+ '<td colspan="2" align="center" style="padding: 20px;">'
+				+ '<a id="btn_test" href="#" class="easyui-linkbutton" iconCls="icon-set" onclick="test()">运行</a>  '
+				+ '<a id="btn_cancel" href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="closeParamJcdfDialog()">取消</a>'
+				+ '</td></tr>';
+		template += '<table>';
+		 $("#form_cip_admin_commonquery_param").html(template);
+		 $.parser.parse($("#form_cip_admin_commonquery_param"));//easyUI解析器，解析easyUI组件
+		 $('#queryId').val(queryId);
+		 if(queryId == "null" || queryId =="" || queryId == null){
+		  queryId ="";
+		 }
+		  $('#queryId').val(queryId);
+		 
+		
+}
+    /*          var json={
+					"queryId":selectRow.queryId,
+					"param":{
+				          "root_node_id":"default",
+				    	},
+				    
+				    "page":"1",
+				    "rows":"20"};
+	 */
+	/**---------------------封装参数，如上述格式------------------------**/			         
+		function getParam() {
+		    var jsonData = {};
+		    var param = {};
+		    var queryId =  $('#queryId').val();
+			jsonData["queryId"] = queryId;
+			for ( var i = 0; i < paramAry.length; i++) {
+				var ary = paramAry[i];
+				if (ary != "") {
+					var result = $("#" + ary).val();
+					param[ary] = result;
+				}
+			}
+			jsonData["param"] = param;
+			if(pagination == 1){
+			 var page = $('#page').val();
+			 var rows = $('#rows').val();
+			 jsonData["page"] = page;
+			 jsonData["rows"] = rows;
+			}	
+		//	alert(jsonData);	
+			return jsonData;			
+		}
+
+		/**-----------------封装参数，调运行接口试运行sql语句-------------------**/
+		function test(){
+			if (!$(formTemplate).form('validate')) {
+				return false;
+			}
+			var jsonData = getParam();
+			if (!jsonData)
+				return false;
+			//如果数据验证通过(即数据合法)
+			$$.openProcessingDialog();
+			//ajax提交数据
+			//调查询配置语句接口 进行测试
+			var callUrl = appId + '/actions/common/query.do?actionId=system_commonquery';
+			$.ajax({
+				type : "POST",
+				url : callUrl,
+				dataType : "json",
+				data : JSON.stringify(jsonData),
+				contentType : "application/json",
+				success : function(data) {
+					$$.closeProcessingDialog();
+					if (data && data.errorCode == 0) {
+						//	$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						//	$$.closeJcdfDialog();
+						//	$$.refreshJcdfDatagrid(tableId);
+						//将结果显示在下面的div图层中
+					//	$('#result').html(JSON.stringify(data));
+					     result(JSON.stringify(data));
+					} else {
+						$$.showJcdfMessager('提示消息', data.msg + '('
+								+ data.errorCode + ')', 'warning');
+					}
+				}
+			});
+		};
+		
+		function result(data){
+		    var template = '<table>';
+		    template += '<tr>'
+		        + '<td title="" colspan="2" align="center" style="padding: 20px;">'
+		        + '返回结果'
+		        + '</td></tr>';
+		    template += '<tr>'
+				+ '<td colspan="2" align="center" style="padding: 20px;">'
+				+ '<textarea type="text" id="count_statement" name="count_statement" value="'+data+'" class="easyui-validatebox" data-options="required:false,validType:\'length[0,65535]\'" style="height:200px;width:100%;color:blue">'
+				+ data
+				+'</textarea>'
+				+ '</td></tr>';
+		   template += '<table>';
+		 $("#result").html(template);
+		 $.parser.parse($("#result"));//easyUI解析器，解析easyUI组件
+		};
+	</script>
+</head>
+<body>
+<div id="area_form">
+	<form id="form_cip_admin_commonquery_param" class="form">
+		<!-- <table>
+			<tr>
+				<td class="right">
+				<div style="width:100px">
+					<label for="queryId">查询id:</label>
+				</div>	
+				</td>
+				<td class="left" style="width:85%">
+					<input type="text" id="queryId" name="queryId"  class="easyui-validatebox" 
+						data-options="required:true,validType:'length[0,50]'" /> 
+				</td>
+			</tr>
+			<tr>
+				<td class="right">
+				<div style="width:100px">
+					<label for="queryId">查询id:</label>
+				</div>	
+				</td>
+				<td class="left" style="width:85%">
+					<input type="text" id="queryId" name="queryId"  class="easyui-validatebox" 
+						data-options="required:true,validType:'length[0,50]'" /> 
+				</td>
+			</tr>
+			<tr>
+				<td class="right">
+				<div style="width:100px">
+					<label for="queryId">查询id:</label>
+				</div>	
+				</td>
+				<td class="left" style="width:85%">
+					<input type="text" id="queryId" name="queryId"  class="easyui-validatebox" 
+						data-options="required:true,validType:'length[0,50]'" /> 
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" align="center" style="padding: 20px;">
+					<a id="btn_test" href="#" class="easyui-linkbutton" iconCls="icon-set" onclick="test()">运行</a>
+				</td>
+			</tr>
+		</table> -->
+	</form>
+	
+	<form id = "result" class = "form"></form>
+	</div>
+	<!-- <div id="result">
+	</div> -->
+</body>
+</html>

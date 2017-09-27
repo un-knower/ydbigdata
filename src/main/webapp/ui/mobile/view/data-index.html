@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta name="format-detection" content="telephone=no" />
+    <title>大数据平台</title>
+    <link rel="stylesheet" type="text/css" href="../css/weui.css">
+    <link rel="stylesheet" type="text/css" href="../css/jquery-weui.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/index.css">
+</head>
+<body>
+<div class="container">
+    <div class="top-content">
+        <div class="top-tab-area">
+            <ul class="tab-all">
+                <li class="tab-list">首页</li>
+                <li class="tab-list tab-list-active">重要指标</li>
+                <li class="tab-list">目标值</li>
+                <li class="tab-list">业务量</li>
+                <li class="tab-list">运输</li>
+                <li class="tab-list">时效</li>
+                <li class="tab-list">质控</li>
+            </ul>
+        </div>
+        <div class="search-btn"></div>
+        <div class="tab-search-input">
+            <div class="search-area">
+                <div class="search-box">
+                    <div class="search-img"></div>
+                    <input id="search-info-area" class="search-info" placeholder="账户搜索">
+                    <div class="search-close"></div>
+                </div>
+                <div class="search-cancel">取消</div>
+            </div>
+        </div>
+    </div>
+    <div class="org-area">
+        <div class="org-select-area">
+            <div class="org-item-left">
+                <span class="org-name">机构</span>
+                <span class="org-name-detail">
+                    <label>
+                        <input class="org-name-input" id="picker-pos" data-value="" data-num="area_id" readonly="readonly">
+                        <!--<ins class="arrow-bottom-img"></ins>-->
+                    </label>
+                </span>
+            </div>
+            <div class="org-item-right">
+                <span class="org-name">日期</span>
+                <span class="date-name-detail">
+                    <label>
+                        <input class="org-name-input" id="calender-select" readonly="readonly">
+                        <ins class="arrow-rili-img"></ins>
+                    </label>
+                </span>
+            </div>
+        </div>
+        <div class="data-detail-show">
+            <div id="accept-info">
+                <p class="data-detail-name">揽件量(件)<span class="index-arrow-right index-top-arrow-right"></span></p>
+                <p id="data-detail-num" class="data-detail-num">---</p>
+            </div>
+            <div class="scroll-ng-area">
+                <div class="ratio-area" id="ratio-area">
+                    <div class="ratio-left">
+                        <span class="ratio-name">日环比</span>
+                        <span class="ratio-white-num">---</span>
+                        <span class="ratio-img-top ratio-img-top-down"></span>
+                    </div>
+                    <div class="ratio-right">
+                        <span class="ratio-name">周同比</span>
+                        <span class="ratio-white-num">---</span>
+                        <span class="ratio-img-top ratio-img-top-up"></span>
+                    </div>
+                </div>
+                <!-- <div id="wave" class="wave" style="position: absolute;bottom:-10px;width: 100%;height: 90px;overflow:hidden"></div> -->
+            </div>
+            <div class="detail-info-area">
+                <div class="detail-left">
+                    <p class="detail-name" id="per-capita">人均件量<span class="detail-item-hd-price">(件)</span><span class="index-arrow-right"></span></p>
+                    <p class="detail-num" id="per-capita-num">---</p>
+                    <div class="detail-ratio" id="per-capita-left">
+                        <span class="detail-ratio-name">日环比</span>
+                        <span class="detail-ratio-num ratio-down-num">---</span>
+                        <span class="detail-ratio-img ratio-img-top-down"></span>
+                        <span class="detail-ratio-name">周同比</span>
+                        <span class="detail-ratio-num ratio-up-num">---</span>
+                        <span class="detail-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+                <div class="detail-right">
+                    <p class="detail-name">菜鸟综合评分</p>
+                    <p class="detail-num" id="newbee-rank">---</p>
+                    <div class="detail-ratio" id="per-capita-right">
+                        <span class="detail-ratio-name">行业排名(-)</span>
+                        <span class="detail-ratio-num ratio-down-num">---</span>
+                        <span class="detail-ratio-img ratio-img-top-down"></span>
+                        <span class="detail-ratio-name">平均分</span>
+                        <span class="detail-ratio-num ratio-up-num">---</span>
+                        <span class="detail-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="all-detail-area water-remark-area">
+        <p class="all-detail-name">重要指标</p>
+        <div class="all-detail-menu" id="all-item">
+            <div class="all-detail-item">
+                <div class="detail-item-hd">订单量<span class="detail-item-hd-price">(件)</span></div>
+                <div class="detail-item-hd-val ratio-up-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">日环比</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">周同比</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="all-detail-item">
+                <div class="detail-item-hd">派件量<span class="detail-item-hd-price">(件)</span></div>
+                <div class="detail-item-hd-val ratio-down-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">日环比</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-down-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-down"></span>
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">周同比</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-down-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-down"></span>
+                    </div>
+                </div>
+                <div class="point-next"></div>
+            </div>
+            <div class="all-detail-item">
+                <div class="detail-item-hd">签收率<span class="detail-item-hd-price">(%)</span></div>
+                <div class="detail-item-hd-val ratio-up-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">日环比</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">周同比</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="all-detail-item">
+                <div class="detail-item-hd">开通线路<span class="detail-item-hd-price">(条)</span></div>
+                <div class="detail-item-hd-val ratio-up-down-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">新增</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-down-num">---</span>
+                        <!--<span class="detail-item-ratio-img ratio-img-top-down"></span>-->
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">撤销</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <!--<span class="detail-item-ratio-img ratio-img-top-up"></span>-->
+                    </div>
+                </div>
+            </div>
+            <div class="all-detail-item">
+                <div class="detail-item-hd">发车数<span class="detail-item-hd-price">(辆)</span></div>
+                <div class="detail-item-hd-val ratio-up-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">日环比</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">周同比</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="all-detail-item">
+                <div class="detail-item-hd">装载率<span class="detail-item-hd-price">(%)</span></div>
+                <div class="detail-item-hd-val ratio-down-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">日环比</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-down-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-down"></span>
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">周同比</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-down-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-down"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="all-detail-item">
+                <div class="detail-item-hd">全程时效<span class="detail-item-hd-price">(时)</span></div>
+                <div class="detail-item-hd-val ratio-up-num">---</div>
+                <div class="detail-item-bd ">
+                    <div class="detail-item-bd-name">日环比</div>
+                    <div class="detail-item-bd-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+                <div class="detail-item-ft">
+                    <div class="detail-item-ft-name">周环比</div>
+                    <div class="detail-item-ft-val">
+                        <span class="detail-item-bd-num ratio-up-num">---</span>
+                        <span class="detail-item-ratio-img ratio-img-top-up"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="menu-area">
+    <div class="menu-item">
+        <div class="menu-img menu-tab-data menu-tab-active"></div>
+        <p class="menu-name menu-name-active">数据</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-scan"></div>
+        <p class="menu-name">订阅</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-infor"></div>
+        <p class="menu-name">资讯</p>
+    </div>
+    <div class="menu-item">
+        <div class="menu-img menu-tab-my"></div>
+        <p class="menu-name">我的</p>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/jquery-weui.min.js"></script>
+<script src="../js/YDM-mobile-contants.js"></script>
+<script src="../js/index.js"></script>
+<script>
+	var homePageURL = appId + "/action/homepage/index.do";
+    var sendClass;
+    $(function() {
+        init();
+    });
+    function init() {
+
+        getNum();    //用于显示网点
+        viewJs();
+        //loop();
+        setView(); //设置页面效果
+        linkTab();  //导航栏设置
+        getBaskInfo(); //初始化获取数据
+        commonFun(); //公用方法，防止全局空间污染
+    }
+    
+    function getBaskInfo() {
+    	getBaskInfoDetail()
+    }
+    
+    
+    function getBaskInfoDetail() {
+    	$.showLoading("加载中");
+        var conditonStr;
+        sendClass = $("#picker-pos").attr("data-num");
+        if(sendClass == "area_id") {
+            conditonStr = "{'area_id':'" + $("#picker-pos").attr("data-value") +"'}"
+        }else if(sendClass == "prov_id") {
+            conditonStr = "{'prov_id':'" + $("#picker-pos").attr("data-value") +"'}"
+        }else if(sendClass == "com_id") {
+            conditonStr = "{'com_id':'" + $("#picker-pos").attr("data-value") +"'}"
+        }
+        var survParams = {
+   			"date_time": $("#calender-select").val(),
+            "conditonStr":conditonStr
+        };
+        console.log(JSON.stringify(conditonStr));
+        var str = encodeURI("search_condition="+JSON.stringify(survParams));
+        $.ajax({
+            type : 'POST',
+            url : homePageURL,
+            dataType : 'json',
+            data: str,
+            contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+            success : function(oData) {
+                $.hideLoading();
+                if (oData && oData.errorCode == 0) {
+                    addBashInfo(oData.data);
+                } else {
+                    $(".ratio-down-num,.ratio-up-num,.detail-num,.data-detail-num").text("---");
+                    $(".ratio-img-top-up,.ratio-img-top-down").hide();
+                    YDM.messageAlert(oData.msg + "("+ oData.errorCode + ")", "错误", "error", null);
+                }
+            }
+        });
+    }
+    
+    function addBashInfo(data) {
+        showToken(data.all_collect_num,data.day_on_day);  //数字滚动显示
+        var strAllRatio = "<div class='ratio-left'><span class='ratio-name'>日环比</span><span class='ratio-num ratio-white-num'>"+ changeData(data.day_on_day,"abs","%") +"</span><span class='ratio-img-all ratio-img-all-"+ changeData(data.day_on_day,"symbol") +"'></span></div><div class='ratio-right'><span class='ratio-name'>周同比</span><span class='ratio-num ratio-white-num'>"+ changeData(data.weak_on_weak,"abs","%") +"</span><span class='ratio-img-all ratio-img-all-"+ changeData(data.weak_on_weak,"symbol") +"'></span> </div>";
+        $("#ratio-area").empty().append(strAllRatio);
+        $("#per-capita-num").text(changeData(data.per_capita_num,"abs")).removeClass('ratio-down-num ratio-up-num').addClass("ratio-"+ changeData(data.pcn_dod,"symbol") +"-num");
+        var strLeft = "<span class='detail-ratio-name'>日环比</span><span class='margin-left-2 detail-ratio-num ratio-"+ changeData(data.pcn_dod,"symbol") +"-num'>"+ changeData(data.pcn_dod,"abs","%") +"</span><span class='detail-ratio-img ratio-img-top-"+ changeData(data.pcn_dod,"symbol") +"'></span><span class='detail-ratio-name margin-left-3'>周同比</span><span class='detail-ratio-num margin-left-2 ratio-"+ changeData(data.pcn_wow,"symbol") +"-num'>"+ changeData(data.pcn_wow,"abs","%") +"</span><span class='detail-ratio-img ratio-img-top-"+ changeData(data.pcn_wow,"symbol") +"'></span>";
+        $("#per-capita-left").empty().append(strLeft);
+        $("#newbee-rank").text(changeData(data.newbee_mark,"abs")).removeClass('ratio-down-num ratio-up-num').addClass("ratio-"+ changeData(data.sx_flag,"symbol") +"-num");
+        var strRight = "<span class='detail-ratio-name'>行业排名("+ changeData(data.newbee_rank,"abs") +")</span><span class='margin-left-2 detail-ratio-num ratio-"+ changeData(data.sx_flag,"symbol") +"-num'>"+ changeData(data.sx_flag,"abs") +"</span><span class='detail-ratio-img ratio-img-top-"+ changeData(data.sx_flag,"symbol") +"'></span><span class='detail-ratio-name margin-left-3'>平均分</span><span class='detail-ratio-num margin-left-2 ratio-"+ changeData(data.newbee_ave,"symbol") +"-num'>"+ changeData(data.newbee_ave,"abs") +"</span><span class='detail-ratio-img ratio-img-top-"+ changeData(data.newbee_ave,"symbol") +"'></span>";
+        $("#per-capita-right").empty().append(strRight);
+        var strItem = "<div class='all-detail-item'><div class='detail-item-hd'>订单量<span class='detail-item-hd-price'>(件)</span></div><div class='detail-item-hd-val ratio-"+ changeData(data.on_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.order_num,"abs")) +"</div><div class='detail-item-bd '><div class='detail-item-bd-name'>日环比</div><div class='detail-item-bd-val'><span class='detail-item-bd-num ratio-"+ changeData(data.on_dod,"symbol") +"-num'>"+ changeData(data.on_dod,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.on_dod,"symbol") +"'></span></div></div><div class='detail-item-ft'><div class='detail-item-ft-name'>周同比</div><div class='detail-item-ft-val'><span class='detail-item-bd-num ratio-"+ changeData(data.on_wow,"symbol") +"-num'>"+ changeData(data.on_wow,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.on_wow,"symbol") +"'></span></div></div> <div class='point-next'></div></div>" +
+                    "<div class='all-detail-item' data-link='traffic-pick-up.html' data-page='pj'><div class='detail-item-hd'>派件量<span class='detail-item-hd-price'>(件)</span></div><div class='detail-item-hd-val ratio-"+ changeData(data.sd_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.send_num,"abs")) +"</div><div class='detail-item-bd '><div class='detail-item-bd-name'>日环比</div><div class='detail-item-bd-val'><span class='detail-item-bd-num ratio-"+ changeData(data.sd_dod,"symbol") +"-num'>"+ changeData(data.sd_dod,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.sd_dod,"symbol") +"'></span></div></div><div class='detail-item-ft'><div class='detail-item-ft-name'>周同比</div><div class='detail-item-ft-val'><span class='detail-item-bd-num ratio-"+ changeData(data.sd_wow,"symbol") +"-num'>"+ changeData(data.sd_wow,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.sd_wow,"symbol") +"'></span></div></div><div class='point-next'></div> </div>" +
+                    "<div class='all-detail-item'  data-link='traffic-sign-info.html' data-page='dq'><div class='detail-item-hd'>单日签收率<span class='detail-item-hd-price'>(%)</span></div><div class='detail-item-hd-val ratio-"+ changeData(data.sr_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.sign_rate,"abs")) +"</div><div class='detail-item-bd '><div class='detail-item-bd-name'>日环比</div><div class='detail-item-bd-val'><span class='detail-item-bd-num ratio-"+ changeData(data.sr_dod,"symbol") +"-num'>"+ changeData(data.sr_dod,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.sr_dod,"symbol") +"'></span></div></div><div class='detail-item-ft'><div class='detail-item-ft-name'>周同比</div><div class='detail-item-ft-val'><span class='detail-item-bd-num ratio-"+ changeData(data.sr_wow,"symbol") +"-num'>"+ changeData(data.sr_wow,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.sr_wow,"symbol") +"'></span></div></div><div class='point-next'></div> </div>" +
+                     "<div class='all-detail-item' data-link='translate-carline.html' data-page=''><div class='detail-item-hd'>开通车线<span class='detail-item-hd-price'>(条)</span></div><div class='detail-item-hd-val ratio-"+ changeData(data.oi_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.open_line,"abs")) +"</div><div class='detail-item-bd '><div class='detail-item-bd-name'>新增</div><div class='detail-item-bd-val'><span class='detail-item-bd-num ratio-"+ changeData(data.oi_dod,"symbol") +"-num'>"+ changeData(data.oi_dod,"abs") +"</span></div></div><div class='detail-item-ft'><div class='detail-item-ft-name'>撤销</div><div class='detail-item-ft-val'><span class='detail-item-bd-num ratio-"+ changeData(data.oi_wow,"symbol") +"-num'>"+ changeData(data.oi_wow,"abs") +"</span></div></div><div class='point-next'></div> </div>" +
+                    "<div class='all-detail-item' data-link='translate-depart.html' data-page=''><div class='detail-item-hd'>发车数量<span class='detail-item-hd-price'>(辆)</span></div><div class='detail-item-hd-val ratio-"+ changeData(data.sc_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.send_car,"abs")) +"</div><div class='detail-item-bd '><div class='detail-item-bd-name'>日环比</div><div class='detail-item-bd-val'><span class='detail-item-bd-num ratio-"+ changeData(data.sc_dod,"symbol") +"-num'>"+ changeData(data.sc_dod,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.sc_dod,"symbol") +"'></span></div></div><div class='detail-item-ft'><div class='detail-item-ft-name'>周同比</div><div class='detail-item-ft-val'><span class='detail-item-bd-num ratio-"+ changeData(data.sc_wow,"symbol") +"-num'>"+ changeData(data.sc_wow,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.sc_wow,"symbol") +"'></span></div></div><div class='point-next'></div> </div>" +
+                    "<div class='all-detail-item' data-link='translate-freight.html' data-page='' ><div class='detail-item-hd'>装载率<span class='detail-item-hd-price'>(%)</span></div><div class='detail-item-hd-val ratio-"+ changeData(data.fr_dod,"symbol") +"-num'>"+ formatNumberRgx(changeData(data.freight_rate,"abs")) +"</div><div class='detail-item-bd '><div class='detail-item-bd-name'>日环比</div><div class='detail-item-bd-val'><span class='detail-item-bd-num ratio-"+ changeData(data.fr_dod,"symbol") +"-num'>"+ changeData(data.fr_dod,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.fr_dod,"symbol") +"'></span></div></div><div class='detail-item-ft'><div class='detail-item-ft-name'>周同比</div><div class='detail-item-ft-val'><span class='detail-item-bd-num ratio-"+ changeData(data.fr_wow,"symbol") +"-num'>"+ changeData(data.fr_wow,"abs","%") +"</span><span class='detail-item-ratio-img ratio-img-top-"+ changeData(data.fr_wow,"symbol") +"'></span></div></div><div class='point-next'></div> </div>"
+        $("#all-item").empty().append(strItem);
+        linkDetailInfo()
+    }
+
+    function linkDetailInfo() {
+        $(".all-detail-item").on("click",function() {
+            var linkHref = $(this).attr("data-link");
+            if(linkHref != null) {
+                window.location.href = linkHref + "?sendType=" + sendClass + "&dataOrg=" + $("#picker-pos").attr("data-value") + "&pageInfo=" + $(this).attr("data-page");
+            }
+        })
+    }
+
+    
+    function viewJs() {
+        var orgShowName = "集团";    //为了获取集团名称
+        $.each(showOrgName,function(index,val) {
+            if(val != "无") {
+                orgShowName = val;
+            }
+        });
+        console.log(showOrgName);
+        $("#picker-pos").val(orgShowName).attr({"data-value":showOrgCode,"data-num":showOrgType});
+        console.log(showOrgCode);
+        $("#per-capita").on("click",function() {
+            window.location.href="data-index-percapita.html?sendType=" + sendClass + "&dataOrg=" + $("#picker-pos").attr("data-value");
+        });
+        $("#accept-info").on("click",function() {
+            window.location.href = "traffic-pick-up.html?sendType=" + sendClass + "&dataOrg=" + $("#picker-pos").attr("data-value") + "&pageInfo=lj";
+        });
+    }
+</script>
+</body>
+</html>

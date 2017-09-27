@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript">
+	var objectName = '角色未分配权限资源信息';
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var pageId = 'cip_admin_role_resource_list';
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var today = getToday();
+	var formSearchTemplate = '#cip_admin_resource_searchForm';
+	var roleId = "";
+	var root_resource_id = "";
+	var obj_attr_id = "";
+	var obj_id = "";
+	$(function() {
+		init();
+		//getAuthButtons(pageId,gridMenuId,authActions,expellActions);
+		getRoleResourses(roleId);
+		loadTree();
+
+	});
+	/*--------------------初始化页面传递的参数---------------------------*/
+	function init() {
+		roleId = $$.QueryString("roleId");
+		nowRoleId = roleId;
+		root_resource_id = $$.QueryString("root_resource_id");
+		obj_attr_id = $$.QueryString("obj_attr_id");
+		obj_id = $$.QueryString("obj_id");
+	}
+	/*--------------------加载未添加的数据资源树---------------------------*/
+	function getRoleResourses(roleId) {
+		$("#uncheck_res_tree").tree("options").url = appId
+				+ "/actions/admin_auth_perTree/uncheckResTree.do?actionId=cip_admin_auth_preTree_uncheckResTreeData&roleId="
+				+ roleId + "&obj_attr_id=" + obj_attr_id + "&obj_id=" + obj_id;
+		$("#uncheck_res_tree").tree("reload");
+	}
+
+	function loadTree() {
+		$("#uncheck_res_tree")
+				.tree(
+						{
+							url : '',
+							animate : true,
+							lines : true,
+							dnd : true,
+							checkbox : true,
+							onBeforeLoad : function(node, param) {
+								param.roleId = nowRoleId;
+							},
+							loadFilter : function(data) {
+								if (data.length == 0) {
+									$$.showJcdfMessager('提示消息', '当前角色没有可用数据资源',
+											'warning');
+								}
+								return data;
+							},
+							onDragEnter : function(target, source) {
+								if ($(this).tree('isLeaf', target)
+										&& $(this).tree('getNode', target).attributes.type == "B")
+									return false;
+							},
+						});
+	};
+
+	/**-----------------保存选中的数据资源------------------**/
+	function saveResource() {
+		var dataArr = [];
+		dataArr.push(root_resource_id);//资源根节点
+		dataArr.push(obj_attr_id);//权限对象id
+		dataArr.push(obj_id);//权限对象属性id
+		//获取已选中的节点,并筛选出type为'B'的节点	 
+		var selectNodes = $('#uncheck_res_tree').tree('getChecked');
+		var length = selectNodes.length;
+		var nodeIdArr = [];
+		for (var i = 0; i < length; i++) {
+			if (selectNodes[i].attributes.type == 'B') {
+				var id = selectNodes[i].id;
+				nodeIdArr.push(id);//选中的数据资源id
+			}
+		}
+		var urlSaveTree = appId
+				+ '/actions/admin_auth_perTree/savePreTree.do?actionId=cip_admin_auth_perTree_savePreTree&arr=';
+		$
+				.ajax({
+					type : "POST",
+					url : urlSaveTree += dataArr,
+					dataType : "json",
+					data : JSON.stringify(nodeIdArr),
+					contentType : "application/json",
+					success : function(data) {
+						$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '保存成功', 'info');
+							//	$("#uncheck_res_tree").tree("reload");
+							//保存成功后，对已添加数据资源树进行刷新。					
+						    //parent.frames["frame_cip_admin_auth_obj_list"].frames["auth_obj"].frames['cip_admin_rootResource']
+						    //	.reloadResTree();
+						    window.parent.reloadResTree();
+							$$.closeJcdfDialog();
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+				});
+
+	}
+	/**-----------------取消数据资源选中框------------------**/
+	function cancleResouce() {
+		$$.closeJcdfDialog();
+	}
+
+	/**-----------------重置------------**/
+	function searchReset() {
+		$(formSearchTemplate).form('reset');
+	};
+
+	/**-----------------查询事件，生成过滤条件后的树------------**/
+	function getSearchTree() {
+		var resource_id = $('#resource_id').val();
+		var resource_name = $('#resource_name').val();
+		var id = roleId;
+		var dataAry = [];
+		dataAry.push(id);
+		dataAry.push(resource_id);
+		dataAry.push(resource_name);
+		dataAry.push(obj_attr_id);
+		dataAry.push(obj_id);
+		$("#uncheck_res_tree").tree("options").url = appId
+				+ "/actions/admin_auth_perTree/getSearchTree.do?actionId=cip_admin_auth_preTree_getSearchTree&dataAry="
+				+ dataAry;
+		$("#uncheck_res_tree").tree("reload");
+	}
+</script>
+</head>
+<body class="easyui-layout">
+	 <div data-options="region:'north', split:false, border:false"
+		style="overflow-y:scroll;height:34%;">
+		<div class="area">
+			<div class="area-title" style="font-size: 14px;padding:0px 0px 2px">信息查询/数据资源树</div>
+			<div class="area-body">
+				<form id="cip_admin_resource_searchForm" class="search-form"
+					method="post">
+					<table cellpadding="2" style="width: 100%">
+						<tr>
+							<td align="right">资源id关键字：</td>
+							<td align="left"><input id="resource_id" name="resource_id"
+								class="easyui-validatebox" data-options=""
+								style="height:26px;width:220px" /></td>
+
+						</tr>
+						<tr>
+							<td align="right">资源名称关键字：</td>
+							<td align="left"><input id="resource_name"
+								name="resource_name" class="easyui-validatebox" data-options=""
+								style="height:26px;width:220px" /></td>
+						</tr>
+					</table>
+				</form>
+				<div class="button-section" style="margin-top: 0px;margin-bottom: 0px">
+					<a class="easyui-linkbutton" iconCls="icon-search"
+						style="margin-right: 20px;" onclick="getSearchTree()">查询</a> <a
+						class="easyui-linkbutton" iconCls="icon-reload"
+						style="margin-right: 20px;" onclick="searchReset()">重置</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div data-options="region:'center', split:false, border:false"
+		style="width: 65%;overflow-y:hidden;">
+		<div class="area" style="padding:5px;overflow-y:hidden;">
+			<div class="area-body autoAdapt"
+				style="overflow-y:scroll;height:90%;position:absolute;top: 1px;bottom:0px;left:0px;right:0px;padding:4px">
+				<div id="roletree" class="easyui-layout">
+					<ul id="uncheck_res_tree" fit="true" class="easyui-tree" style="padding:0px"
+						data-options="checkbox:true,lines:true,animate:true"></ul>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div data-options="region:'south',border:false" style="height:10% ">
+		<div class="button-section" style="margin-top: 2px;margin-bottom: 0px">
+			<a class="easyui-linkbutton" iconCls="icon-ok"
+				onclick="saveResource()">保存</a> <a class="easyui-linkbutton"
+				iconCls="icon-cancel" onclick="cancleResouce()">取消</a>
+		</div>
+	</div>
+
+</body>
+</html>

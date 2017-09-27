@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.api.cvp.dao.YdbiBusinessTargetMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.api.cvp.model.YdbiBusinessTarget">
+		<result column="data_date" property="data_date" jdbcType="VARCHAR" />
+		<result column="org_id" property="org_id" jdbcType="VARCHAR" />
+		<result column="org_name" property="org_name" jdbcType="VARCHAR" />
+		<result column="goal_values" property="goal_values" jdbcType="VARCHAR" />
+		<result column="actual_values" property="actual_values" jdbcType="VARCHAR" />
+		<result column="actual_residual_quantity" property="actual_residual_quantity" jdbcType="VARCHAR" />
+		<result column="residual_quantity" property="residual_quantity" jdbcType="VARCHAR" />
+		<result column="residual_quantity_percent" property="residual_quantity_percent" jdbcType="VARCHAR" />
+		<result column="period_finish_percent" property="period_finish_percent" jdbcType="VARCHAR" />
+		<result column="finish_percent" property="finish_percent" jdbcType="VARCHAR" />
+		<result column="day_percent" property="day_percent" jdbcType="VARCHAR" />
+		<result column="volatility_values" property="volatility_values" jdbcType="VARCHAR" />
+		<result column="superior_org_name" property="superior_org_name" jdbcType="VARCHAR" />
+		<result column="week_percent" property="week_percent" jdbcType="VARCHAR" />
+		<result column="month_even" property="month_even" jdbcType="VARCHAR" />
+		<result column="week_even" property="week_even" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 目标值 -->
+	<select id="selectAll" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+			IFNULL(Round((SUM(c.trgt_val)/10000),2),0) AS goal_values, 
+			IFNULL(Round((SUM(a.pick_cnt)/10000),2),0) AS actual_values, 
+			IFNULL(Round((SUM(a.pick_cnt)-SUM(c.trgt_val))/10000,2),0) AS residual_quantity, 
+			IFNULL(Round((SUM(a.pick_cnt)-SUM(c.trgt_val))/SUM(c.trgt_val)*100,2),0) AS residual_quantity_percent, 
+			IFNULL(Round(SUM(a.pick_cnt)/SUM(c.trgt_val)*100,2),0) AS finish_percent 
+		FROM ydbi.bas_s_bigdata_busi a
+		INNER JOIN ydbi.org_inf b
+		ON a.dbct_cd = b.org_cd
+		LEFT JOIN ydbi.dbct_trgt_val_tbl c
+		ON a.dbct_cd = c.dbct_cd
+		AND a.stats_dt = c.pick_dt
+		]]>
+		<where> 
+				AND a.stats_dt = #{data_date}
+				<![CDATA[
+				AND b.org_typ = '3'
+				AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					
+					AND b.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					
+					AND b.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					
+					AND b.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		    
+	</select>
+	
+	<!-- 获取列表 -->
+	<select id="selectLine" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+			case when #{sel_level} = '1' then b.prov_cd 
+				 when #{sel_level} = '2' then b.org_cd 
+				 when #{sel_level} = '5' then b.org_cd
+				 else b.grtr_dist_cd  end  AS org_id,
+			case when #{sel_level} = '1' then b.prov_nm 
+				 when #{sel_level} = '2' then b.org_nm 
+				 when #{sel_level} = '5' then b.org_nm
+				 else b.grtr_dist_nm  end  AS org_name,
+			IFNULL(Round((SUM(a.trgt_val)/10000),2),0) AS goal_values, 
+			IFNULL(Round((SUM(a.pick_cnt)/10000),2),0) AS actual_values, 
+			IFNULL(Round((SUM(a.pick_cnt)-SUM(a.trgt_val))/10000,2),0)  AS residual_quantity, 
+			IFNULL(Round((SUM(a.pick_cnt)-SUM(a.trgt_val))/SUM(a.trgt_val)*100,2),0) AS residual_quantity_percent,
+			IFNULL(Round(SUM(a.pick_cnt)/SUM(a.trgt_val)*100,2),0) AS finish_percent 
+		FROM ydbi.org_inf b
+		LEFT JOIN (
+		SELECT
+			a.stats_dt AS stats_dt,
+			a.dbct_cd AS dbct_cd,
+			c.trgt_val AS trgt_val, 
+			a.pick_cnt AS pick_cnt
+		FROM ydbi.bas_s_bigdata_busi a
+		LEFT JOIN ydbi.dbct_trgt_val_tbl c
+		ON a.dbct_cd = c.dbct_cd
+		AND a.stats_dt = c.pick_dt
+		)a
+		ON a.dbct_cd = b.org_cd
+		]]>
+		<where> 
+			AND a.stats_dt = #{data_date}
+			<![CDATA[AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt
+			 AND b.org_typ = '3' ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND b.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND b.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND b.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		  GROUP BY 1,2
+		  LIMIT #{page1,jdbcType=INTEGER},#{rows1,jdbcType=INTEGER}
+	</select>
+	<!-- 获取日趋势 -->
+	<select id="selectDay" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+			a.stats_dt AS data_date,
+			IFNULL(Round((SUM(c.trgt_val)/10000),2),0) AS goal_values,
+			IFNULL(Round((SUM(a.pick_cnt)/10000),2),0) AS actual_values
+		FROM ydbi.bas_s_bigdata_busi a
+		LEFT JOIN ydbi.org_inf b
+		ON a.dbct_cd = b.org_cd
+		LEFT JOIN ydbi.dbct_trgt_val_tbl c
+		ON a.dbct_cd = c.dbct_cd
+		AND a.stats_dt = c.pick_dt
+		]]>
+		<where> 
+			 AND a.stats_dt BETWEEN #{start}  AND #{data_date}
+			 <![CDATA[
+			 AND b.org_typ = '3'
+			 AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND b.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND b.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND b.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		 GROUP BY 1
+	</select>
+	<!-- 详情 -->
+	<select id="selectXQ" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			IFNULL(Round((a.pick_cnt-a.trgt_val)/10000,2),0) AS residual_quantity,  
+			IFNULL(Round((a.pick_cnt-d.pick_cnt)/10000,2),0) AS actual_residual_quantity, 
+			IFNULL(Round((a.pick_cnt-d.pick_cnt)/d.pick_cnt*100,2),0) AS day_percent, 
+			IFNULL(Round(a.finish_percent*100,2),0) AS finish_percent,
+			IFNULL(Round(a.pick_cnt/10000,2),0) AS actual_values,
+			IFNULL(Round(a.trgt_val/10000,2),0) AS goal_values
+			
+		FROM (
+					SELECT 	 	
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then b.grtr_dist_cd 
+					when #{sel_level} = '2' then b.prov_cd 
+					when #{sel_level} = '5' then b.org_cd
+					else '000000'  end  AS dbct_cd,
+					 SUM(a.pick_cnt) AS pick_cnt,
+					 SUM(c.trgt_val) AS trgt_val,
+					 SUM(a.pick_cnt)/SUM(c.trgt_val) AS finish_percent
+					FROM ydbi.bas_s_bigdata_busi a 
+					LEFT JOIN ydbi.dbct_trgt_val_tbl c
+					ON a.dbct_cd = c.dbct_cd
+					AND a.stats_dt = c.pick_dt
+					LEFT JOIN ydbi.org_inf b
+					ON a.dbct_cd = b.org_cd
+					<where> 
+			 			AND a.stats_dt = #{data_date}
+			 			<![CDATA[
+			 			AND b.org_typ = '3'
+			 			AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt]]>
+						<if test='sel_cd =="0" and sel_level == "0" '>
+							 AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+						</if>
+						<if test='sel_level!=null and sel_level == "1" '>
+							AND b.grtr_dist_cd =#{sel_cd}
+						</if>
+						<if test='sel_level!=null and sel_level == "2" '>
+							AND b.prov_cd =#{sel_cd}
+						</if>
+						<if test='sel_level!=null and sel_level == "5" '>
+							AND b.org_cd =#{sel_cd}
+						</if>
+				    </where>
+					) a	
+		LEFT JOIN(
+					SELECT 	
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then b.grtr_dist_cd 
+					when #{sel_level} = '2' then b.prov_cd 
+					when #{sel_level} = '5' then b.org_cd
+					else '000000'  end  AS dbct_cd,
+					 SUM(a.pick_cnt) AS pick_cnt,
+					 SUM(a.pick_cnt)/SUM(q.trgt_val) AS  finish_percent
+					FROM ydbi.bas_s_bigdata_busi a 
+					LEFT JOIN ydbi.dbct_trgt_val_tbl q
+					ON a.dbct_cd = q.dbct_cd
+					AND a.stats_dt = q.pick_dt
+					LEFT JOIN ydbi.org_inf b
+					ON a.dbct_cd = b.org_cd
+					<where> 
+					 		AND a.stats_dt = DATE_SUB(#{data_date},INTERVAL 1 DAY) 
+					 		<![CDATA[
+					 		AND b.org_typ = '3'
+					 		AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt]]>
+						<if test='sel_cd =="0" and sel_level == "0" '>
+						 	AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+						</if>
+						<if test='sel_level!=null and sel_level == "1" '>
+							AND b.grtr_dist_cd =#{sel_cd}
+						</if>
+						<if test='sel_level!=null and sel_level == "2" '>
+							AND b.prov_cd =#{sel_cd}
+						</if>
+						<if test='sel_level!=null and sel_level == "5" '>
+							AND b.org_cd =#{sel_cd}
+						</if>
+				    </where>
+					)d
+		ON a.stats_dt = d.stats_dt
+		AND a.dbct_cd = d.dbct_cd
+	</select>
+	<!-- 完成率排名 -->
+	<select id="selectFinish" parameterType="java.util.Map" resultMap="BaseResultMap">
+	<![CDATA[
+		SELECT
+			case when #{sel_level} = '1' then b.prov_cd 
+				 when #{sel_level} = '2' then b.org_cd 
+				 when #{sel_level} = '5' then b.org_cd
+				 else b.grtr_dist_cd  end  AS org_id,
+			case when #{sel_level} = '1' then b.prov_nm 
+				 when #{sel_level} = '2' then b.org_nm 
+				 when #{sel_level} = '5' then b.org_nm
+				 else b.grtr_dist_nm  end  AS org_name,
+			IFNULL(Round((SUM(a.trgt_val)/10000),2),0) AS goal_values,
+			IFNULL(Round((SUM(a.pick_cnt)/10000),2),0) AS actual_values,
+			IFNULL(Round(SUM(a.pick_cnt)/SUM(a.trgt_val)*100,2),0) AS finish_percent
+		FROM ydbi.org_inf b
+		LEFT JOIN (
+			SELECT
+				a.stats_dt AS stats_dt,
+				a.dbct_cd AS dbct_cd,
+				c.trgt_val AS trgt_val, 
+				a.pick_cnt AS pick_cnt
+			FROM ydbi.bas_s_bigdata_busi a
+			LEFT JOIN ydbi.dbct_trgt_val_tbl c
+			ON a.dbct_cd = c.dbct_cd
+			AND a.stats_dt = c.pick_dt
+			)a
+		ON a.dbct_cd = b.org_cd
+		]]>
+		<where>
+			AND a.stats_dt = #{data_date}
+			<![CDATA[
+			 AND b.org_typ = '3'
+			 AND b.start_tm<=a.stats_dt AND b.end_tm >=a.stats_dt]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 
+					 AND b.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND b.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND b.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND b.org_cd =#{sel_cd}
+				</if>
+		    </where>
+		GROUP BY 1,2
+		ORDER BY finish_percent DESC
+		LIMIT #{page1,jdbcType=INTEGER},#{rows1,jdbcType=INTEGER}
+	</select>
+	<!-- 波动率排名 -->
+	<select id="selectVolat" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	SELECT
+			a.dbct_cd  AS org_id,
+			a.dbct_name  AS org_name,
+			IFNULL(Round((a.finish_percent*100-b.finish_percent*100),2),0) AS volatility_values,
+			IFNULL(Round(b.finish_percent*100,2),0) AS period_finish_percent,
+			IFNULL(Round(a.finish_percent*100,2),0) AS  finish_percent
+		FROM (
+				SELECT 	
+					#{data_date} AS stats_dt,
+					case when #{sel_level} = '1' then oi.prov_cd 
+							when #{sel_level} = '2' then oi.org_cd 
+							when #{sel_level} = '5' then oi.org_cd
+							else oi.grtr_dist_cd  end  AS dbct_cd,
+					case when #{sel_level} = '1' then oi.prov_nm 
+							when #{sel_level} = '2' then oi.org_nm 
+							when #{sel_level} = '5' then oi.org_nm
+							else oi.grtr_dist_nm  end  AS dbct_name,
+					IFNULL(SUM(a.pick_cnt)/SUM(a.trgt_val),0) AS  finish_percent 
+				FROM ydbi.org_inf oi
+				LEFT JOIN (
+					SELECT
+						a.stats_dt AS stats_dt,
+						a.dbct_cd AS dbct_cd,
+						c.trgt_val AS trgt_val, 
+						a.pick_cnt AS pick_cnt
+					FROM ydbi.bas_s_bigdata_busi a
+					LEFT JOIN ydbi.dbct_trgt_val_tbl c
+					ON a.dbct_cd = c.dbct_cd
+					AND a.stats_dt = c.pick_dt
+					)a
+				ON a.dbct_cd = oi.org_cd
+				<where> 
+					AND a.stats_dt = #{data_date}
+					<![CDATA[AND oi.start_tm<=a.stats_dt AND oi.end_tm >=a.stats_dt]]>
+						AND oi.org_typ = '3'
+							<if test='sel_cd =="0" and sel_level == "0" '>
+								AND oi.grtr_dist_cd in ('1','2','3','4','5','6')
+							</if>
+							<if test='sel_level!=null and sel_level == "1" '>
+								AND oi.grtr_dist_cd =#{sel_cd}
+							</if>
+							<if test='sel_level!=null and sel_level == "2" '>
+								AND oi.prov_cd =#{sel_cd}
+							</if>
+							<if test='sel_level!=null and sel_level == "5" '>
+								AND oi.org_cd =#{sel_cd}
+							</if>
+						</where>
+				GROUP BY 1,2
+			) a
+		LEFT JOIN (
+					SELECT 	
+						#{data_date} AS stats_dt,
+						case when #{sel_level} = '1' then oi.prov_cd 
+								when #{sel_level} = '2' then oi.org_cd 
+								when #{sel_level} = '5' then oi.org_cd
+								else oi.grtr_dist_cd  end  AS dbct_cd,
+						case when #{sel_level} = '1' then oi.prov_nm 
+								when #{sel_level} = '2' then oi.org_nm 
+								when #{sel_level} = '5' then oi.org_nm
+								else oi.grtr_dist_nm  end  AS dbct_name,
+						IFNULL(SUM(a.pick_cnt)/SUM(a.trgt_val),0)  AS  finish_percent 
+					FROM ydbi.org_inf oi
+					LEFT JOIN (
+						SELECT
+							a.stats_dt AS stats_dt,
+							a.dbct_cd AS dbct_cd,
+							c.trgt_val AS trgt_val, 
+							a.pick_cnt AS pick_cnt
+						FROM ydbi.bas_s_bigdata_busi a
+						LEFT JOIN ydbi.dbct_trgt_val_tbl c
+						ON a.dbct_cd = c.dbct_cd
+						AND a.stats_dt = c.pick_dt
+						)a
+					ON a.dbct_cd = oi.org_cd
+					<where>
+						AND a.stats_dt = DATE_SUB(#{data_date},INTERVAL 1 DAY) 
+						<![CDATA[AND oi.start_tm<=a.stats_dt AND oi.end_tm >=a.stats_dt]]>
+						AND oi.org_typ = '3'
+								<if test='sel_cd =="0" and sel_level == "0" '>
+									AND oi.grtr_dist_cd in ('1','2','3','4','5','6')
+								</if>
+								<if test='sel_level!=null and sel_level == "1" '>
+									AND oi.grtr_dist_cd =#{sel_cd}
+								</if>
+								<if test='sel_level!=null and sel_level == "2" '>
+									AND oi.prov_cd =#{sel_cd}
+								</if>
+								<if test='sel_level!=null and sel_level == "5" '>
+									AND oi.org_cd =#{sel_cd}
+								</if>
+							</where>
+					GROUP BY 1,2
+				)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		GROUP BY 1
+		ORDER BY volatility_values DESC
+		LIMIT #{page1,jdbcType=INTEGER},#{rows1,jdbcType=INTEGER}
+	</select>
+</mapper>

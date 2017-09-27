@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.api.quality.dao.YdbiQualityControlMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.api.quality.model.YdbiQualityControl">
+		<result column="quality_flag" property="quality_flag" jdbcType="VARCHAR" />
+		<result column="day_per_amount" property="day_per_amount" jdbcType="VARCHAR" />
+		<result column="delay_rate" property="delay_rate" jdbcType="VARCHAR" />
+		<result column="wrong_rate" property="wrong_rate" jdbcType="VARCHAR" />
+		<result column="wrongpoints_rate" property="wrongpoints_rate" jdbcType="VARCHAR" />
+		<result column="wrongpackage_rate" property="wrongpackage_rate" jdbcType="VARCHAR" />
+		<result column="loss_rate" property="loss_rate" jdbcType="VARCHAR" />
+		<result column="Retention_rate" property="Retention_rate" jdbcType="VARCHAR" />
+		<result column="day_percent1" property="day_percent1" jdbcType="VARCHAR" />
+		<result column="week_with_percent1" property="week_with_percent1" jdbcType="VARCHAR" />
+		<result column="day_percent2" property="day_percent2" jdbcType="VARCHAR" />
+		<result column="week_with_percent2" property="week_with_percent2" jdbcType="VARCHAR" />
+		<result column="day_percent3" property="day_percent3" jdbcType="VARCHAR" />
+		<result column="week_with_percent3" property="week_with_percent3" jdbcType="VARCHAR" />
+		<result column="day_percent4" property="day_percent4" jdbcType="VARCHAR" />
+		<result column="week_with_percent4" property="week_with_percent4" jdbcType="VARCHAR" />
+		<result column="day_percent5" property="day_percent5" jdbcType="VARCHAR" />
+		<result column="week_with_percent5" property="week_with_percent5" jdbcType="VARCHAR" />
+		<result column="day_percent6" property="day_percent6" jdbcType="VARCHAR" />
+		<result column="week_with_percent6" property="week_with_percent6" jdbcType="VARCHAR" />
+		<result column="day_percent7" property="day_percent7" jdbcType="VARCHAR" />
+		<result column="week_with_percent7" property="week_with_percent7" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!--质控-->
+	<select id="selectAll" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+		SELECT
+			'延误率-错发率-错分率-集错包率-遗失率-疑似遗失率'  AS quality_flag,
+			Round(a.dly_rte*100,2) AS delay_rate,  			
+			Round(a.err_rte2*100,2) AS wrong_rate,			
+			Round(a.err_rte1*100,2) AS wrongpoints_rate,		
+			Round(a.err_rte3*100,2) AS wrongpackage_rate,		
+			Round(a.lost_rte*10000,2) AS loss_rate,				
+			Round(a.y_lost_rte*10000,2) AS Retention_rate,													
+			Round((a.dly_rte-b.dly_rte)/b.dly_rte*100,2) AS day_percent1, 
+			Round((a.dly_rte-c.dly_rte)/c.dly_rte*100,2) AS week_with_percent1,
+			Round((a.err_rte2-b.err_rte2)/b.err_rte2*100,2) AS day_percent2,  
+			Round((a.err_rte2-c.err_rte2)/c.err_rte2*100,2) AS week_with_percent2,
+			Round((a.err_rte1-b.err_rte1)/b.err_rte1*100,2) AS day_percent3,  
+			Round((a.err_rte1-c.err_rte1)/c.err_rte1*100,2) AS week_with_percent3,
+			Round((a.err_rte3-b.err_rte3)/b.err_rte3*100,2) AS day_percent4,  
+			Round((a.err_rte3-c.err_rte3)/c.err_rte3*100,2) AS week_with_percent4,
+			Round((a.lost_rte-b.lost_rte)/b.lost_rte*100,2) AS day_percent5,  
+			Round((a.lost_rte-c.lost_rte)/c.lost_rte*100,2) AS week_with_percent5,
+			Round((a.y_lost_rte-b.y_lost_rte)/b.y_lost_rte*100,2) AS day_percent6, 
+			Round((a.y_lost_rte-c.y_lost_rte)/c.y_lost_rte*100,2) AS week_with_percent6
+		FROM (
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				 when #{sel_level} = '2' then o.prov_cd
+				 when #{sel_level} = '5' then o.org_cd
+				 else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) 		AS dly_rte,		
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt)			AS err_rte2,    
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)	AS err_rte1, 	
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num)	AS err_rte3,	
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8)	AS lost_rte,
+				Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8)	AS y_lost_rte 	
+			FROM ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=#{data_date}
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)a
+		LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				 when #{sel_level} = '2' then o.prov_cd
+				 when #{sel_level} = '5' then o.org_cd
+				 else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) 	AS dly_rte,		
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt)	AS err_rte2,    
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)	AS err_rte1, 	
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num)	AS err_rte3,	
+				Round(SUM(a.lost_cnt)/SUM(a.dob_tot_cnt),8)	AS lost_rte,	
+				Round(SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt),8)	AS y_lost_rte 	
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.bas_s_bigdata_base b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 DAY)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)b
+		ON a.stats_dt = b.stats_dt
+		AND a.dbct_cd = b.dbct_cd
+		LEFT JOIN(
+			SELECT 
+				#{data_date} AS stats_dt,
+				case when #{sel_level} = '1' then o.grtr_dist_cd
+				 when #{sel_level} = '2' then o.prov_cd
+				 when #{sel_level} = '5' then o.org_cd
+				 else '000000'  end  AS dbct_cd,
+				SUM(a.dly_snd_cnt)/SUM(a.dly_tot_cnt) 	AS dly_rte,		
+				SUM(a.err_snd_cnt)/SUM(a.oper_cnt)	AS err_rte2,    
+				SUM(a.issue_err_sum)/SUM(a.issue_sign_sum)	AS err_rte1, 	
+				SUM(a.pk_error_num)/SUM(a.pk_tot_num)	AS err_rte3,	
+				SUM(a.lost_cnt)/SUM(a.dob_tot_cnt)	AS lost_rte,
+				SUM(a.dob_lost_cnt)/SUM(a.dob_tot_cnt)	AS y_lost_rte
+			FROM  ydbi.bas_s_bigdata_qut_ctl a
+			LEFT JOIN ydbi.bas_s_bigdata_base b
+			ON a.stats_dt = b.stats_dt
+			AND a.dbct_cd = b.dbct_cd
+			LEFT JOIN ydbi.org_inf o
+			ON a.dbct_cd = o.org_cd
+			<where> 
+				AND  a.stats_dt=DATE_SUB(#{data_date},INTERVAL 1 WEEK)
+				<![CDATA[	
+				AND o.org_typ = '3'
+				AND o.start_tm<=a.stats_dt AND o.end_tm >=a.stats_dt ]]>
+				<if test='sel_cd =="0" and sel_level == "0" '>
+					 AND o.grtr_dist_cd in ('1','2','3','4','5','6')
+				</if>
+				<if test='sel_level!=null and sel_level == "1" '>
+					AND o.grtr_dist_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "2" '>
+					AND o.prov_cd =#{sel_cd}
+				</if>
+				<if test='sel_level!=null and sel_level == "5" '>
+					AND o.org_cd =#{sel_cd}
+				</if>
+		    </where>
+			)c
+		ON a.stats_dt = c.stats_dt
+		AND a.dbct_cd = c.dbct_cd
+	</select>
+	
+</mapper>

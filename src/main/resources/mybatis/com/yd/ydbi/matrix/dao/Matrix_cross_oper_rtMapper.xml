@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.matrix.dao.Matrix_cross_oper_rtMapper" >
+
+  <!-- 开启二级缓存 每隔10分钟刷新一次缓存-->
+  <cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.matrix.model.Matrix_cross_oper_rt" >
+    <result column="dbct_cd" property="dbctCd" jdbcType="INTEGER" />
+    <result column="dbct_name" property="dbctName" jdbcType="VARCHAR" />
+    <result column="oper_typ" property="operTyp" jdbcType="SMALLINT" />
+    <result column="eqpt_id" property="eqptId" jdbcType="VARCHAR" />
+    <result column="cross_oper_cnt" property="crossOperCnt" jdbcType="BIGINT" />
+    <result column="oper_Tot_Dur" property="operTotDur" jdbcType="DECIMAL" />
+    <result column="eqpt_rate" property="eqptRate" jdbcType="VARCHAR" />
+    <result column="vld_Oper_Dur" property="vldOperDur" jdbcType="DECIMAL" />
+    <result column="itm_rate" property="itmRate" jdbcType="VARCHAR" />
+    <result column="stats_tm" property="statsTm" jdbcType="DATE" />
+  </resultMap>
+ 
+  <select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	  <![CDATA[
+	  	SELECT 
+	  		CONCAT(g.mc, '(', a.dbct_cd, ')') AS dbct_name,
+		 	if(a.oper_typ = 0,'发出交叉带','到达交叉带') AS oper_typ,
+			a.eqpt_id AS eqpt_id,a.cross_oper_cnt,
+			cast(a.oper_Tot_Dur as decimal(9,2)) as  oper_Tot_Dur,
+	 		FORMAT(a.cross_oper_cnt / a.oper_Tot_Dur,0) AS eqpt_rate,
+			cast(a.vld_Oper_Dur as decimal(9,2)) as  vld_Oper_Dur,
+	 		FORMAT(a.cross_oper_cnt / a.vld_Oper_Dur,0) AS itm_rate
+	  	FROM matrix.daw_s_cross_dbct_oper_rt a
+		LEFT JOIN
+			ydserver.gs g
+		ON
+			a.dbct_cd = g.bm
+		]]>
+		  	<where> 
+				<if test='start_dt !=null and start_dt !="" '>
+				   <![CDATA[ AND a.stats_tm >=  #{start_dt,jdbcType=DATE} ]]>
+				</if>
+				<if test='end_dt !=null and end_dt !="" '>
+				   <![CDATA[ AND a.stats_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+				</if>
+				<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+				   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+				</if>
+				<if test='eqpt_id !=null and eqpt_id !="" '>
+				   <![CDATA[ AND a.eqpt_id =  #{eqpt_id,jdbcType=INTEGER} ]]>
+				</if>
+				<if test='oper_typ !=null and oper_typ !="" '>
+				   <![CDATA[ AND a.oper_typ =  #{oper_typ,jdbcType=INTEGER} ]]>
+				</if>
+				<if test='sel_level != 0  and sel_dbct_id ==""'>
+				   <![CDATA[ AND a.dbct_cd in (
+				   			select distinct
+								gsa.bm as id
+							from ydserver.gs gsa
+							inner join ydserver.county b ON gsa.szd = b.CountyID
+							inner join ydserver.city c ON b.CityID = c.CityID
+							where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+							and gsa.lb = 3
+				   )]]>
+				</if>
+	  		</where> 
+		ORDER by a.dbct_cd
+		LIMIT #{start_num,jdbcType=INTEGER},#{row_num,jdbcType=INTEGER}
+  </select>
+  
+  <select id="searchFooterData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	 <![CDATA[
+	  	SELECT
+			count(*) AS dbct_cd
+  	  ]]>
+		FROM 
+		(
+			 <![CDATA[
+			  	SELECT 
+			  		CONCAT(g.mc, '(', a.dbct_cd, ')') AS dbct_name,
+				 	if(a.oper_typ = 0,'发出交叉带','到达交叉带') AS oper_typ,
+					a.eqpt_id AS eqpt_id,a.cross_oper_cnt,
+					cast(a.oper_Tot_Dur as decimal(9,2)) as  oper_Tot_Dur,
+			 		FORMAT(a.cross_oper_cnt / a.oper_Tot_Dur,0) AS eqpt_rate,
+					cast(a.vld_Oper_Dur as decimal(9,2)) as  vld_Oper_Dur,
+			 		FORMAT(a.cross_oper_cnt / a.vld_Oper_Dur,0) AS itm_rate
+			  	FROM matrix.daw_s_cross_dbct_oper_rt a
+				LEFT JOIN
+					ydserver.gs g
+				ON
+					a.dbct_cd = g.bm
+				]]>
+			  	<where> 
+					<if test='start_dt !=null and start_dt !="" '>
+					   <![CDATA[ AND a.stats_tm >=  #{start_dt,jdbcType=DATE} ]]>
+					</if>
+					<if test='end_dt !=null and end_dt !="" '>
+					   <![CDATA[ AND a.stats_tm <=  #{end_dt,jdbcType=DATE}  ]]>
+					</if>
+					<if test='sel_dbct_id !=null and sel_dbct_id !="" '>
+					   <![CDATA[ AND a.dbct_cd =  #{sel_dbct_id,jdbcType=INTEGER} ]]>
+					</if>
+					<if test='eqpt_id !=null and eqpt_id !="" '>
+					   <![CDATA[ AND a.eqpt_id =  #{eqpt_id,jdbcType=INTEGER} ]]>
+					</if>
+					<if test='oper_typ !=null and oper_typ !="" '>
+					   <![CDATA[ AND a.oper_typ =  #{oper_typ,jdbcType=INTEGER} ]]>
+					</if>
+					<if test='sel_level != 0  and sel_dbct_id ==""'>
+					   <![CDATA[ AND a.dbct_cd in (
+					   			select distinct
+									gsa.bm as id
+								from ydserver.gs gsa
+								inner join ydserver.county b ON gsa.szd = b.CountyID
+								inner join ydserver.city c ON b.CityID = c.CityID
+								where c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+								and gsa.lb = 3
+					   )]]>
+					</if>
+		  		</where> 
+		) b
+  </select>
+</mapper>

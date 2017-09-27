@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.ys.dao.WD_YS_delayRateMapper">
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000" type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	<!-- 装载率head -->
+	<select id="findlrhead" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.LR_2">
+		SELECT
+			"to" AS "LR",
+			ROUND(
+				SUM(arv_cnt_dly) / SUM(arv_cnt)*100,
+				2
+			) AS num
+		FROM
+			bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND stats_dt = #{date_time}
+		
+			
+			
+		UNION
+		
+		
+		SELECT
+			"ye",
+			ROUND(
+				SUM(arv_cnt_dly) / SUM(arv_cnt)*100,
+				2
+			) AS num
+		FROM
+			bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND stats_dt = DATE_ADD(#{date_time}, INTERVAL - 1 DAY)
+			
+			
+		UNION
+		
+		
+		SELECT
+			"lw",
+			ROUND(
+				SUM(arv_cnt_dly) / SUM(arv_cnt)*100,
+				2
+			) AS num
+		FROM
+			bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+			AND stats_dt = DATE_ADD(
+				#{date_time},
+				INTERVAL - 1 WEEK
+			)
+		
+		UNION
+		
+		
+		SELECT
+			"yj",
+			ROUND(
+					SUM(arv_cnt_dly) / SUM(arv_cnt)*100,
+				2
+			) AS num
+		FROM
+			bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND
+		stats_dt BETWEEN
+		BINARY	concat(date_format(LAST_DAY(#{date_time}),'%Y-%m-'),'01')
+		AND BINARY #{date_time}
+			
+			
+		UNION
+		
+		
+		SELECT
+			"zj",
+			ROUND(
+					SUM(arv_cnt_dly) / SUM(arv_cnt)*100,
+				2
+			) AS num
+		FROM
+			bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND stats_dt BETWEEN
+		BINARY DATE_ADD(DATE_ADD(date_sub(#{date_time},INTERVAL WEEKDAY(#{date_time}) + 1 DAY),INTERVAL + 1 DAY),INTERVAL - 1 WEEK)
+		AND
+		BINARY DATE_ADD(DATE_ADD(date_sub(#{date_time},INTERVAL WEEKDAY(#{date_time}) - 5 DAY),INTERVAL + 1 DAY),INTERVAL - 1 WEEK)
+
+	</select>
+	<!-- 详情 -->
+	<select id="finddetail" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.CLR_Detail">
+		SELECT 
+			distinct
+			t.fbcode as fb_code,ROUND((t.arv_cnt_dly/t.arv_cnt)*100,2)  lr,
+			ROUND((100  -(t.arv_cnt_dly*y.arv_cnt)/(y.arv_cnt_dly*t.arv_cnt)*100),2) dlr,
+			ROUND((100  -(t.arv_cnt_dly*w.arv_cnt)/(w.arv_cnt_dly*t.arv_cnt)*100),2) wlr
+			FROM 
+			(
+			
+			
+				SELECT
+					arv_cnt_dly,
+					arv_cnt,
+					k.org_nm AS fbcode
+				FROM
+					bas_t_bigdata_trans_arve_wd
+				<include refid="in_join_where"/>
+		    	AND stats_dt = #{date_time} 
+				AND arv_cnt_dly>0
+				GROUP BY dest_site
+			
+			
+			) t
+			LEFT JOIN 
+			(
+			
+			
+				SELECT
+					arv_cnt_dly,
+					arv_cnt,
+					k.org_nm AS fbcode
+				FROM
+					bas_t_bigdata_trans_arve_wd
+				<include refid="in_join_where"/> 
+					AND stats_dt = DATE_ADD(#{date_time}, INTERVAL - 1 DAY)
+					AND arv_cnt_dly>0
+					GROUP BY dest_site
+					
+					
+			)  y
+			
+			on t.fbcode=y.fbcode 
+			LEFT JOIN 
+			(
+			
+				
+				SELECT
+					arv_cnt_dly,arv_cnt,
+					k.org_nm AS fbcode
+				FROM
+					bas_t_bigdata_trans_arve_wd
+				<include refid="in_join_where"/> 
+				AND	stats_dt = DATE_ADD(#{date_time}, INTERVAL - 1 WEEK)
+				AND arv_cnt_dly>0
+				GROUP BY dest_site	
+				
+				
+			)  w
+			
+			on t.fbcode=w.fbcode 
+	</select>
+	<!-- 日卡班车趋势 -->
+	<select id="finddaytrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+			ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2) AS realnum,
+			(
+				SELECT
+					ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2)
+				FROM bas_t_bigdata_trans_arve_wd
+				<include refid="in_join_where"/>
+			    AND stats_dt = DATE_ADD(#{date_time},INTERVAL - 1 WEEK)
+				AND k.start_tm<![CDATA[<=]]> stats_dt
+				AND stats_dt<![CDATA[<]]> k.end_tm
+			) AS onsamenum,
+			stats_dt AS startdate
+		FROM bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+	    AND stats_dt = #{date_time}
+	</select>
+	<!-- 周总趋势 -->
+	<select id="findweektrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+	SELECT
+		ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2)
+		 AS realnum,
+		(
+			SELECT
+				ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2)
+			FROM bas_t_bigdata_trans_arve_wd
+			<include refid="in_join_where"/>
+			AND stats_dt BETWEEN BINARY DATE_ADD(date_format(#{date_first},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+			AND BINARY DATE_ADD(date_format(#{date_final},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+		) AS onsamenum,
+		date_format(#{date_first},'%c-%d') AS startdate,
+		date_format(#{date_first},'%Y-%c-%d') AS enddate
+		FROM bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND stats_dt BETWEEN BINARY date_format(#{date_first},'%Y-%c-%d')
+		AND BINARY date_format(#{date_final},'%Y-%c-%d')
+	</select>
+	<!-- 月趋势 -->
+	<select id="findmonthtrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+		ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2) AS realnum,
+		(
+			SELECT
+				ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2)
+			FROM bas_t_bigdata_trans_arve_wd
+			<include refid="in_join_where"/>
+			AND stats_dt BETWEEN BINARY DATE_ADD(date_format(#{date_first},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+			AND BINARY DATE_ADD( date_format(#{date_final},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+		) AS onsamenum,
+		date_format(#{date_final},'%Y-%c-%d') AS startdate,
+		date_format(#{date_first},'%Y-%c-%d') AS enddate
+		FROM bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND stats_dt BETWEEN BINARY date_format(#{date_first},'%Y-%c-%d')
+		AND BINARY date_format(#{date_final},'%Y-%c-%d')
+	</select>
+	<!-- 季度趋势 -->
+	<select id="findseasontrend" parameterType="java.util.Map" resultType="com.yd.ydbi.ys.model.SC_AloKbtrend">
+		SELECT
+		ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2) AS realnum,
+		(
+			SELECT
+				ROUND(SUM(arv_cnt_dly) / SUM(arv_cnt)*100,2)
+			FROM bas_t_bigdata_trans_arve_wd
+			<include refid="in_join_where"/>
+			AND stats_dt BETWEEN BINARY DATE_ADD(date_format(#{date_first},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+			AND BINARY DATE_ADD(date_format(#{date_final},'%Y-%c-%d'),INTERVAL - 1 YEAR)
+		) AS onsamenum,
+		date_format(#{date_final},'%Y-%c-%d') AS startdate,
+		date_format(#{date_first},'%Y-%c-%d')  AS enddate
+		FROM bas_t_bigdata_trans_arve_wd
+		<include refid="in_join_where"/>
+		AND stats_dt BETWEEN BINARY date_format(#{date_first},'%Y-%c-%d')
+		AND BINARY date_format(#{date_final},'%Y-%c-%d')
+	</select>
+	<sql id="in_join_where">
+		INNER JOIN org_inf k
+		ON bas_t_bigdata_trans_arve_wd.dest_site = k.Org_Cd
+		<where> 
+			<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+				AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "1" '>
+				AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "2" '>
+				AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "3" '>
+				AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+			</if>
+		</where>
+		AND k.start_tm<![CDATA[<=]]> stats_dt
+		AND stats_dt<![CDATA[<]]> k.end_tm
+		-- AND k.org_typ = '3'
+	</sql>
+	<sql id="in_join_where_wd">
+		INNER JOIN org_inf k
+		ON bas_t_bigdata_trans_arve_wd.dest_site = k.Org_Cd
+		<where>
+			<if test='sel_dbct_id!=null and sel_dbct_id != "" '>
+				AND k.fisc_dbct_cd =#{sel_dbct_id,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "1" '>
+				AND k.grtr_dist_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "2" '>
+				AND k.prov_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "3" '>
+				AND k.city_cd =#{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND k.org_cd = #{sel_cd,jdbcType=INTEGER}
+			</if>
+		</where>
+		AND k.start_tm<![CDATA[<=]]> stats_dt
+		AND stats_dt<![CDATA[<]]> k.end_tm
+		-- AND k.org_typ = '3'
+	</sql>
+</mapper>

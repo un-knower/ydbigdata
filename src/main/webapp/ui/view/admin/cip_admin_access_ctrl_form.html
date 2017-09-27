@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<script type="text/javascript">
+	var id_access_flag = "";
+	var id_sys_id = "";
+	var pageId = 'cip_admin_access_ctrl_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_access_ctrl/getData.do?actionId=cip_admin_access_ctrl_getData";
+	var formTemplate = "#form_cip_admin_access_ctrl";
+	var listId = "cip_admin_access_ctrl_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+
+	$(function() {
+		init();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			submitData();
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+	});
+
+	function init() {
+		id_access_flag = $$.QueryString("access_flag");
+		id_sys_id = $$.QueryString("sys_id");
+		actionUrl = $$.QueryString("actionUrl");
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+		loadCombobox('access_flag', 'access_flag');
+		loadCombobox('access_type', 'access_type');
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		if (mode == "edit") {
+			loadEditData();
+			$('#access_flag').attr({
+				editable : false
+			});
+			$('#sys_id').attr({
+				editable : false
+			});
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+		} else if (mode == "add") {
+			$('#access_flag').combobox('setValue', '');
+			$('#sys_id').val('');
+
+			$('#access_type').combobox('setValue', '');
+			$('#access_ip').val('');
+			$('#remark').val('');
+			$('#create_time').val('');
+			$('#update_time').val('');
+			$('#operator').val('');
+		}
+
+	};
+
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"access_flag" : id_access_flag,
+			"sys_id" : id_sys_id
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_access_ctrl" class="form">
+			<table>
+				<tr>
+					<td class="right"><label for="access_flag">访问标识:</label></td>
+					<td class="left"><input type="text" id="access_flag" style="width:232px;height:28px"
+						name="access_flag"  class="easyui-combobox"
+						data-options="required:true" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="sys_id">系统id:</label></td>
+					<td class="left"><input type="text" id="sys_id" name="sys_id" style="width:220px;height:26px"
+						 class="easyui-validatebox"
+						data-options="required:true" /></td>
+				</tr>
+
+				<tr>
+					<td class="right"><label for="access_type">访问类型:</label></td>
+					<td class="left"><input type="text" id="access_type"
+						name="access_type" class="easyui-combobox" style="width:232px;height:28px"
+						data-options="required:false" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="access_ip">访问ip:</label></td>
+					<td class="left"><input type="text" id="access_ip"
+						name="access_ip" style="width:220px;height:26px" class="easyui-validatebox"
+						data-options="required:false" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="auth_code">访问授权码:</label></td>
+					<td class="left"><input type="text" id="auth_code"
+						name="auth_code" style="width:220px;height:26px" class="easyui-validatebox"
+						data-options="required:false" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="other_params">额外访问参数:</label></td>
+					<td class="left"><textarea type="" id="other_params"
+							name="other_params" style="width:220px;height:50px;" class="easyui-validatebox"
+							data-options="required:false" ></textarea></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="remark">操作备注:</label></td>
+					<td class="left"><textarea type="" id="remark" name="remark"
+							style="width:220px;height:50px;" class="easyui-validatebox"
+							data-options="required:false"></textarea></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<div class="button-section">
+		<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+		<a id="btn_cancel" href="#" class="easyui-linkbutton"
+			iconCls="icon-cancel">取消</a>
+	</div>
+</body>
+</html>

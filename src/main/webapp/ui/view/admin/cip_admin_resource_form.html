@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../js/validate.js"></script>
+<script type="text/javascript" src="../../js/json2.js"></script>
+<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/gray/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../../js/jquery-easyui/themes/icon.css" />
+<link rel="stylesheet" type="text/css" href="../../css/common.css" />
+<style>
+.icon {
+	width: 16px;
+	height: 16px;
+	margin: 6px;
+}
+
+.icon:hover {
+	cursor: pointer;
+}
+</style>
+<script type="text/javascript">
+	var id_resource_id = "";
+	var pageId = 'cip_admin_resource_form';
+	var actionUrl;
+	var actionId;
+	var tableId;
+	var mode = "";
+	var callUrl;
+	var getUrl = appId
+			+ "/actions/admin_resource/getData.do?actionId=cip_admin_resource_getData";
+	var formTemplate = "#form_cip_admin_resource";
+	var listId = "cip_admin_resource_list";
+	var ddicUrl = appId
+			+ '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+	var editHistoryData = null;
+
+	var urlResource = appId
+			+ "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+	var urlActionForm = ""; //action form url
+	var authActions = {}; //当前用户授权的行为项目
+	var expellActions = {};
+	var resource_type = "";
+
+	$(function() {
+		init();
+		//保存按钮单击事件
+		$("#btn_save").bind("click", function() {
+			if (mode == "display") {
+				$$.closeJcdfDialog();
+			} else {
+				submitData();
+			}
+		});
+		//取消按钮单击事件
+		$("#btn_cancel").bind("click", function() {
+			$$.closeJcdfDialog();
+		});
+		$("#btn_select").bind("click", function() {
+			selectIcon();
+		});
+
+	});
+
+	function init() {
+		id_resource_id = $$.QueryString("resource_id");
+		actionUrl = $$.QueryString("actionUrl");
+		//alert(actionUrl);
+		tableId = $$.QueryString("tableId");
+		mode = $$.QueryString("mode");
+		actionId = $$.QueryString("refActionId");
+		//alert(actionId);
+		resource_type = $$.QueryString("type");
+		//alert(resource_type);
+		loadCombobox('resource_type', 'resource_type');
+
+		callUrl = actionUrl + "?actionId=" + actionId;
+		if (mode == "edit") {
+			loadEditData();
+			$('#resource_id').attr({
+				editable : false
+			});
+		} else if (mode == "display") {
+			loadEditData();
+			$('#btn_save').hide();
+		} else if (mode == "add") {
+			//resource_type  菜单项  'A' 动作 'B' 菜单组 'F' 页面 'P' 菜单根节点'R'
+			$('#type').hide(); //隐藏资源类型页面
+			if (resource_type == "menu") {
+				$('#resource_type').combobox('setValue', 'A');
+			} else if (resource_type == "button") {
+				$('#resource_type').combobox('setValue', 'B');
+			} else if (resource_type == "page") {
+				$('#resource_type').combobox('setValue', 'P');
+			} else if (resource_type == "groupMenu") {
+				$('#resource_type').combobox('setValue', 'F');
+				$('#url').hide();
+			}
+			// $('#resource_type').combobox('setValue', '');
+
+		}
+
+	};
+
+	/**
+	 * 加载历史数据，用于修改
+	 */
+	function loadEditData() {
+		$$.openProcessingDialog();
+		var jsonData = {
+			"resource_id" : id_resource_id
+		};
+		$.ajax({
+			type : "POST",
+			url : getUrl,
+			dataType : "json",
+			contentType : "application/json",
+			data : JSON.stringify(jsonData),
+			success : function(oData) {
+				$$.closeProcessingDialog();
+				if (oData != null && oData.errorCode == 0) {
+					editHistoryData = oData.data;
+					//填充修改记录的历史数据
+					$(formTemplate).form('load', editHistoryData);
+				} else {
+					$$.showJcdfMessager('提示消息', oData.msg, 'warning');
+				}
+			}
+		});
+	}
+
+	function submitData() {
+		if (!$(formTemplate).form('validate')) {
+			return false;
+		}
+		var jsonData = $$.serializeToJson(formTemplate);
+		if (!jsonData)
+			return false;
+		//如果数据验证通过(即数据合法)
+		$$.openProcessingDialog();
+
+		//ajax提交数据
+		$.ajax({
+			type : "POST",
+			url : callUrl,
+			dataType : "json",
+			data : JSON.stringify(jsonData),
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					$$.showJcdfMessager('提示消息', '操作成功', 'info');
+					$$.closeJcdfDialog();
+					$$.refreshJcdfDatagrid(tableId);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg + '(' + data.errorCode
+							+ ')', 'warning');
+				}
+			}
+		});
+	};
+
+	function selectIcon() {
+		var selectIcon = appId
+				+ "/actions/admin_resource/selectIcon.do?actionId=cip_admin_resource_selectIcon";
+		$.ajax({
+			type : "POST",
+			url : selectIcon,
+			dataType : "json",
+			contentType : "application/json",
+			success : function(data) {
+				$$.closeProcessingDialog();
+				if (data && data.errorCode == 0) {
+					//	$$.showJcdfMessager('提示消息', '操作成功', 'info');	
+					var icons = data.data;
+					showIcon(icons);
+				} else {
+					$$.showJcdfMessager('提示消息', data.msg, 'warning');
+				}
+			}
+		});
+	}
+	//将图标显示成可视化的页面，可点击选中
+	function showIcon(icons) {
+		var img = "";
+		var id = "";
+		var code = "";
+		for (var i = 0; i < icons.length; i++) {
+			id = icons[i].icon_id;
+			code = icons[i].icon_code;
+			img += '<img class="icon" onclick="onIconSelected(\'' + id
+					+ '\')" src=\"data:image/png;base64,' + code + '\">' + ' ';
+		}
+		// alert(icons[0].icon_code);
+		// var html='<img id="icon1" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAKfSURBVDjLpZPrS1NhHMf9O3bOdmwDCWREIYKEUHsVJBI7mg3FvCxL09290jZj2EyLMnJexkgpLbPUanNOberU5taUMnHZUULMvelCtWF0sW/n7MVMEiN64AsPD8/n83uucQDi/id/DBT4Dolypw/qsz0pTMbj/WHpiDgsdSUyUmeiPt2+V7SrIM+bSss8ySGdR4abQQv6lrui6VxsRonrGCS9VEjSQ9E7CtiqdOZ4UuTqnBHO1X7YXl6Daa4yGq7vWO1D40wVDtj4kWQbn94myPGkCDPdSesczE2sCZShwl8CzcwZ6NiUs6n2nYX99T1cnKqA2EKui6+TwphA5k4yqMayopU5mANV3lNQTBdCMVUA9VQh3GuDMHiVcLCS3J4jSLhCGmKCjBEx0xlshjXYhApfMZRP5CyYD+UkG08+xt+4wLVQZA1tzxthm2tEfD3JxARH7QkbD1ZuozaggdZbxK5kAIsf5qGaKMTY2lAU/rH5HW3PLsEwUYy+YCcERmIjJpDcpzb6l7th9KtQ69fi09ePUej9l7cx2DJbD7UrG3r3afQHOyCo+V3QQzE35pvQvnAZukk5zL5qRL59jsKbPzdheXoBZc4saFhBS6AO7V4zqCpiawuptwQG+UAa7Ct3UT0hh9p9EnXT5Vh6t4C22QaUDh6HwnECOmcO7K+6kW49DKqS2DrEZCtfuI+9GrNHg4fMHVSO5kE7nAPVkAxKBxcOzsajpS4Yh4ohUPPWKTUh3PaQEptIOr6BiJjcZXCwktaAGfrRIpwblqOV3YKdhfXOIvBLeREWpnd8ynsaSJoyESFphwTtfjN6X1jRO2+FxWtCWksqBApeiFIR9K6fiTpPiigDoadqCEag5YUFKl6Yrciw0VOlhOivv/Ff8wtn0KzlebrUYwAAAABJRU5ErkJggg==">';
+		$('#icon').html(img);
+		$('#icon').dialog({
+			title : '选择图标',
+			width : 400,
+			height : 200,
+			closed : false,
+			cache : false,
+			modal : true
+		});
+	}
+	//点击选择添加图标
+	function onIconSelected(id) {
+		//将图标id即图表名称添加到文本框中
+		$('#icon_id').val("icon-" + id);
+		//关闭窗口
+		$('#icon').dialog('close');
+	}
+</script>
+</head>
+<body>
+	<div id="area_form">
+		<form id="form_cip_admin_resource" class="form">
+			<table>
+				<tr>
+					<td class="right"><label for="">资源id:</label></td>
+					<td class="left"><input type="text" id="resource_id"
+						name="resource_id" style="height:26px;width:220px" class="easyui-validatebox"
+						data-options="required:true" /></td>
+				</tr>
+
+				<tr>
+					<td class="right"><label for="resource_name">资源名称:</label></td>
+					<td class="left"><input type="text" id="resource_name"
+						name="resource_name" style="height:26px;width:220px"
+						class="easyui-validatebox" data-options="required:false" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="resource_desc">资源描述:</label></td>
+					<td class="left"><textarea type="" id="resource_desc"
+							name="resource_desc" style="height:50px;width:220px"
+							class="easyui-validatebox" data-options="required:false"></textarea></td>
+				</tr>
+				<tr id="url">
+					<td class="right"><label for="sys_uri">访问URI:</label></td>
+					<td class="left"><textarea type="" id="sys_uri" name="sys_uri"
+							style="height:50px;width:220px" class="easyui-validatebox"
+							data-options="required:false"></textarea></td>
+				</tr>
+				<tr id="type">
+					<td class="right"><label for="resource_type">资源类型:</label></td>
+					<td class="left"><input type="text" id="resource_type"
+						name="resource_type" style="height:28px;width:232px" class="easyui-combobox"
+						data-options="required:false" /></td>
+				</tr>
+				<tr>
+					<td class="right"><label for="icon_id">图标id:</label></td>
+					<td class="left"><input type="text" id="icon_id"
+						name="icon_id" style="height:26px;width:220px" class="easyui-validatebox"
+						data-options="required:false" /> <a id="btn_select" href="#"
+						class="easyui-linkbutton" style="width:60px;">选择</a></td>
+
+				</tr>
+			</table>
+		</form>
+		<div id="icon"></div>
+	</div>
+	<div class="button-section">
+		<a id="btn_save" href="#" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+		<a id="btn_cancel" href="#" class="easyui-linkbutton"
+			iconCls="icon-cancel">取消</a>
+	</div>
+
+	<!-- <a href="#" class="easyui-switchbutton" onText="开" offText="关" name="unitState"></a> -->
+</body>
+</html>

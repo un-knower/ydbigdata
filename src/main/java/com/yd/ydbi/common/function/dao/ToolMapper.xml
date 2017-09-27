@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.common.function.dao.ToolMapper" >
+  
+  <resultMap id="BaseResultMap" type="com.yd.ydbi.common.function.model.ComboxBean" >
+    <result column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <resultMap id="OrgInfoResultMap" type="com.yd.ydbi.common.function.model.OrgInfoBean" >
+    <result column="orgCd" property="orgCd" jdbcType="INTEGER" />
+    <result column="orgName" property="orgName" jdbcType="VARCHAR" />
+    <result column="orgType" property="orgType" jdbcType="INTEGER" />
+    <result column="superOrgCd" property="superOrgCd" jdbcType="INTEGER" />
+    <result column="superOrgName" property="superOrgName" jdbcType="VARCHAR" />
+    <result column="tranCd" property="tranCd" jdbcType="INTEGER" />
+    <result column="tranName" property="tranName" jdbcType="VARCHAR" />
+    <result column="countyId" property="countyId" jdbcType="INTEGER" />
+    <result column="countyName" property="countyName" jdbcType="VARCHAR" />
+    <result column="cityId" property="cityId" jdbcType="INTEGER" />
+    <result column="cityName" property="cityName" jdbcType="VARCHAR" />
+    <result column="provId" property="provId" jdbcType="INTEGER" />
+    <result column="provName" property="provName" jdbcType="VARCHAR" />
+    <result column="areaId" property="areaId" jdbcType="INTEGER" />
+    <result column="areaName" property="areaName" jdbcType="VARCHAR" />
+  </resultMap>
+ 
+  <select id="getRegion" parameterType="java.util.Map" resultMap="BaseResultMap" >
+	  <![CDATA[
+			select distinct
+				if( t.bigarea = '港澳台', '99', substring( t.bigarea, 1, 1 ) ) as id,
+				substring( t.bigarea, 2 ) as name
+			from ydserver.province t
+			where #{sel_level,jdbcType=INTEGER} = 0 
+		union all
+			select distinct
+				t.ProvinceID as id,
+				t.ProvinceName as name
+			from ydserver.province t
+			where #{sel_level,jdbcType=INTEGER} = 11
+		union all
+			select distinct
+				t.ProvinceID as id,
+				t.ProvinceName as name
+			from ydserver.province t
+			where #{sel_level,jdbcType=INTEGER} = 1
+			and if( t.bigarea = '港澳台', '99', substring( t.bigarea, 1, 1 ) ) = #{sel_cd,jdbcType=INTEGER}
+		union all
+			select distinct
+				t.CityID as id,
+				t.CityName as name
+			from ydserver.city t
+			where #{sel_level,jdbcType=INTEGER} = 2
+			and t.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+		union all
+			select distinct
+				t.CountyID as id,
+				t.CountyName as name
+			from ydserver.county t
+			where #{sel_level,jdbcType=INTEGER} = 3
+			and t.CityID = #{sel_cd,jdbcType=INTEGER}
+		union all
+			select distinct
+				t.bm as id,
+				t.mc as name
+			from ydserver.gs t
+			where #{sel_level,jdbcType=INTEGER} = 4
+			and t.szd = #{sel_cd,jdbcType=INTEGER}
+			and t.lb in (2,22)
+		union all
+			select distinct
+				a.bm as id,
+				a.mc as name
+			from ydserver.gs a
+			inner join ydserver.county b ON a.szd = b.CountyID
+			inner join ydserver.city c ON b.CityID = c.CityID
+			where #{sel_level,jdbcType=INTEGER} = 24
+			and c.CityID = #{sel_cd,jdbcType=INTEGER}
+			and a.lb in (2,22)
+		union all
+			select distinct
+				a.bm as id,
+				a.mc as name
+			from ydserver.gs a
+			inner join ydserver.county b ON a.szd = b.CountyID
+			inner join ydserver.city c ON b.CityID = c.CityID
+			where #{sel_level,jdbcType=INTEGER} = 14
+			and c.ProvinceID = #{sel_cd,jdbcType=INTEGER}
+			and a.lb = 3
+		union all
+			select distinct
+				a.bm as id,
+				a.mc as name
+			from ydserver.gs a
+			inner join ydserver.county b ON a.szd = b.CountyID
+			inner join ydserver.city c ON b.CityID = c.CityID
+			where #{sel_level,jdbcType=INTEGER} = 34
+			and c.CityID = #{sel_cd,jdbcType=INTEGER}
+			and a.lb = 3
+		union all
+			select distinct
+				a.bm as id,
+				a.mc as name
+			from ydserver.gs a
+			where #{sel_level,jdbcType=INTEGER} = 444
+			and a.lb = 3
+		union all
+			select distinct
+				a.bm as id,
+				a.mc as name
+			from ydserver.gs a
+			inner join ydserver.wdzzz_cw b ON a.bm = b.wdbm
+			where #{sel_level,jdbcType=INTEGER} = 44
+			and b.zzz = #{sel_cd,jdbcType=INTEGER}
+			and b.yxx = 0
+			and a.lb in (2,22)
+		union all
+			select distinct
+				t.bm as id,
+				t.mc as name
+			from ydserver.gs t
+			where #{sel_level,jdbcType=INTEGER} = 5
+			and t.sjdw = #{sel_cd,jdbcType=INTEGER}
+			and t.lb = 21
+		order by 1	
+		]]>
+  </select>
+  <select id="getOrgInf" parameterType="java.util.Map" resultMap="OrgInfoResultMap" >
+	  <![CDATA[
+	  		SELECT
+				a.bm             AS orgCd,
+				a.mc             AS orgName,
+				a.lb             AS orgType,
+				a.sjdw           AS superOrgCd,
+				e.mc             AS superOrgName,
+				f.zzz            AS tranCd,
+				g.mc             AS tranName,
+				b.CountyID       AS countyId,
+				b.CountyName     AS countyName,
+				c.CityID         AS cityId,
+				c.CityName       AS cityName,
+				d.ProvinceID     AS provId,
+				d.ProvinceName   AS provName,
+				IF ( d.bigarea = '港澳台', '0', substring(d.bigarea, 1, 1) ) AS areaId,
+				substring(d.bigarea, 2) AS areaName
+			FROM
+				ydserver.gs a
+			LEFT JOIN ydserver.county b ON a.szd = b.CountyID
+			LEFT JOIN ydserver.city c ON b.CityID = c.CityID
+			LEFT JOIN ydserver.province d ON c.ProvinceID = d.ProvinceID
+			LEFT JOIN ydserver.gs e ON a.sjdw = e.bm
+			LEFT JOIN ydserver.wdzzz_cw f ON a.bm = f.wdbm AND f.yxx = 0
+			LEFT JOIN ydserver.gs g ON f.zzz = g.bm
+			WHERE a.lb IN (21, 22, 2, 3, 50)
+			AND a.bm = #{sel_cd,jdbcType=INTEGER}
+	  ]]>
+  </select>
+  <select id="getRegionByRole" parameterType="java.util.Map" resultType="com.yd.ydbi.common.function.model.OrgInfoBean" >
+	  		SELECT DISTINCT
+				if(#{sel_level}='5',t.Org_Cd,0)             AS orgCd,
+				if(#{sel_level}='5',t.Org_Name,"")            AS orgName,
+				if(#{sel_level}='5',t.Org_Type,0)            AS orgType,
+				if(#{sel_level}='4',t.City_Id,0)              AS cityId,
+				if(#{sel_level}='4',t.City_Name,"")           AS cityName,
+				if(#{sel_level}='2',t.Prov_Id,0)              AS provId,
+				if(#{sel_level}='2',t.Prov_Name,"")           AS provName,
+				if(#{sel_level}='1',t.Area_Id,0)              AS areaId,
+			    if(#{sel_level}='1',t.Area_Name,"")           AS areaName
+			FROM ydbi.org_region_view t
+	   <where> 
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND t.Org_Cd  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "4" '>
+				AND t.Org_Cd  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "2" '>
+				AND t.Prov_Id  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='sel_level!=null and sel_level == "1" '>
+				AND t.Area_Id  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+		</where>
+  </select>
+</mapper>

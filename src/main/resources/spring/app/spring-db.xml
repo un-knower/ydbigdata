@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans    
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/jee 
+                        http://www.springframework.org/schema/jee/spring-jee-4.0.xsd">
+
+
+	<!-- 引入配置文件 <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:jdbc.properties" /> </bean> -->
+	<bean id="propertyConfigurer"
+		  class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:dbconfig/jdbc.properties</value>
+				<value>classpath:dbconfig/redis.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<!--  JNDI数据源-->    
+ 	<jee:jndi-lookup id="readDataSource" jndi-name="jndi_ydbi" />
+ 	<jee:jndi-lookup id="readDataSource2" jndi-name="jndi_ydbi" />
+ 	<jee:jndi-lookup id="writeDataSource" jndi-name="jndi_ydbi" />
+
+	<!-- 配置动态分配的读写 数据源 -->
+	<bean id="dataSource" class="com.yd.ydbi.common.aspect.ChooseDataSource"
+		lazy-init="true">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String" value-type="javax.sql.DataSource">
+				<!-- write -->
+				<entry key="write" value-ref="writeDataSource" />
+				<!-- read -->
+				<entry key="read" value-ref="readDataSource" />
+				<entry key="read2" value-ref="readDataSource2" />
+			</map>
+		</property>
+		<!-- 配置了数据库具体的那些是读哪些是写的前缀关键字 -->
+		<property name="defaultTargetDataSource" ref="writeDataSource" />
+		<property name="methodType">
+			<map key-type="java.lang.String">
+				<!-- read -->
+				<entry key="read" value=",get,select,count,list,query" />
+				<entry key="read2" value=",mysql2_get,mysql2_select,mysql2_count,mysql2_list,mysql2_query" />
+				<!-- write -->
+				<entry key="write" value=",add,create,update,delete,remove," />
+			</map>
+		</property>
+	</bean>
+	
+	 <!-- SPRING JDBC -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<bean id="namedParameterJdbcTemplate" class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+		<constructor-arg ref="dataSource"/> 
+	</bean>
+
+</beans>  

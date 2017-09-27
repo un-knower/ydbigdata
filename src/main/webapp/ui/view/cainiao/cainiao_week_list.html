@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/orange/easyui.css"/>
+	<link rel="stylesheet" type="text/css" href="../../js/jquery-easyui/themes/icon.css"/>
+	<link rel="stylesheet" type="text/css" href="../../css/common.css"/>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../js/jquery-easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/validate.js"></script>
+	<script type="text/javascript" src="../../js/json2.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-1.0.js"></script>
+	<script type="text/javascript" src="../../js/jcdf-contants-1.0.js"></script>
+	<script type="text/javascript">
+		var objectName = '线路周报表';
+		var listTemplate = '#cainiao_week_list';
+		var listId = "cainiao_week_list";
+		var formSearchTemplate = '#cainiao_week_searchForm';
+		var searchFormId = "cainiao_week_searchForm";
+		var gridMenuId = '#cainiao_week_list_menu';
+		var urlSearch = appId + '/actions/cainiao/searchWeekData.do?actionId=cainiao_searchWeekData';
+		var urlExport= appId + '/actions/cainiao/exportWeekEntities.do?actionId=cainiao_exportWeekEntities';
+		var ddicUrl = appId + '/actions/common/domain/getDomains.do?actionId=system_getDomains&domainId=';
+		var pageId = 'cainiao_week_list';
+		
+		var urlResource = appId + "/actions/common/user/getResources.do?actionId=system_getResources&resource_id=";
+		var urlActionForm = ""; //action form url
+		var authActions = {}; //当前用户授权的行为项目
+		var expellActions = {
+			"cainiao_searchWeekData":urlSearch,
+			"cainiao_exportWeekEntities":urlExport
+		}; //当前用户需要特殊处理的按钮，不在menubar上显示的 
+		var isDatagridLoaded = false;
+		var today = getToday();
+		$(function(){
+			//统计时间初始化
+			$('#startDt').datebox({
+				value: getBeforeDate(6),	
+				editable:false,
+			    onSelect: function(date){
+			        $("#endDt").datebox({
+		                value : myformatter1(date)
+		            });
+			    }
+			});  
+			$('#endDt').datebox({  
+				value: getBeforeDate(0),
+				readonly:true   
+			});  
+			//startp
+			$('#startPlace').combobox({
+ 			    url:appId+"/actions/cainiao/getRegion.do?actionId=cainiao_getRegion&endPlace=&startPlace="+$('#startPlace').val(),    
+ 			    valueField:'id',    
+ 			    textField:'name',
+ 				filter: function(q, row){
+					var opts = $(this).combobox('options');
+					return row[opts.textField].indexOf(q) > -1;
+				},
+               	onHidePanel: function() {  
+                	    var _options = $(this).combobox('options');  
+                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+	               	     for (var i = 0; i < _data.length; i++) {  
+	             	        if (_data[i][_options.valueField] == _value) {  
+	             	            _b=true;  
+	             	            break;  
+	             	        }  
+	             	    }
+                	    if(!_b){  
+                	        $(this).combobox('setValue', '');  
+                	    }  
+                	}, 
+ 			    loadFilter:function(oData){
+ 			    	var data = oData.data;
+ 			    	for(var i in data){
+ 			    		data[i].name = data[i].name;
+ 			    	}
+ 			    	data.unshift({"id":"","name":"请选择"});
+ 			    	return data;
+ 			    }
+ 			});
+			//stopstartp
+			//startend
+			$('#endPlace').combobox({
+ 			    url:appId+"/actions/cainiao/getRegion.do?actionId=cainiao_getRegion&endPlace=&startPlace="+$('#startPlace').val(),    
+ 			    valueField:'id',    
+ 			    textField:'name',
+ 				filter: function(q, row){
+					var opts = $(this).combobox('options');
+					return row[opts.textField].indexOf(q) > -1;
+				},
+               	onHidePanel: function() {  
+                	    var _options = $(this).combobox('options');  
+                	    var _data = $(this).combobox('getData');/* 下拉框所有选项 */  
+                	    var _value = $(this).combobox('getValue');/* 用户输入的值 */  
+                	    var _b = false;/* 标识是否在下拉列表中找到了用户输入的字符 */  
+	               	     for (var i = 0; i < _data.length; i++) {  
+	             	        if (_data[i][_options.valueField] == _value) {  
+	             	            _b=true;  
+	             	            break;  
+	             	        }  
+	             	    }
+                	    if(!_b){  
+                	        $(this).combobox('setValue', '');  
+                	    }  
+                	}, 
+ 			    loadFilter:function(oData){
+ 			    	var data = oData.data;
+ 			    	for(var i in data){
+ 			    		data[i].name = data[i].name;
+ 			    	}
+ 			    	data.unshift({"id":"","name":"请选择"});
+ 			    	return data;
+ 			    }
+ 			});
+			//stopend
+
+			//加载dategrid()
+			getAuthButtons(pageId,gridMenuId,authActions,expellActions);
+			loadDatagrid();
+			searchData('cainiao_searchWeekData',urlSearch);
+		});
+		
+		
+		//自动获取当前七天
+		function getBeforeDate(n){
+			var n = n;
+		    var d = new Date();
+		    var year = d.getFullYear();
+		    var mon=d.getMonth()+1;
+		    var day=d.getDate();
+		    if(day <= n){
+	           if(mon>1) {
+	              mon=mon-1;
+	           }else {
+	            year = year-1;
+	            mon = 12;
+               }
+         	}
+	        d.setDate(d.getDate()-n);
+	        year = d.getFullYear();
+	        mon=d.getMonth()+1;
+	        day=d.getDate();
+		    s = year+"-"+(mon<10?('0'+mon):mon)+"-"+(day<10?('0'+day):day);
+		    return s;
+		}
+		//自动获取当前七天
+		function startDateformatter(date) {
+			var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+			var dayFu7 = day-6;
+			var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0"
+			+ (date.getMonth() + 1);
+			return date.getFullYear() + '-' + month + '-' + dayFu7;
+		};
+		function endDateformatter(date) {
+			var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+			var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0"
+			+ (date.getMonth() + 1);
+			return date.getFullYear() + '-' + month + '-' + day;
+		};
+		//自动获取七天
+		function myformatter1(date) {
+            var y = date.getFullYear();
+            var m = date.getMonth() + 1;
+            var d = date.getDate()+6;
+            return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+        }
+		//自动获取月和日期
+		function myformatter2(date) {
+            var m = date.getMonth() + 1;
+            var d = date.getDate();
+            return (m < 10 ? ('0' + m) : m) + '月' + (d < 10 ? ('0' + d) : d)+ '日';
+        }
+		
+		
+		function refresh(buttonId,actionUrl){
+			$.ajax({
+				   type: "POST",
+				   url: actionUrl+"?actionId="+buttonId,
+				   dataType:"json",
+				   success: function(data){
+				   	 	$$.closeProcessingDialog();
+						if (data && data.errorCode == 0) {
+							$$.showJcdfMessager('提示消息', '操作成功', 'info');
+						} else {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+				   }
+			});
+		};
+		
+		function searchData(buttonId,actionUrl){
+			/* 日期框 */
+			var end=$("#endDt").datebox("getValue"); 
+			end = end.replace(/-/g,'/'); 
+			var timestampStart = new Date(end).getTime();
+			var timestampToday = new Date().getTime();
+			var result=timestampToday-timestampStart;
+			if(result<0){
+				$$.showJcdfMessager('提示消息', '结束日期不能大于今天', 'warning');
+				return false;
+			}
+			/* 线路单量  */
+			var startlevUnitCnt = $("#startlevUnitCnt").val();
+			var endlevUnitCnt = $("#endlevUnitCnt").val();
+			var result=endlevUnitCnt-startlevUnitCnt;
+			if(result<0){
+				$$.showJcdfMessager('提示消息', '线路单量输入有误，请重输', 'warning');
+				return false;
+			}
+			
+			var params = $$.serializeToJson(formSearchTemplate);
+			var json = { "search_condition" : JSON.stringify(params) };
+			if(isDatagridLoaded){
+				$(listTemplate).datagrid('load', json );
+			}else{
+				$(listTemplate).datagrid({
+					queryParams: json,
+					url : urlSearch
+				});
+				isDatagridLoaded = true;
+			}	
+		};
+		
+		function exportExcel(buttonId,actionUrl){
+			var params = $$.serializeToJson(formSearchTemplate);
+			$('#'+searchFormId).form('submit',{    
+			    url:actionUrl,    
+			    onSubmit: function(param){
+			    	param.search_condition = JSON.stringify(params)
+			    },
+			    success: function(data){   
+			    	var oData = JSON.parse(data);
+			        if (oData&&oData.errorCode){   
+			        	$$.showJcdfMessager('提示消息', oData.msg, 'warning');   
+			        }    
+			    } 
+			}); 		
+		};
+		
+		function searchReset(){
+			$(formSearchTemplate).form('reset');
+		};
+					
+		/**
+		 * 页面加载时初始化datagrid列表并加载列表数据进行显示
+		 */
+		function loadDatagrid() {
+			$(listTemplate).datagrid({
+				//title:objectName+'列表',
+				height : $$.getDatagridHeight(),
+				width : $$.getDatagridWidth(),
+				border : true,
+				nowrap : true,
+				striped : true,
+				fitColumns : true,
+				idField : '',
+				columns:[
+				         	[
+								{field : 'lnNm',title :'线路名称',width : $$.fillsize(0.1),align : 'center'}, 
+								{field : 'firstDay',title :'第一日',width : $$.fillsize(0.1),align : 'center'}, 
+								{field : 'secondDay',title :'第二日',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'thirdDay',title :'第三日',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'fourthDay',title :'第四日',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'fifthDay',title :'第五日',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'sixthDay',title :'第六日',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'seventhDay',title :'第七日',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'lineQuantity',title :'线路单量',width : $$.fillsize(0.1),align : 'center'},
+								{field : 'rankState',title :'排名状态',width : $$.fillsize(0.1),align : 'center',styler: function(value,row,index){
+							          if(row.rankState > 0){
+								          return 'color:green;';
+							          }else if(row.rankState < 0){
+								          return 'color:red;';
+							          }else{
+								           return value;
+							          }
+							        },
+							        formatter:function(value, row, index){
+							          if(row.rankState > 0){
+							          	return '↑'+value;
+							          }else  if(row.rankState < 0){
+							          	return '↓'+(0-value);
+							          }else{
+							          	return '-';
+							          }
+							     }}
+							]
+				 		],
+				onBeforeLoad : function() {
+					$$.clearSelect(listId);
+				},
+				queryParams : $$.serializeToJson(searchFormId),
+				pagination : true,
+				rownumbers : true,
+				singleSelect : true,
+				pageSize : $$.pageSize,
+				pageList : $$.pageList,
+				toolbar : gridMenuId,
+				loadFilter : function(data) {
+					if (data != null && data.errorCode > 0) {
+						if (data.msg != null && data.msg != "") {
+							$$.showJcdfMessager('提示消息', data.msg, 'warning');
+						}
+					}
+					return data;
+				},
+				onLoadSuccess:function(data){ 
+					$("#beizhu").html("");
+	            		var startDt = $('#startDt').datebox('getValue');
+	            		var endDt = $('#endDt').datebox('getValue');
+	            		$("#beizhu").show();
+						var newContent = '<p style="font-size: larger;font-weight:bold;line-height:20px;margin-left: 20px;">说明:</p>'
+								+'<p style="font-size: larger;line-height:20px;margin-left: 50px;">查询时间：'+startDt+'至'+endDt+'</p>'
+							;
+						$("#beizhu").html(newContent);
+           	 	}
+			});
+		}
+	</script>
+</head> 
+<body class="easyui-layout">
+	<div data-options="region:'north', split:false, border:false" style="padding: 4px 0;">
+		<fieldset style="padding: 5px; border: 1px solid #d4a375;height:184px;">
+			<legend>信息查询</legend>
+			<form id="cainiao_week_searchForm" class="search-form" method="post">
+				<table cellpadding="2" style="width: 100%">
+				   <tr>
+						<td align="right">统计时间：</td>
+						<td class="left">
+						<input type="text" id="startDt" class="easyui-datebox"
+							name="startDt" style="width:150px;height:26px" data-options="required:true" onSelect="startDateSelect(this)"/>		
+						<input type="text" id="endDt" class="easyui-datebox"
+							name="endDt" style="width:150px;height:26px" data-options="required:true" />		
+						</td>
+						<td align="right">起点：</td>
+						<td>
+							<input type="text" id="startPlace" name="startPlace"  style="width:220px;height:26px"/>
+						</td>
+						<td align="right">线路类型：</td>
+						<td align="left">
+							<select id="lineType" name="line_type"  style="width:150px;height:26px">
+								<!-- <option value="0">-请选择-</option> -->
+								<option value="1">省-省</option>
+								<option value="2" selected="selected">市-市</option>
+								<option value="3">2860线路</option>
+								<option value="4">50城市线路</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td align="right">线路单量：</td>
+						<td>
+							<input type="text" id="startlevUnitCnt" name="startlevUnitCnt"  style="width:150px;height:26px"
+								onkeyup="this.value=this.value.replace(/[\W]/g,'')" onblur="this.value=this.value.replace(/[\W]/g,'')"/>
+							<input type="text" id="endlevUnitCnt" name="endlevUnitCnt"  style="width:150px;height:26px"
+								onkeyup="this.value=this.value.replace(/[\W]/g,'')" onblur="this.value=this.value.replace(/[\W]/g,'')"/>
+						</td>
+						<td align="right">终点：</td>
+						<td>
+							<input type="text" id="endPlace" name="endPlace"  style="width:220px;height:26px"/>
+						</td>
+						<td align="right">排名状态：</td>
+						<td align="left">
+							<select id="rankState" name="rankState"  style="width:150px;height:26px">
+								<option value="0">-请选择-</option>	
+								<option value="1">不变</option>
+								<option value="2">上升</option>
+								<option value="3">下降</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td colspan="8" align="center" >
+							<a class="easyui-linkbutton" iconCls="icon-search"
+								style="margin-right: 20px;"
+								onclick="searchData('cainiao_searchWeekData',urlSearch)">查询</a>
+							<a class="easyui-linkbutton" iconCls="icon-reload"
+								style="margin-right: 20px;" onclick="searchReset()">重置</a> 
+							<a class="easyui-linkbutton" iconCls="icon-download"
+								style="margin-right: 20px;"
+								onclick="exportExcel('cainiao_exportWeekEntities',urlExport)">导出</a>
+						</td> 
+					</tr>
+				</table>
+			</form>
+			<div id="beizhu" style="display: none;color:red;">
+			</div>
+		</fieldset>
+	</div>
+	<div data-options="region:'center', split:false, border:false" style="padding: 0 2px;">
+		<!-- <div id="cainiao_week_list_menu">
+			<div style="padding: 5px;">
+			</div>
+		</div> -->
+		<table id="cainiao_week_list" fit="true"></table>
+	</div>
+</body>
+</html>

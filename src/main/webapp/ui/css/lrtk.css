@@ -1,0 +1,9 @@
+.menu_list{width:100%;overflow-x:auto;overflow:scroll;height: 100%;}
+.menu_head{width:98%;height:25px;line-height:25px;padding-left:2%;font-size:14px;color:#525252;cursor:pointer;border:1px solid #e1e1e1;position:relative;margin:0px;font-weight:bold;background:#f1f1f1 url(../img/pro_left.png) center right no-repeat;}
+.menu_list .current{background:#f1f1f1 url(../img/pro_down.png) center right no-repeat;}
+.menu_body{width:98%;height:auto;overflow:hidden;line-height:38px;border-left:1px solid #e1e1e1;backguound:#fff;border-right:1px solid #e1e1e1;}
+.menu_body a{display:block;width:223px;height:25px;line-height:25px;padding-left:38px;color:#777777;background:#fff;text-decoration:none;border-bottom:1px solid #e1e1e1;}
+.menu_body a:hover{text-decoration:none;}
+.menu_body p{font-size: 12px;padding-left: 38px;}
+.menu_body strong{font-size: 14px;padding-left: 38px;}
+

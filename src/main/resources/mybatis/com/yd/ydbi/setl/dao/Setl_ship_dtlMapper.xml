@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yd.ydbi.setl.dao.Setl_ship_dtlMapper">
+
+	<!-- 开启二级缓存 每隔10分钟刷新一次缓存 -->
+	<cache flushInterval="600000"
+		type="com.yd.ydbi.common.cache.MyBatisRedisCache" />
+	<!-- Result Map -->
+	<resultMap id="BaseResultMap" type="com.yd.ydbi.setl.model.Setl_ship_dtl">
+		<result column="setl_dt" property="setlDt" jdbcType="VARCHAR" />
+		<result column="setl_adj_dt" property="setlAdjDt" jdbcType="VARCHAR" />
+		<result column="ship_id" property="shipId" jdbcType="BIGINT" />
+		<result column="grtr_pkg_id" property="grtrPkgId" jdbcType="BIGINT" />
+		<result column="setl_org_cd" property="setlOrgCd" jdbcType="INTEGER" />
+		<result column="setl_org_nm" property="setlOrgNm" jdbcType="VARCHAR" />
+		<result column="setl_org_sub_cd" property="setlOrgSubCd" jdbcType="INTEGER" />
+		<result column="setl_org_sub_nm" property="setlOrgSubNm" jdbcType="VARCHAR" />
+		<result column="unit_dt" property="unitDt" jdbcType="VARCHAR" />
+		<result column="unit_brch_cd" property="unitBrchCd" jdbcType="INTEGER" />
+		<result column="unit_brch_nm" property="unitBrchNm" jdbcType="VARCHAR" />
+		<result column="cd_alloc_brch_cd" property="cdAllocBrchCd" jdbcType="INTEGER" />
+		<result column="cd_alloc_brch_nm" property="cdAllocBrchNm" jdbcType="VARCHAR" />
+		<result column="alloc_cust_cd" property="allocCustCd" jdbcType="VARCHAR" />
+		<result column="alloc_cust_nm" property="allocCustNm" jdbcType="VARCHAR" />
+		<result column="pick_dt" property="pickDt" jdbcType="VARCHAR" />
+		<result column="pick_brch_cd" property="pickBrchCd" jdbcType="INTEGER" />
+		<result column="pick_brch_nm" property="pickBrchNm" jdbcType="VARCHAR" />
+		<result column="pick_devi_cd" property="pickDeviCd" jdbcType="INTEGER" />
+		<result column="pick_devi_nm" property="pickDeviNm" jdbcType="VARCHAR" />
+		<result column="pick_emp_cd" property="pickEmpCd" jdbcType="INTEGER" />
+		<result column="pick_emp_nm" property="pickEmpNm" jdbcType="VARCHAR" />
+		<result column="strt_prov_cd" property="strtProvCd" jdbcType="INTEGER" />
+		<result column="strt_prov_nm" property="strtProvNm" jdbcType="VARCHAR" />
+		<result column="strt_city_cd" property="strtCityCd" jdbcType="INTEGER" />
+		<result column="strt_city_nm" property="strtCityNm" jdbcType="VARCHAR" />
+		<result column="strt_cnty_cd" property="strtCntyCd" jdbcType="INTEGER" />
+		<result column="strt_cnty_nm" property="strtCntyNm" jdbcType="VARCHAR" />
+		<result column="rch_tm" property="rchTm" jdbcType="VARCHAR" />
+		<result column="dist_tm" property="distTm" jdbcType="VARCHAR" />
+		<result column="cfm_rcv_tm" property="cfmRcvTm" jdbcType="VARCHAR" />
+		<result column="cfm_rcv_pers" property="cfmRcvPers" jdbcType="VARCHAR" />
+		<result column="dest_brch_cd" property="destBrchCd" jdbcType="INTEGER" />
+		<result column="dest_brch_nm" property="destBrchNm" jdbcType="VARCHAR" />
+		<result column="cfm_rcv_devi_cd" property="cfmRcvDeviCd" jdbcType="INTEGER" />
+		<result column="cfm_rcv_devi_nm" property="cfmRcvDeviNm" jdbcType="VARCHAR" />
+		<result column="delv_emp_cd" property="delvEmpCd" jdbcType="INTEGER" />
+		<result column="delv_emp_nm" property="delvEmpNm" jdbcType="VARCHAR" />
+		<result column="dest_prov_cd" property="destProvCd" jdbcType="INTEGER" />
+		<result column="dest_prov_nm" property="destProvNm" jdbcType="VARCHAR" />
+		<result column="dest_city_cd" property="destCityCd" jdbcType="INTEGER" />
+		<result column="dest_city_nm" property="destCityNm" jdbcType="VARCHAR" />
+		<result column="dest_cnty_cd" property="destCntyCd" jdbcType="INTEGER" />
+		<result column="dest_cnty_nm" property="destCntyNm" jdbcType="VARCHAR" />
+		<result column="cfm_rcv_city_cd" property="cfmRcvCityCd" jdbcType="INTEGER" />
+		<result column="cfm_rcv_city_nm" property="cfmRcvCityNm" jdbcType="VARCHAR" />
+		<result column="actl_delv_dur" property="actlDelvDur" jdbcType="VARCHAR" />
+		<result column="stip_delv_dur" property="stipDelvDur" jdbcType="VARCHAR" />
+		<result column="actl_wgt" property="actlWgt" jdbcType="DECIMAL" />
+		<result column="vol_wgt" property="volWgt" jdbcType="DECIMAL" />
+		<result column="pick_setl_wgt" property="pickSetlWgt" jdbcType="DECIMAL" />
+		<result column="setl_wgt" property="setlWgt" jdbcType="DECIMAL" />
+		<result column="setl_wgt_adj" property="setlWgtAdj" jdbcType="DECIMAL" />
+		<result column="setl_wgt_typ" property="setlWgtTyp" jdbcType="VARCHAR" />
+		<result column="trans_typ" property="transTyp" jdbcType="VARCHAR" />
+		<result column="one_grd_exp_cd" property="oneGrdExpCd" jdbcType="INTEGER" />
+		<result column="one_grd_exp_nm" property="oneGrdExpNm" jdbcType="VARCHAR" />
+		<result column="two_grd_exp_cd" property="twoGrdExpCd" jdbcType="INTEGER" />
+		<result column="two_grd_exp_nm" property="twoGrdExpNm" jdbcType="VARCHAR" />
+		<result column="amnt" property="amnt" jdbcType="DECIMAL" />
+		<result column="adj_amnt" property="adjAmnt" jdbcType="DECIMAL" />
+		<result column="setl_dt_rng" property="setlDtRng" jdbcType="VARCHAR" />
+		<result column="if_car" property="ifCar" jdbcType="VARCHAR" />
+		<result column="if_ship" property="ifShip" jdbcType="VARCHAR" />
+		<result column="car_exp" property="carExp" jdbcType="DECIMAL" />
+		<result column="car_exp_adj" property="carExpAdj" jdbcType="DECIMAL" />
+		<result column="adj_typ" property="adjTyp" jdbcType="VARCHAR" />
+		<result column="err_typ" property="errTyp" jdbcType="VARCHAR" />
+		<result column="wgt" property="wgt" jdbcType="DECIMAL" />
+		<result column="entr_dt" property="entrDt" jdbcType="VARCHAR" />
+		<result column="subd_typ" property="subdTyp" jdbcType="VARCHAR" />
+		<result column="rt" property="rt" jdbcType="DECIMAL" />
+		<result column="pick_scor_if_same" property="pickScorIfSame" jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<!-- 分页查询 -->
+	<select id="searchData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+	    SELECT
+			a.setl_dt                 AS  setl_dt             --  结算日期                
+			,a.setl_adj_dt            AS  setl_adj_dt         --  结算调整日期            
+			,a.ship_id                AS  ship_id             --  运单号                  
+			,a.grtr_pkg_id            AS  grtr_pkg_id         --  大包号                  
+			,a.setl_org_cd            AS  setl_org_cd         --  结算公司编码            
+			,a.setl_org_nm            AS  setl_org_nm         --  结算公司名称            
+			,a.setl_org_sub_cd        AS  setl_org_sub_cd     --  结算公司下级站点编码    
+			,a.setl_org_sub_nm        AS  setl_org_sub_nm     --  结算公司下级站点名称    
+			,a.unit_dt                AS  unit_dt             --  录单日期                
+			,a.unit_brch_cd           AS  unit_brch_cd        --  录单网点编码            
+			,a.unit_brch_nm           AS  unit_brch_nm        --  录单网点名称            
+			,a.cd_alloc_brch_cd       AS  cd_alloc_brch_cd    --  条码分配网点编码        
+			,a.cd_alloc_brch_nm       AS  cd_alloc_brch_nm    --  条码分配网点名称        
+			,a.alloc_cust_cd          AS  alloc_cust_cd       --  所分配客户编码          
+			,a.alloc_cust_nm          AS  alloc_cust_nm       --  所分配客户名称          
+			,a.pick_dt                AS  pick_dt             --  揽件日期                
+			,a.pick_brch_cd           AS  pick_brch_cd        --  揽件或始发网点编码      
+			,a.pick_brch_nm           AS  pick_brch_nm        --  揽件或始发网点名称      
+			,a.pick_devi_cd           AS  pick_devi_cd        --  揽件分部编码            
+			,a.pick_devi_nm           AS  pick_devi_nm        --  揽件分部名称            
+			,a.pick_emp_cd            AS  pick_emp_cd         --  揽件业务员编码          
+			,a.pick_emp_nm            AS  pick_emp_nm         --  揽件业务员名称          
+			,a.strt_prov_cd           AS  strt_prov_cd        --  始发省份编码            
+			,a.strt_prov_nm           AS  strt_prov_nm        --  始发省份名称            
+			,a.strt_city_cd           AS  strt_city_cd        --  始发城市编码            
+			,a.strt_city_nm           AS  strt_city_nm        --  始发城市名称            
+			,a.strt_cnty_cd           AS  strt_cnty_cd        --  始发区县编码            
+			,a.strt_cnty_nm           AS  strt_cnty_nm        --  始发区县名称            
+			,a.rch_tm                 AS  rch_tm              --  到件时间                
+			,a.dist_tm                AS  dist_tm             --  分发时间                
+			,a.cfm_rcv_tm             AS  cfm_rcv_tm          --  签收日期                
+			,a.cfm_rcv_pers           AS  cfm_rcv_pers        --  签收人                  
+			,a.dest_brch_cd           AS  dest_brch_cd        --  签收或目的网点编码      
+			,a.dest_brch_nm           AS  dest_brch_nm        --  签收或目的网点名称      
+			,a.cfm_rcv_devi_cd        AS  cfm_rcv_devi_cd     --  签收分部编码            
+			,a.cfm_rcv_devi_nm        AS  cfm_rcv_devi_nm     --  签收分部名称            
+			,a.delv_emp_cd            AS  delv_emp_cd         --  派件业务员编码          
+			,a.delv_emp_nm            AS  delv_emp_nm         --  派件业务员名称          
+			,a.dest_prov_cd           AS  dest_prov_cd        --  目的省份编码            
+			,a.dest_prov_nm           AS  dest_prov_nm        --  目的省份名称            
+			,a.dest_city_cd           AS  dest_city_cd        --  目的城市编码            
+			,a.dest_city_nm           AS  dest_city_nm        --  目的城市名称            
+			,a.dest_cnty_cd           AS  dest_cnty_cd        --  目的区县编码            
+			,a.dest_cnty_nm           AS  dest_cnty_nm        --  目的区县名称            
+			,a.cfm_rcv_city_cd        AS  cfm_rcv_city_cd     --  签收城市编码            
+			,a.cfm_rcv_city_nm        AS  cfm_rcv_city_nm     --  签收城市名称            
+			,a.actl_delv_dur          AS  actl_delv_dur       --  实际派送历时            
+			,a.stip_delv_dur          AS  stip_delv_dur       --  规定派送历时            
+			,a.actl_wgt               AS  actl_wgt            --  实际重量                
+			,a.vol_wgt                AS  vol_wgt             --  计泡重量                
+			,a.pick_setl_wgt          AS  pick_setl_wgt       --  揽件结算重量            
+			,a.setl_wgt               AS  setl_wgt            --  结算重量                
+			,a.setl_wgt_adj           AS  setl_wgt_adj        --  第11天结算重量          
+			,a.setl_wgt_typ           AS  setl_wgt_typ        --  结算重量类型            
+			,a.trans_typ              AS  trans_typ           --  运输方式                
+			,a.one_grd_exp_cd         AS  one_grd_exp_cd      --  一级费用类型编码        
+			,a.one_grd_exp_nm         AS  one_grd_exp_nm      --  一级费用类型名称        
+			,a.two_grd_exp_cd         AS  two_grd_exp_cd      --  二级费用类型编码        
+			,a.two_grd_exp_nm         AS  two_grd_exp_nm      --  二级费用类型名称        
+			,a.amnt                   AS  amnt                --  费用金额                
+			,a.adj_amnt               AS  adj_amnt            --  小计(新-旧)             
+			,a.setl_dt_rng            AS  setl_dt_rng         --  结算日期范围            
+			,a.if_car                 AS  if_car              --  是否直跑车              
+			,a.if_ship                AS  if_ship             --  是否同城件              
+			,a.car_exp                AS  car_exp             --  广东报表整车称重费第1天 
+			,a.car_exp_adj            AS  car_exp_adj         --  广东报表整车称重费第11天
+			,a.adj_typ                AS  adj_typ             --  调整方式                
+			,a.err_typ                AS  err_typ             --  错误类别                
+			,a.wgt                    AS  wgt                 --  重量                    
+			,a.entr_dt                AS  entr_dt             --  录入时间                
+			,a.subd_typ               AS  subd_typ            --  补贴类型                
+			,a.rt                     AS  rt                  --  费率                    
+			,a.pick_scor_if_same      AS  pick_scor_if_same   --  揽录分是否一致
+		FROM 
+		(
+		]]>	
+		<foreach item="tb_nm" index="index" collection="tb_list" separator="union all" >
+			SELECT
+				setl_dt                 AS  setl_dt             --  结算日期                
+				,setl_adj_dt            AS  setl_adj_dt         --  结算调整日期            
+				,ship_id                AS  ship_id             --  运单号                  
+				,grtr_pkg_id            AS  grtr_pkg_id         --  大包号                  
+				,setl_org_cd            AS  setl_org_cd         --  结算公司编码            
+				,setl_org_nm            AS  setl_org_nm         --  结算公司名称            
+				,setl_org_sub_cd        AS  setl_org_sub_cd     --  结算公司下级站点编码    
+				,setl_org_sub_nm        AS  setl_org_sub_nm     --  结算公司下级站点名称    
+				,unit_dt                AS  unit_dt             --  录单日期                
+				,unit_brch_cd           AS  unit_brch_cd        --  录单网点编码            
+				,unit_brch_nm           AS  unit_brch_nm        --  录单网点名称            
+				,cd_alloc_brch_cd       AS  cd_alloc_brch_cd    --  条码分配网点编码        
+				,cd_alloc_brch_nm       AS  cd_alloc_brch_nm    --  条码分配网点名称        
+				,alloc_cust_cd          AS  alloc_cust_cd       --  所分配客户编码          
+				,alloc_cust_nm          AS  alloc_cust_nm       --  所分配客户名称          
+				,pick_dt                AS  pick_dt             --  揽件日期                
+				,pick_brch_cd           AS  pick_brch_cd        --  揽件或始发网点编码      
+				,pick_brch_nm           AS  pick_brch_nm        --  揽件或始发网点名称      
+				,pick_devi_cd           AS  pick_devi_cd        --  揽件分部编码            
+				,pick_devi_nm           AS  pick_devi_nm        --  揽件分部名称            
+				,pick_emp_cd            AS  pick_emp_cd         --  揽件业务员编码          
+				,pick_emp_nm            AS  pick_emp_nm         --  揽件业务员名称          
+				,strt_prov_cd           AS  strt_prov_cd        --  始发省份编码            
+				,strt_prov_nm           AS  strt_prov_nm        --  始发省份名称            
+				,strt_city_cd           AS  strt_city_cd        --  始发城市编码            
+				,strt_city_nm           AS  strt_city_nm        --  始发城市名称            
+				,strt_cnty_cd           AS  strt_cnty_cd        --  始发区县编码            
+				,strt_cnty_nm           AS  strt_cnty_nm        --  始发区县名称            
+				,rch_tm                 AS  rch_tm              --  到件时间                
+				,dist_tm                AS  dist_tm             --  分发时间                
+				,cfm_rcv_tm             AS  cfm_rcv_tm          --  签收日期                
+				,cfm_rcv_pers           AS  cfm_rcv_pers        --  签收人                  
+				,dest_brch_cd           AS  dest_brch_cd        --  签收或目的网点编码      
+				,dest_brch_nm           AS  dest_brch_nm        --  签收或目的网点名称      
+				,cfm_rcv_devi_cd        AS  cfm_rcv_devi_cd     --  签收分部编码            
+				,cfm_rcv_devi_nm        AS  cfm_rcv_devi_nm     --  签收分部名称            
+				,delv_emp_cd            AS  delv_emp_cd         --  派件业务员编码          
+				,delv_emp_nm            AS  delv_emp_nm         --  派件业务员名称          
+				,dest_prov_cd           AS  dest_prov_cd        --  目的省份编码            
+				,dest_prov_nm           AS  dest_prov_nm        --  目的省份名称            
+				,dest_city_cd           AS  dest_city_cd        --  目的城市编码            
+				,dest_city_nm           AS  dest_city_nm        --  目的城市名称            
+				,dest_cnty_cd           AS  dest_cnty_cd        --  目的区县编码            
+				,dest_cnty_nm           AS  dest_cnty_nm        --  目的区县名称            
+				,cfm_rcv_city_cd        AS  cfm_rcv_city_cd     --  签收城市编码            
+				,cfm_rcv_city_nm        AS  cfm_rcv_city_nm     --  签收城市名称            
+				,actl_delv_dur          AS  actl_delv_dur       --  实际派送历时            
+				,stip_delv_dur          AS  stip_delv_dur       --  规定派送历时            
+				,actl_wgt               AS  actl_wgt            --  实际重量                
+				,vol_wgt                AS  vol_wgt             --  计泡重量                
+				,pick_setl_wgt          AS  pick_setl_wgt       --  揽件结算重量            
+				,setl_wgt               AS  setl_wgt            --  结算重量                
+				,setl_wgt_adj           AS  setl_wgt_adj        --  第11天结算重量          
+				,CASE WHEN setl_wgt_typ='1' THEN '实重'
+					  WHEN setl_wgt_typ='2' THEN '计泡'
+					  ELSE setl_wgt_typ
+			     END                    AS  setl_wgt_typ        --  结算重量类型            
+				,CASE WHEN trans_typ='1' THEN '汽运'
+				      WHEN trans_typ='2' THEN '航空'
+				      ELSE trans_typ
+				 END                    AS  trans_typ           --  运输方式                
+				,one_grd_exp_cd         AS  one_grd_exp_cd      --  一级费用类型编码        
+				,one_grd_exp_nm         AS  one_grd_exp_nm      --  一级费用类型名称        
+				,two_grd_exp_cd         AS  two_grd_exp_cd      --  二级费用类型编码        
+				,two_grd_exp_nm         AS  two_grd_exp_nm      --  二级费用类型名称        
+				,amnt                   AS  amnt                --  费用金额                
+				,adj_amnt               AS  adj_amnt            --  小计(新-旧)             
+				,setl_dt_rng            AS  setl_dt_rng         --  结算日期范围            
+				,CASE WHEN if_car='0' THEN '否'
+				      WHEN if_car='1' THEN '是'
+				      ELSE if_car
+				 END                    AS  if_car              --  是否直跑车              
+				,CASE WHEN if_ship='0' THEN '否'
+				      WHEN if_ship='1' THEN '是'
+				      ELSE if_ship
+				 END                    AS  if_ship             --  是否同城件              
+				,car_exp                AS  car_exp             --  广东报表整车称重费第1天 
+				,car_exp_adj            AS  car_exp_adj         --  广东报表整车称重费第11天
+				,adj_typ                AS  adj_typ             --  调整方式                
+				,err_typ                AS  err_typ             --  错误类别                
+				,wgt                    AS  wgt                 --  重量                    
+				,entr_dt                AS  entr_dt             --  录入时间                
+				,subd_typ               AS  subd_typ            --  补贴类型                
+				,rt                     AS  rt                  --  费率                    
+				,CASE WHEN pick_scor_if_same='0' THEN '否'
+				      WHEN pick_scor_if_same='1' THEN '是'
+				      ELSE pick_scor_if_same
+				 END                    AS  pick_scor_if_same   --  揽录分是否一致
+		   FROM setl.${tb_nm} 		   	
+		   <where> 
+			<if test='ship_id != null and ship_id != "" '>
+				AND ship_id IN 
+				 <foreach item="item" index="index" collection="ship_id_array" open="(" separator="," close=")" >
+		            #{item,jdbcType=BIGINT}
+		         </foreach>
+			</if>
+			<if test='sel_start_dt!=null and sel_start_dt !="" '>
+			    AND setl_dt >= #{sel_start_dt,jdbcType=DATE} 
+			</if>
+			<if test='sel_end_dt!=null and sel_end_dt != "" '>
+				<![CDATA[	AND setl_dt <= #{sel_end_dt,jdbcType=DATE} ]]>
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND setl_org_cd  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='org_id != null and org_id != "" '>
+				AND setl_org_sub_cd = #{org_id,jdbcType=INTEGER}
+			</if>
+			<if test='one_fee_cd != null and one_fee_cd != "" '>
+				AND one_grd_exp_cd = #{one_fee_cd,jdbcType=INTEGER}
+			</if>
+			<if test='two_fee_cd != null and two_fee_cd != "" '>
+				AND two_grd_exp_cd = #{two_fee_cd,jdbcType=INTEGER}
+			</if>
+			<if test='cust_nm != null and cust_nm != "" '>
+				AND alloc_cust_nm LIKE CONCAT('%', #{cust_nm,jdbcType=VARCHAR}, '%')
+			</if>
+			<if test='trans_typ != null and trans_typ != "" '>
+				AND trans_typ = #{trans_typ,jdbcType=INTEGER}
+			</if>
+			<if test='if_car != null and if_car != "" '>
+				AND if_car = #{if_car,jdbcType=INTEGER}
+			</if>
+			<if test='if_city != null and if_city != "" '>
+				AND if_ship = #{if_city,jdbcType=INTEGER}
+			</if>
+			<if test='chk_org != null and chk_org != "" '>
+				AND pick_scor_if_same = #{chk_org,jdbcType=INTEGER}
+			</if>
+			<if test='chk_wgt != null and chk_wgt != "" '>
+				AND wgt = if(#{chk_wgt,jdbcType=INTEGER}=1,5,wgt)
+			</if>
+			<if test='chk_vol != null and chk_vol != "" '>
+				AND setl_wgt_typ = if(#{chk_wgt,jdbcType=INTEGER}=1,2,1)
+			</if>
+		</where>
+		</foreach>
+		) a	
+		LIMIT #{start_num},#{row_num}
+	</select>
+
+	<!-- 汇总查询 -->
+	<select id="searchFooterData" parameterType="java.util.Map"
+		resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+			COUNT(*)        AS  setl_org_cd       
+		FROM 
+		(
+		]]>	
+		<foreach item="tb_nm" index="index" collection="tb_list" separator="union all" >
+			SELECT
+				setl_dt                 AS  setl_dt             --  结算日期                
+				,setl_adj_dt            AS  setl_adj_dt         --  结算调整日期            
+				,ship_id                AS  ship_id             --  运单号                  
+				,grtr_pkg_id            AS  grtr_pkg_id         --  大包号                  
+				,setl_org_cd            AS  setl_org_cd         --  结算公司编码            
+				,setl_org_nm            AS  setl_org_nm         --  结算公司名称            
+				,setl_org_sub_cd        AS  setl_org_sub_cd     --  结算公司下级站点编码    
+				,setl_org_sub_nm        AS  setl_org_sub_nm     --  结算公司下级站点名称    
+				,unit_dt                AS  unit_dt             --  录单日期                
+				,unit_brch_cd           AS  unit_brch_cd        --  录单网点编码            
+				,unit_brch_nm           AS  unit_brch_nm        --  录单网点名称            
+				,cd_alloc_brch_cd       AS  cd_alloc_brch_cd    --  条码分配网点编码        
+				,cd_alloc_brch_nm       AS  cd_alloc_brch_nm    --  条码分配网点名称        
+				,alloc_cust_cd          AS  alloc_cust_cd       --  所分配客户编码          
+				,alloc_cust_nm          AS  alloc_cust_nm       --  所分配客户名称          
+				,pick_dt                AS  pick_dt             --  揽件日期                
+				,pick_brch_cd           AS  pick_brch_cd        --  揽件或始发网点编码      
+				,pick_brch_nm           AS  pick_brch_nm        --  揽件或始发网点名称      
+				,pick_devi_cd           AS  pick_devi_cd        --  揽件分部编码            
+				,pick_devi_nm           AS  pick_devi_nm        --  揽件分部名称            
+				,pick_emp_cd            AS  pick_emp_cd         --  揽件业务员编码          
+				,pick_emp_nm            AS  pick_emp_nm         --  揽件业务员名称          
+				,strt_prov_cd           AS  strt_prov_cd        --  始发省份编码            
+				,strt_prov_nm           AS  strt_prov_nm        --  始发省份名称            
+				,strt_city_cd           AS  strt_city_cd        --  始发城市编码            
+				,strt_city_nm           AS  strt_city_nm        --  始发城市名称            
+				,strt_cnty_cd           AS  strt_cnty_cd        --  始发区县编码            
+				,strt_cnty_nm           AS  strt_cnty_nm        --  始发区县名称            
+				,rch_tm                 AS  rch_tm              --  到件时间                
+				,dist_tm                AS  dist_tm             --  分发时间                
+				,cfm_rcv_tm             AS  cfm_rcv_tm          --  签收日期                
+				,cfm_rcv_pers           AS  cfm_rcv_pers        --  签收人                  
+				,dest_brch_cd           AS  dest_brch_cd        --  签收或目的网点编码      
+				,dest_brch_nm           AS  dest_brch_nm        --  签收或目的网点名称      
+				,cfm_rcv_devi_cd        AS  cfm_rcv_devi_cd     --  签收分部编码            
+				,cfm_rcv_devi_nm        AS  cfm_rcv_devi_nm     --  签收分部名称            
+				,delv_emp_cd            AS  delv_emp_cd         --  派件业务员编码          
+				,delv_emp_nm            AS  delv_emp_nm         --  派件业务员名称          
+				,dest_prov_cd           AS  dest_prov_cd        --  目的省份编码            
+				,dest_prov_nm           AS  dest_prov_nm        --  目的省份名称            
+				,dest_city_cd           AS  dest_city_cd        --  目的城市编码            
+				,dest_city_nm           AS  dest_city_nm        --  目的城市名称            
+				,dest_cnty_cd           AS  dest_cnty_cd        --  目的区县编码            
+				,dest_cnty_nm           AS  dest_cnty_nm        --  目的区县名称            
+				,cfm_rcv_city_cd        AS  cfm_rcv_city_cd     --  签收城市编码            
+				,cfm_rcv_city_nm        AS  cfm_rcv_city_nm     --  签收城市名称            
+				,actl_delv_dur          AS  actl_delv_dur       --  实际派送历时            
+				,stip_delv_dur          AS  stip_delv_dur       --  规定派送历时            
+				,actl_wgt               AS  actl_wgt            --  实际重量                
+				,vol_wgt                AS  vol_wgt             --  计泡重量                
+				,pick_setl_wgt          AS  pick_setl_wgt       --  揽件结算重量            
+				,setl_wgt               AS  setl_wgt            --  结算重量                
+				,setl_wgt_adj           AS  setl_wgt_adj        --  第11天结算重量          
+				,setl_wgt_typ           AS  setl_wgt_typ        --  结算重量类型            
+				,trans_typ              AS  trans_typ           --  运输方式                
+				,one_grd_exp_cd         AS  one_grd_exp_cd      --  一级费用类型编码        
+				,one_grd_exp_nm         AS  one_grd_exp_nm      --  一级费用类型名称        
+				,two_grd_exp_cd         AS  two_grd_exp_cd      --  二级费用类型编码        
+				,two_grd_exp_nm         AS  two_grd_exp_nm      --  二级费用类型名称        
+				,amnt                   AS  amnt                --  费用金额                
+				,adj_amnt               AS  adj_amnt            --  小计(新-旧)             
+				,setl_dt_rng            AS  setl_dt_rng         --  结算日期范围            
+				,if_car                 AS  if_car              --  是否直跑车              
+				,if_ship                AS  if_ship             --  是否同城件              
+				,car_exp                AS  car_exp             --  广东报表整车称重费第1天 
+				,car_exp_adj            AS  car_exp_adj         --  广东报表整车称重费第11天
+				,adj_typ                AS  adj_typ             --  调整方式                
+				,err_typ                AS  err_typ             --  错误类别                
+				,wgt                    AS  wgt                 --  重量                    
+				,entr_dt                AS  entr_dt             --  录入时间                
+				,subd_typ               AS  subd_typ            --  补贴类型                
+				,rt                     AS  rt                  --  费率                    
+				,pick_scor_if_same      AS  pick_scor_if_same   --  揽录分是否一致
+		   FROM setl.${tb_nm} 		   	
+		   <where> 
+			<if test='ship_id != null and ship_id != "" '>
+				AND ship_id IN 
+				 <foreach item="item" index="index" collection="ship_id_array" open="(" separator="," close=")" >
+		            #{item,jdbcType=BIGINT}
+		         </foreach>
+			</if>
+			<if test='sel_start_dt!=null and sel_start_dt !="" '>
+			    AND setl_dt >= #{sel_start_dt,jdbcType=DATE} 
+			</if>
+			<if test='sel_end_dt!=null and sel_end_dt != "" '>
+				<![CDATA[	AND setl_dt <= #{sel_end_dt,jdbcType=DATE} ]]>
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND setl_org_cd  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='org_id != null and org_id != "" '>
+				AND setl_org_sub_cd = #{org_id,jdbcType=INTEGER}
+			</if>
+			<if test='one_fee_cd != null and one_fee_cd != "" '>
+				AND one_grd_exp_cd = #{one_fee_cd,jdbcType=INTEGER}
+			</if>
+			<if test='two_fee_cd != null and two_fee_cd != "" '>
+				AND two_grd_exp_cd = #{two_fee_cd,jdbcType=INTEGER}
+			</if>
+			<if test='cust_nm != null and cust_nm != "" '>
+				AND alloc_cust_nm LIKE CONCAT('%', #{cust_nm,jdbcType=VARCHAR}, '%')
+			</if>
+			<if test='trans_typ != null and trans_typ != "" '>
+				AND trans_typ = #{trans_typ,jdbcType=INTEGER}
+			</if>
+			<if test='if_car != null and if_car != "" '>
+				AND if_car = #{if_car,jdbcType=INTEGER}
+			</if>
+			<if test='if_city != null and if_city != "" '>
+				AND if_ship = #{if_city,jdbcType=INTEGER}
+			</if>
+			<if test='chk_org != null and chk_org != "" '>
+				AND pick_scor_if_same = #{chk_org,jdbcType=INTEGER}
+			</if>
+			<if test='chk_wgt != null and chk_wgt != "" '>
+				AND wgt = if(#{chk_wgt,jdbcType=INTEGER}=1,5,wgt)
+			</if>
+			<if test='chk_vol != null and chk_vol != "" '>
+				AND setl_wgt_typ = if(#{chk_wgt,jdbcType=INTEGER}=1,2,1)
+			</if>
+		</where>
+		</foreach>
+		) a	
+	</select>
+	
+	<select id="exportData" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+	<![CDATA[
+		SELECT
+			 CONVERT('结算日期' USING GBK)
+			,CONVERT('结算调整日期' USING GBK)
+			,CONVERT('运单号' USING GBK)
+			,CONVERT('大包号' USING GBK)
+			,CONVERT('结算公司编码' USING GBK)
+			,CONVERT('结算公司名称' USING GBK)
+			,CONVERT('结算公司下级站点编码' USING GBK)
+			,CONVERT('结算公司下级站点名称' USING GBK)
+			,CONVERT('录单日期' USING GBK)
+			,CONVERT('录单网点编码' USING GBK)
+			,CONVERT('录单网点名称' USING GBK)
+			,CONVERT('条码分配网点编码' USING GBK)
+			,CONVERT('条码分配网点名称' USING GBK)
+			,CONVERT('所分配客户编码' USING GBK)
+			,CONVERT('所分配客户名称' USING GBK)
+			,CONVERT('揽件日期' USING GBK)
+			,CONVERT('揽件或始发网点编码' USING GBK)
+			,CONVERT('揽件或始发网点名称' USING GBK)
+			,CONVERT('揽件分部编码' USING GBK)
+			,CONVERT('揽件分部名称' USING GBK)
+			,CONVERT('揽件业务员编码' USING GBK)
+			,CONVERT('揽件业务员名称' USING GBK)
+			,CONVERT('始发省份编码' USING GBK)
+			,CONVERT('始发省份名称' USING GBK)
+			,CONVERT('始发城市编码' USING GBK)
+			,CONVERT('始发城市名称' USING GBK)
+			,CONVERT('始发区县编码' USING GBK)
+			,CONVERT('始发区县名称' USING GBK)
+			,CONVERT('到件时间' USING GBK)
+			,CONVERT('分发时间' USING GBK)
+			,CONVERT('签收日期' USING GBK)
+			,CONVERT('签收人' USING GBK)
+			,CONVERT('签收或目的网点编码' USING GBK)
+			,CONVERT('签收或目的网点名称' USING GBK)
+			,CONVERT('签收分部编码' USING GBK)
+			,CONVERT('签收分部名称' USING GBK)
+			,CONVERT('派件业务员编码' USING GBK)
+			,CONVERT('派件业务员名称' USING GBK)
+			,CONVERT('目的省份编码' USING GBK)
+			,CONVERT('目的省份名称' USING GBK)
+			,CONVERT('目的城市编码' USING GBK)
+			,CONVERT('目的城市名称' USING GBK)
+			,CONVERT('目的区县编码' USING GBK)
+			,CONVERT('目的区县名称' USING GBK)
+			,CONVERT('签收城市编码' USING GBK)
+			,CONVERT('签收城市名称' USING GBK)
+			,CONVERT('实际派送历时' USING GBK)
+			,CONVERT('规定派送历时' USING GBK)
+			,CONVERT('实际重量' USING GBK)
+			,CONVERT('计泡重量' USING GBK)
+			,CONVERT('揽件结算重量' USING GBK)
+			,CONVERT('结算重量' USING GBK)
+			,CONVERT('第11天结算重量' USING GBK)
+			,CONVERT('结算重量类型' USING GBK)
+			,CONVERT('运输方式' USING GBK)
+			,CONVERT('一级费用类型编码' USING GBK)
+			,CONVERT('一级费用类型名称' USING GBK)
+			,CONVERT('二级费用类型编码' USING GBK)
+			,CONVERT('二级费用类型名称' USING GBK)
+			,CONVERT('费用金额' USING GBK)
+			,CONVERT('小计(新-旧)' USING GBK)
+			,CONVERT('结算日期范围' USING GBK)
+			,CONVERT('是否直跑车' USING GBK)
+			,CONVERT('是否同城件' USING GBK)
+			,CONVERT('广东报表整车称重费第1天 ' USING GBK)
+			,CONVERT('广东报表整车称重费第11天' USING GBK)
+			,CONVERT('调整方式' USING GBK)
+			,CONVERT('错误类别' USING GBK)
+			,CONVERT('重量' USING GBK)
+			,CONVERT('录入时间' USING GBK)
+			,CONVERT('补贴类型' USING GBK)
+			,CONVERT('费率' USING GBK)
+			,CONVERT('结算公司和条码分配是否一致' USING GBK)
+		union all
+		SELECT 
+			CONVERT(a.setl_dt            USING GBK)     AS  setl_dt             --  结算日期                
+			,CONVERT(a.setl_adj_dt        USING GBK)    AS  setl_adj_dt         --  结算调整日期            
+			,CONVERT(a.ship_id            USING GBK)    AS  ship_id             --  运单号                  
+			,CONVERT(a.grtr_pkg_id        USING GBK)    AS  grtr_pkg_id         --  大包号                  
+			,CONVERT(a.setl_org_cd        USING GBK)    AS  setl_org_cd         --  结算公司编码            
+			,CONVERT(a.setl_org_nm        USING GBK)    AS  setl_org_nm         --  结算公司名称            
+			,CONVERT(a.setl_org_sub_cd    USING GBK)    AS  setl_org_sub_cd     --  结算公司下级站点编码    
+			,CONVERT(a.setl_org_sub_nm    USING GBK)    AS  setl_org_sub_nm     --  结算公司下级站点名称    
+			,CONVERT(a.unit_dt            USING GBK)    AS  unit_dt             --  录单日期                
+			,CONVERT(a.unit_brch_cd       USING GBK)    AS  unit_brch_cd        --  录单网点编码            
+			,CONVERT(a.unit_brch_nm       USING GBK)    AS  unit_brch_nm        --  录单网点名称            
+			,CONVERT(a.cd_alloc_brch_cd   USING GBK)    AS  cd_alloc_brch_cd    --  条码分配网点编码        
+			,CONVERT(a.cd_alloc_brch_nm   USING GBK)    AS  cd_alloc_brch_nm    --  条码分配网点名称        
+			,CONVERT(a.alloc_cust_cd      USING GBK)    AS  alloc_cust_cd       --  所分配客户编码          
+			,CONVERT(a.alloc_cust_nm      USING GBK)    AS  alloc_cust_nm       --  所分配客户名称          
+			,CONVERT(a.pick_dt            USING GBK)    AS  pick_dt             --  揽件日期                
+			,CONVERT(a.pick_brch_cd       USING GBK)    AS  pick_brch_cd        --  揽件或始发网点编码      
+			,CONVERT(a.pick_brch_nm       USING GBK)    AS  pick_brch_nm        --  揽件或始发网点名称      
+			,CONVERT(a.pick_devi_cd       USING GBK)    AS  pick_devi_cd        --  揽件分部编码            
+			,CONVERT(a.pick_devi_nm       USING GBK)    AS  pick_devi_nm        --  揽件分部名称            
+			,CONVERT(a.pick_emp_cd        USING GBK)    AS  pick_emp_cd         --  揽件业务员编码          
+			,CONVERT(a.pick_emp_nm        USING GBK)    AS  pick_emp_nm         --  揽件业务员名称          
+			,CONVERT(a.strt_prov_cd       USING GBK)    AS  strt_prov_cd        --  始发省份编码            
+			,CONVERT(a.strt_prov_nm       USING GBK)    AS  strt_prov_nm        --  始发省份名称            
+			,CONVERT(a.strt_city_cd       USING GBK)    AS  strt_city_cd        --  始发城市编码            
+			,CONVERT(a.strt_city_nm       USING GBK)    AS  strt_city_nm        --  始发城市名称            
+			,CONVERT(a.strt_cnty_cd       USING GBK)    AS  strt_cnty_cd        --  始发区县编码            
+			,CONVERT(a.strt_cnty_nm       USING GBK)    AS  strt_cnty_nm        --  始发区县名称            
+			,CONVERT(a.rch_tm             USING GBK)    AS  rch_tm              --  到件时间                
+			,CONVERT(a.dist_tm            USING GBK)    AS  dist_tm             --  分发时间                
+			,CONVERT(a.cfm_rcv_tm         USING GBK)    AS  cfm_rcv_tm          --  签收日期                
+			,CONVERT(a.cfm_rcv_pers       USING GBK)    AS  cfm_rcv_pers        --  签收人                  
+			,CONVERT(a.dest_brch_cd       USING GBK)    AS  dest_brch_cd        --  签收或目的网点编码      
+			,CONVERT(a.dest_brch_nm       USING GBK)    AS  dest_brch_nm        --  签收或目的网点名称      
+			,CONVERT(a.cfm_rcv_devi_cd    USING GBK)    AS  cfm_rcv_devi_cd     --  签收分部编码            
+			,CONVERT(a.cfm_rcv_devi_nm    USING GBK)    AS  cfm_rcv_devi_nm     --  签收分部名称            
+			,CONVERT(a.delv_emp_cd        USING GBK)    AS  delv_emp_cd         --  派件业务员编码          
+			,CONVERT(a.delv_emp_nm        USING GBK)    AS  delv_emp_nm         --  派件业务员名称          
+			,CONVERT(a.dest_prov_cd       USING GBK)    AS  dest_prov_cd        --  目的省份编码            
+			,CONVERT(a.dest_prov_nm       USING GBK)    AS  dest_prov_nm        --  目的省份名称            
+			,CONVERT(a.dest_city_cd       USING GBK)    AS  dest_city_cd        --  目的城市编码            
+			,CONVERT(a.dest_city_nm       USING GBK)    AS  dest_city_nm        --  目的城市名称            
+			,CONVERT(a.dest_cnty_cd       USING GBK)    AS  dest_cnty_cd        --  目的区县编码            
+			,CONVERT(a.dest_cnty_nm       USING GBK)    AS  dest_cnty_nm        --  目的区县名称            
+			,CONVERT(a.cfm_rcv_city_cd    USING GBK)    AS  cfm_rcv_city_cd     --  签收城市编码            
+			,CONVERT(a.cfm_rcv_city_nm    USING GBK)    AS  cfm_rcv_city_nm     --  签收城市名称            
+			,CONVERT(a.actl_delv_dur      USING GBK)    AS  actl_delv_dur       --  实际派送历时            
+			,CONVERT(a.stip_delv_dur      USING GBK)    AS  stip_delv_dur       --  规定派送历时            
+			,CONVERT(a.actl_wgt           USING GBK)    AS  actl_wgt            --  实际重量                
+			,CONVERT(a.vol_wgt            USING GBK)    AS  vol_wgt             --  计泡重量                
+			,CONVERT(a.pick_setl_wgt      USING GBK)    AS  pick_setl_wgt       --  揽件结算重量            
+			,CONVERT(a.setl_wgt           USING GBK)    AS  setl_wgt            --  结算重量                
+			,CONVERT(a.setl_wgt_adj       USING GBK)    AS  setl_wgt_adj        --  第11天结算重量          
+			,CONVERT(a.setl_wgt_typ       USING GBK)    AS  setl_wgt_typ        --  结算重量类型            
+			,CONVERT(a.trans_typ          USING GBK)    AS  trans_typ           --  运输方式                
+			,CONVERT(a.one_grd_exp_cd     USING GBK)    AS  one_grd_exp_cd      --  一级费用类型编码        
+			,CONVERT(a.one_grd_exp_nm     USING GBK)    AS  one_grd_exp_nm      --  一级费用类型名称        
+			,CONVERT(a.two_grd_exp_cd     USING GBK)    AS  two_grd_exp_cd      --  二级费用类型编码        
+			,CONVERT(a.two_grd_exp_nm     USING GBK)    AS  two_grd_exp_nm      --  二级费用类型名称        
+			,CONVERT(a.amnt               USING GBK)    AS  amnt                --  费用金额                
+			,CONVERT(a.adj_amnt           USING GBK)    AS  adj_amnt            --  小计(新-旧)             
+			,CONVERT(a.setl_dt_rng        USING GBK)    AS  setl_dt_rng         --  结算日期范围            
+			,CONVERT(a.if_car             USING GBK)    AS  if_car              --  是否直跑车              
+			,CONVERT(a.if_ship            USING GBK)    AS  if_ship             --  是否同城件              
+			,CONVERT(a.car_exp            USING GBK)    AS  car_exp             --  广东报表整车称重费第1天 
+			,CONVERT(a.car_exp_adj        USING GBK)    AS  car_exp_adj         --  广东报表整车称重费第11天
+			,CONVERT(a.adj_typ            USING GBK)    AS  adj_typ             --  调整方式                
+			,CONVERT(a.err_typ            USING GBK)    AS  err_typ             --  错误类别                
+			,CONVERT(a.wgt                USING GBK)    AS  wgt                 --  重量                    
+			,CONVERT(a.entr_dt            USING GBK)    AS  entr_dt             --  录入时间                
+			,CONVERT(a.subd_typ           USING GBK)    AS  subd_typ            --  补贴类型                
+			,CONVERT(a.rt                 USING GBK)    AS  rt                  --  费率                    
+			,CONVERT(a.pick_scor_if_same  USING GBK)    AS  pick_scor_if_same   --  揽录分是否一致
+		 FROM (
+		]]>	
+		<foreach item="tb_nm" index="index" collection="tb_list" separator="union all" >
+			SELECT
+				setl_dt                 AS  setl_dt             --  结算日期                
+				,setl_adj_dt            AS  setl_adj_dt         --  结算调整日期            
+				,ship_id                AS  ship_id             --  运单号                  
+				,grtr_pkg_id            AS  grtr_pkg_id         --  大包号                  
+				,setl_org_cd            AS  setl_org_cd         --  结算公司编码            
+				,setl_org_nm            AS  setl_org_nm         --  结算公司名称            
+				,setl_org_sub_cd        AS  setl_org_sub_cd     --  结算公司下级站点编码    
+				,setl_org_sub_nm        AS  setl_org_sub_nm     --  结算公司下级站点名称    
+				,unit_dt                AS  unit_dt             --  录单日期                
+				,unit_brch_cd           AS  unit_brch_cd        --  录单网点编码            
+				,unit_brch_nm           AS  unit_brch_nm        --  录单网点名称            
+				,cd_alloc_brch_cd       AS  cd_alloc_brch_cd    --  条码分配网点编码        
+				,cd_alloc_brch_nm       AS  cd_alloc_brch_nm    --  条码分配网点名称        
+				,alloc_cust_cd          AS  alloc_cust_cd       --  所分配客户编码          
+				,alloc_cust_nm          AS  alloc_cust_nm       --  所分配客户名称          
+				,pick_dt                AS  pick_dt             --  揽件日期                
+				,pick_brch_cd           AS  pick_brch_cd        --  揽件或始发网点编码      
+				,pick_brch_nm           AS  pick_brch_nm        --  揽件或始发网点名称      
+				,pick_devi_cd           AS  pick_devi_cd        --  揽件分部编码            
+				,pick_devi_nm           AS  pick_devi_nm        --  揽件分部名称            
+				,pick_emp_cd            AS  pick_emp_cd         --  揽件业务员编码          
+				,pick_emp_nm            AS  pick_emp_nm         --  揽件业务员名称          
+				,strt_prov_cd           AS  strt_prov_cd        --  始发省份编码            
+				,strt_prov_nm           AS  strt_prov_nm        --  始发省份名称            
+				,strt_city_cd           AS  strt_city_cd        --  始发城市编码            
+				,strt_city_nm           AS  strt_city_nm        --  始发城市名称            
+				,strt_cnty_cd           AS  strt_cnty_cd        --  始发区县编码            
+				,strt_cnty_nm           AS  strt_cnty_nm        --  始发区县名称            
+				,rch_tm                 AS  rch_tm              --  到件时间                
+				,dist_tm                AS  dist_tm             --  分发时间                
+				,cfm_rcv_tm             AS  cfm_rcv_tm          --  签收日期                
+				,cfm_rcv_pers           AS  cfm_rcv_pers        --  签收人                  
+				,dest_brch_cd           AS  dest_brch_cd        --  签收或目的网点编码      
+				,dest_brch_nm           AS  dest_brch_nm        --  签收或目的网点名称      
+				,cfm_rcv_devi_cd        AS  cfm_rcv_devi_cd     --  签收分部编码            
+				,cfm_rcv_devi_nm        AS  cfm_rcv_devi_nm     --  签收分部名称            
+				,delv_emp_cd            AS  delv_emp_cd         --  派件业务员编码          
+				,delv_emp_nm            AS  delv_emp_nm         --  派件业务员名称          
+				,dest_prov_cd           AS  dest_prov_cd        --  目的省份编码            
+				,dest_prov_nm           AS  dest_prov_nm        --  目的省份名称            
+				,dest_city_cd           AS  dest_city_cd        --  目的城市编码            
+				,dest_city_nm           AS  dest_city_nm        --  目的城市名称            
+				,dest_cnty_cd           AS  dest_cnty_cd        --  目的区县编码            
+				,dest_cnty_nm           AS  dest_cnty_nm        --  目的区县名称            
+				,cfm_rcv_city_cd        AS  cfm_rcv_city_cd     --  签收城市编码            
+				,cfm_rcv_city_nm        AS  cfm_rcv_city_nm     --  签收城市名称            
+				,actl_delv_dur          AS  actl_delv_dur       --  实际派送历时            
+				,stip_delv_dur          AS  stip_delv_dur       --  规定派送历时            
+				,actl_wgt               AS  actl_wgt            --  实际重量                
+				,vol_wgt                AS  vol_wgt             --  计泡重量                
+				,pick_setl_wgt          AS  pick_setl_wgt       --  揽件结算重量            
+				,setl_wgt               AS  setl_wgt            --  结算重量                
+				,setl_wgt_adj           AS  setl_wgt_adj        --  第11天结算重量          
+				,CASE WHEN setl_wgt_typ='1' THEN '实重'
+					  WHEN setl_wgt_typ='2' THEN '计泡'
+					  ELSE setl_wgt_typ
+			     END                    AS  setl_wgt_typ        --  结算重量类型            
+				,CASE WHEN trans_typ='1' THEN '汽运'
+				      WHEN trans_typ='2' THEN '航空'
+				      ELSE trans_typ
+				 END                    AS  trans_typ           --  运输方式             
+				,one_grd_exp_cd         AS  one_grd_exp_cd      --  一级费用类型编码        
+				,one_grd_exp_nm         AS  one_grd_exp_nm      --  一级费用类型名称        
+				,two_grd_exp_cd         AS  two_grd_exp_cd      --  二级费用类型编码        
+				,two_grd_exp_nm         AS  two_grd_exp_nm      --  二级费用类型名称        
+				,amnt                   AS  amnt                --  费用金额                
+				,adj_amnt               AS  adj_amnt            --  小计(新-旧)             
+				,setl_dt_rng            AS  setl_dt_rng         --  结算日期范围            
+				,CASE WHEN if_car='0' THEN '否'
+				      WHEN if_car='1' THEN '是'
+				      ELSE if_car
+				 END                    AS  if_car              --  是否直跑车              
+				,CASE WHEN if_ship='0' THEN '否'
+				      WHEN if_ship='1' THEN '是'
+				      ELSE if_ship
+				 END                    AS  if_ship             --  是否同城件              
+				,car_exp                AS  car_exp             --  广东报表整车称重费第1天 
+				,car_exp_adj            AS  car_exp_adj         --  广东报表整车称重费第11天
+				,adj_typ                AS  adj_typ             --  调整方式                
+				,err_typ                AS  err_typ             --  错误类别                
+				,wgt                    AS  wgt                 --  重量                    
+				,entr_dt                AS  entr_dt             --  录入时间                
+				,subd_typ               AS  subd_typ            --  补贴类型                
+				,rt                     AS  rt                  --  费率                    
+				,CASE WHEN pick_scor_if_same='0' THEN '否'
+				      WHEN pick_scor_if_same='1' THEN '是'
+				      ELSE pick_scor_if_same
+				 END                    AS  pick_scor_if_same   --  揽录分是否一致
+		   FROM setl.${tb_nm} 	   	
+		   <where> 
+			<if test='ship_id != null and ship_id != "" '>
+				AND ship_id IN 
+				 <foreach item="item" index="index" collection="ship_id_array" open="(" separator="," close=")" >
+		            #{item,jdbcType=BIGINT}
+		         </foreach>
+			</if>
+			<if test='sel_start_dt!=null and sel_start_dt !="" '>
+			    AND setl_dt >= #{sel_start_dt,jdbcType=DATE} 
+			</if>
+			<if test='sel_end_dt!=null and sel_end_dt != "" '>
+				<![CDATA[	AND setl_dt <= #{sel_end_dt,jdbcType=DATE} ]]>
+			</if>
+			<if test='sel_level!=null and sel_level == "5" '>
+				AND setl_org_cd  = #{sel_cd,jdbcType=INTEGER}
+			</if>
+			<if test='org_id != null and org_id != "" '>
+				AND setl_org_sub_cd = #{org_id,jdbcType=INTEGER}
+			</if>
+			<if test='one_fee_cd != null and one_fee_cd != "" '>
+				AND one_grd_exp_cd = #{one_fee_cd,jdbcType=INTEGER}
+			</if>
+			<if test='two_fee_cd != null and two_fee_cd != "" '>
+				AND two_grd_exp_cd = #{two_fee_cd,jdbcType=INTEGER}
+			</if>
+			<if test='cust_nm != null and cust_nm != "" '>
+				AND alloc_cust_nm LIKE CONCAT('%', #{cust_nm,jdbcType=VARCHAR}, '%')
+			</if>
+			<if test='trans_typ != null and trans_typ != "" '>
+				AND trans_typ = #{trans_typ,jdbcType=INTEGER}
+			</if>
+			<if test='if_car != null and if_car != "" '>
+				AND if_car = #{if_car,jdbcType=INTEGER}
+			</if>
+			<if test='if_city != null and if_city != "" '>
+				AND if_ship = #{if_city,jdbcType=INTEGER}
+			</if>
+			<if test='chk_org != null and chk_org != "" '>
+				AND pick_scor_if_same = #{chk_org,jdbcType=INTEGER}
+			</if>
+			<if test='chk_wgt != null and chk_wgt != "" '>
+				AND wgt = if(#{chk_wgt,jdbcType=INTEGER}=1,5,wgt)
+			</if>
+			<if test='chk_vol != null and chk_vol != "" '>
+				AND setl_wgt_typ = if(#{chk_wgt,jdbcType=INTEGER}=1,2,1)
+			</if>
+		</where>
+		</foreach>	
+		LIMIT #{start_num},#{row_num}
+		) a
+		into outfile #{exp_file,jdbcType=VARCHAR} fields terminated by ',' optionally enclosed by '"' escaped by '"' lines terminated by '\n'
+	</select>
+</mapper>   
